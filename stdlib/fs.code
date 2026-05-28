@@ -24,25 +24,34 @@
 #
 # ── Types exported ────────────────────────────────────────────────────────────
 #
-#   FileStat   — snapshot of file metadata (size, timestamps, permissions)
-#   File       — static factory + class-style methods for file operations
-#   Dir        — static factory + class-style methods for directory operations
-#   Path       — pure string-manipulation helpers for path construction
+#   FileStat        — snapshot of file metadata (size, timestamps, permissions)
+#   File            — static factory + class-style methods for file operations
+#   Dir             — static factory + class-style methods for directory operations
+#   Path            — pure string-manipulation helpers for path construction
+#   FileReadStream  — lazy pull reader; use File.createReadStream(path)
+#   FileWriteStream — buffered writer;  use File.createWriteStream(path)
 #
 # ── File ─────────────────────────────────────────────────────────────────────
 #
-#   File.read(path)              → string          read entire file as text
-#   File.write(path, content)    → bool            write / overwrite
-#   File.append(path, content)   → bool            append to end
-#   File.copy(src, dst)          → bool            byte-level copy
-#   File.rename(from, to)        → bool            rename or move
-#   File.delete(path)            → bool            remove the file
-#   File.exists(path)            → bool            path exists (file or dir)
-#   File.isFile(path)            → bool            true only for regular files
-#   File.size(path)              → Int64           size in bytes, -1 on error
-#   File.touch(path)             → bool            create empty / update mtime
-#   File.chmod(path, mode)       → bool            POSIX permission bits
-#   File.stat(path)              → FileStat        full metadata snapshot
+#   File.read(path)                    → string          read entire file as text
+#   File.write(path, content)          → bool            write / overwrite
+#   File.append(path, content)         → bool            append to end
+#   File.copy(src, dst)                → bool            byte-level copy
+#   File.rename(from, to)              → bool            rename or move
+#   File.delete(path)                  → bool            remove the file
+#   File.exists(path)                  → bool            path exists (file or dir)
+#   File.isFile(path)                  → bool            true only for regular files
+#   File.size(path)                    → Int64           size in bytes, -1 on error
+#   File.touch(path)                   → bool            create empty / update mtime
+#   File.chmod(path, mode)             → bool            POSIX permission bits
+#   File.stat(path)                    → FileStat        full metadata snapshot
+#   File.createReadStream(path)        → FileReadStream  lazy pull reader (chunk/line-by-line)
+#   File.createWriteStream(path)       → FileWriteStream buffered writer (truncate)
+#   File.createAppendStream(path)      → FileWriteStream buffered writer (append)
+#
+# Note: File.readStream / writeStream / appendStream (MemoryStream-based) have
+# been replaced by the above FileReadStream / FileWriteStream API. Import
+# stdlib/stream directly if you need MemoryStream-backed file I/O.
 #
 # ── Dir ──────────────────────────────────────────────────────────────────────
 #
@@ -146,6 +155,24 @@ extern fn fs_path_normalize(path: string): string;
 extern fn fs_path_relative(from: string, to: string): string;
 extern fn fs_path_sep(): string;
 extern fn fs_path_delimiter(): string;
+
+# ── FileReadStream ────────────────────────────────────────────────────────────
+extern fn frs_open(path: string, hwm: int): FileReadStream;
+extern fn frs_read(s: FileReadStream, n: int): string;
+extern fn frs_read_byte(s: FileReadStream): int;
+extern fn frs_read_line(s: FileReadStream): string;
+extern fn frs_read_all(s: FileReadStream): string;
+extern fn frs_at_end(s: FileReadStream): int;
+extern fn frs_close(s: FileReadStream);
+extern fn frs_free(s: FileReadStream);
+
+# ── FileWriteStream ───────────────────────────────────────────────────────────
+extern fn fws_open(path: string, append: int): FileWriteStream;
+extern fn fws_write(s: FileWriteStream, text: string);
+extern fn fws_write_byte(s: FileWriteStream, b: int);
+extern fn fws_flush(s: FileWriteStream);
+extern fn fws_close(s: FileWriteStream);
+extern fn fws_free(s: FileWriteStream);
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FileStat — metadata snapshot for a single path
@@ -263,6 +290,179 @@ File extends {
             isDir:     fs_stat_is_dir(path) == 1,
             isSymlink: fs_stat_is_symlink(path) == 1,
         };
+    }
+
+    # ── Lazy streaming ────────────────────────────────────────────────────────
+
+    # Open `path` for incremental reading and return a FileReadStream.
+    # Unlike File.read(), the file is NOT loaded into memory up front — data
+    # flows on demand in chunks via readLine() / read(n) / readByte().
+    # The caller must call .free() when done to close the file handle.
+    #
+    #   const rs: FileReadStream = File.createReadStream("large.log");
+    #   while !rs.atEnd() {
+    #       print(rs.readLine());
+    #   }
+    #   rs.free();
+    export static fn createReadStream(path: string): FileReadStream {
+        return frs_open(path, 65536);
+    }
+
+    # Open `path` for writing (creates or truncates) and return a FileWriteStream.
+    # Data written via .write() / .writeln() is buffered by stdio until .flush()
+    # or .free() is called.
+    # The caller must call .free() when done to flush and close the file handle.
+    #
+    #   const ws: FileWriteStream = File.createWriteStream("out.txt");
+    #   ws.writeln("line one");
+    #   ws.writeln("line two");
+    #   ws.free();
+    export static fn createWriteStream(path: string): FileWriteStream {
+        return fws_open(path, 0);
+    }
+
+    # Open `path` for appending (creates if it does not exist) and return a
+    # FileWriteStream.  Existing content is preserved; new writes are added at
+    # the end of the file.
+    # The caller must call .free() when done.
+    #
+    #   const as: FileWriteStream = File.createAppendStream("log.txt");
+    #   as.writeln("new entry");
+    #   as.free();
+    export static fn createAppendStream(path: string): FileWriteStream {
+        return fws_open(path, 1);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FileReadStream — lazy file-backed pull reader
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Reads a file incrementally in chunks via a stdio FILE*; the file is never
+# fully loaded into memory, making it suitable for large files.
+# Obtain a FileReadStream through File.createReadStream(path).
+#
+#   const rs: FileReadStream = File.createReadStream("server.log");
+#   while !rs.atEnd() {
+#       const line: string = rs.readLine();
+#       # process line…
+#   }
+#   rs.free();
+#
+#   read(n)       → string   read up to n bytes as a string
+#   readByte()    → int      read one byte (0–255) or -1 at EOF
+#   readLine()    → string   read up to the next '\n' (strips newline)
+#   readAll()     → string   read all remaining bytes
+#   atEnd()       → bool     true when EOF is reached
+#   close()                  close the file handle (keep struct alive)
+#   free()                   close + release the struct
+
+export type FileReadStream = intrinsic("i8*");
+
+FileReadStream extends {
+
+    # Read up to `n` bytes from the current file position.
+    # Returns the bytes as a string (NUL-terminated).
+    # Returns "" at EOF or if the stream is closed / file not found.
+    export fn read(n: int): string {
+        return frs_read(self, n);
+    }
+
+    # Read one raw byte from the file.
+    # Returns the byte value (0–255) or -1 at EOF / on error.
+    export fn readByte(): int {
+        return frs_read_byte(self);
+    }
+
+    # Read bytes up to and including the next '\n', returning the line
+    # content WITHOUT the newline character.  Handles both LF and CRLF.
+    # Returns "" at EOF (after the last line has been consumed).
+    export fn readLine(): string {
+        return frs_read_line(self);
+    }
+
+    # Read all remaining bytes from the current position as a single string.
+    # Returns "" when already at EOF or the stream is closed.
+    export fn readAll(): string {
+        return frs_read_all(self);
+    }
+
+    # Return true when the file position is at or past EOF.
+    # Also returns true when the stream is closed or the file was not found.
+    export fn atEnd(): bool {
+        return frs_at_end(self) == 1;
+    }
+
+    # Close the underlying file handle without releasing the stream struct.
+    # Subsequent reads return "" / -1.  Idempotent.
+    export fn close() {
+        frs_close(self);
+    }
+
+    # Close the underlying file handle and free the stream struct.
+    # Must be called exactly once — double-free is detected and aborts.
+    export fn free() {
+        frs_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FileWriteStream — file-backed buffered writer
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Writes to a file through stdio's internal buffer.
+# Obtain a FileWriteStream through File.createWriteStream(path) (truncate)
+# or File.createAppendStream(path) (preserve + append).
+#
+#   const ws: FileWriteStream = File.createWriteStream("report.txt");
+#   ws.writeln("Name,Score");
+#   ws.writeln("Alice,42");
+#   ws.flush();   # optional — free() also flushes via fclose()
+#   ws.free();
+#
+#   write(text)       write a string without a trailing newline
+#   writeln(text)     write a string followed by '\n'
+#   writeByte(b)      write one byte (0–255)
+#   flush()           flush the stdio buffer to the OS
+#   close()           close the file handle (keep struct alive)
+#   free()            flush + close + release the struct
+
+export type FileWriteStream = intrinsic("i8*");
+
+FileWriteStream extends {
+
+    # Write `text` to the file without a trailing newline.
+    export fn write(text: string) {
+        fws_write(self, text);
+    }
+
+    # Write `text` followed by a newline character ('\n').
+    export fn writeln(text: string) {
+        fws_write(self, text);
+        fws_write_byte(self, 10);
+    }
+
+    # Write a single byte (0–255) to the file.
+    export fn writeByte(b: int) {
+        fws_write_byte(self, b);
+    }
+
+    # Flush the stdio internal buffer to the operating system.
+    # Not normally needed — fclose() (called by free()) flushes automatically.
+    export fn flush() {
+        fws_flush(self);
+    }
+
+    # Close the underlying file handle without releasing the stream struct.
+    # The buffer is flushed as part of fclose().  Idempotent.
+    export fn close() {
+        fws_close(self);
+    }
+
+    # Flush, close the underlying file handle, and free the stream struct.
+    # Must be called exactly once — double-free is detected and aborts.
+    export fn free() {
+        fws_free(self);
     }
 }
 

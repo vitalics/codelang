@@ -1,0 +1,96 @@
+import "stdlib/fs";
+
+# ── stdlib/fs — FileReadStream / FileWriteStream fixture ──────────────────────
+#
+# Tests File.createReadStream, File.createWriteStream, File.createAppendStream.
+# All I/O happens inside a fresh temp subdirectory.
+#
+# Expected output (15 lines, indices 0-14):
+#
+#  0  Hello              FileWriteStream.write → File.read verifies
+#  1  5                  File.size after write ("Hello" = 5 bytes)
+#  2  Hello, World       append(", World") → File.read verifies
+#  3  12                 File.size after append
+#  4  Fresh              createWriteStream truncates existing content
+#  5  alpha              FileReadStream.readLine #1
+#  6  beta               FileReadStream.readLine #2
+#  7  gamma              FileReadStream.readLine #3
+#  8  true               FileReadStream.atEnd() after all lines consumed
+#  9  beta               read(6) skips "alpha\n"; next readLine returns "beta"
+# 10  true               readAll() drains file; atEnd() confirms EOF
+# 11  true               atEnd() on an empty file returns true
+# 12  10                 File.size of "row1\nrow2\n" (4+1+4+1 = 10 bytes)
+# 13  row1               readLine #1 after writeln("row1")
+# 14  row2               readLine #2 after writeln("row2")
+
+fn main(): void {
+    const tmp:  string = Dir.temp();
+    const base: string = Path.join(tmp, "cl_fstreams");
+    Dir.removeAll(base);
+    Dir.createAll(base);
+
+    # ── FileWriteStream.write + verify ────────────────────────────────────────
+    const wpath: string = Path.join(base, "w.txt");
+    const ws: FileWriteStream = File.createWriteStream(wpath);
+    ws.write("Hello");
+    ws.free();
+    print(File.read(wpath));             # 0  Hello
+    print(File.size(wpath));             # 1  5
+
+    # ── createAppendStream adds to existing content ───────────────────────────
+    const ap: FileWriteStream = File.createAppendStream(wpath);
+    ap.write(", World");
+    ap.free();
+    print(File.read(wpath));             # 2  Hello, World
+    print(File.size(wpath));             # 3  12
+
+    # ── createWriteStream truncates existing content ───────────────────────────
+    const ws2: FileWriteStream = File.createWriteStream(wpath);
+    ws2.write("Fresh");
+    ws2.free();
+    print(File.read(wpath));             # 4  Fresh
+
+    # ── FileReadStream.readLine ────────────────────────────────────────────────
+    const lpath: string = Path.join(base, "lines.txt");
+    File.write(lpath, "alpha\nbeta\ngamma");
+    const rs: FileReadStream = File.createReadStream(lpath);
+    print(rs.readLine());                # 5  alpha
+    print(rs.readLine());                # 6  beta
+    print(rs.readLine());                # 7  gamma
+    print(rs.atEnd());                   # 8  true
+    rs.free();
+
+    # ── FileReadStream.read(n) advances position ──────────────────────────────
+    # "alpha\nbeta\ngamma": read(6) consumes "alpha\n"; readLine returns "beta"
+    const rs2: FileReadStream = File.createReadStream(lpath);
+    rs2.read(6);
+    print(rs2.readLine());               # 9  beta
+    rs2.free();
+
+    # ── FileReadStream.readAll + atEnd ────────────────────────────────────────
+    const rs3: FileReadStream = File.createReadStream(lpath);
+    rs3.readAll();
+    print(rs3.atEnd());                  # 10 true
+    rs3.free();
+
+    # ── atEnd on an empty file ────────────────────────────────────────────────
+    const epath: string = Path.join(base, "empty.txt");
+    File.touch(epath);
+    const rs4: FileReadStream = File.createReadStream(epath);
+    print(rs4.atEnd());                  # 11 true
+    rs4.free();
+
+    # ── FileWriteStream.writeln (appends '\n' automatically) ─────────────────
+    const nlpath: string = Path.join(base, "nl.txt");
+    const ws3: FileWriteStream = File.createWriteStream(nlpath);
+    ws3.writeln("row1");
+    ws3.writeln("row2");
+    ws3.free();
+    print(File.size(nlpath));            # 12 10  ("row1\nrow2\n" = 10 bytes)
+    const rs5: FileReadStream = File.createReadStream(nlpath);
+    print(rs5.readLine());               # 13 row1
+    print(rs5.readLine());               # 14 row2
+    rs5.free();
+
+    Dir.removeAll(base);
+}

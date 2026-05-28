@@ -1,0 +1,41 @@
+import "stdlib/fs";
+
+# fs_stream.code — exercises File.createReadStream / createWriteStream / createAppendStream.
+#
+# Expected output (5 lines):
+#   hello stream
+#   written
+#   true
+#   hello stream
+#   extra line
+
+fn main(): void {
+    const path: string = Path.join(Dir.temp(), "codelang_fs_stream_test.txt");
+
+    # ── File.createWriteStream — write two lines ──────────────────────────────
+    const ws: FileWriteStream = File.createWriteStream(path);
+    ws.writeln("hello stream");
+    ws.writeln("written");
+    ws.free();
+
+    # ── File.createReadStream — read them back ────────────────────────────────
+    const rs: FileReadStream = File.createReadStream(path);
+    print(rs.readLine());    # hello stream
+    print(rs.readLine());    # written
+    rs.free();
+
+    # ── File.write returns bool ───────────────────────────────────────────────
+    const wrote: bool = File.write(path, "ok\n");
+    print(wrote);            # true
+
+    # ── File.createAppendStream — preserve + append ───────────────────────────
+    File.write(path, "hello stream\n");
+    const ap: FileWriteStream = File.createAppendStream(path);
+    ap.writeln("extra line");
+    ap.free();
+
+    const rs2: FileReadStream = File.createReadStream(path);
+    print(rs2.readLine());   # hello stream
+    print(rs2.readLine());   # extra line
+    rs2.free();
+}

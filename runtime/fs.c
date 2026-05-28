@@ -725,3 +725,193 @@ char *fs_path_sep(void) {
 char *fs_path_delimiter(void) {
     return fs_strdup(PATH_DELIM);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FileReadStream — lazy file-backed pull reader
+ *
+ * Reads a file incrementally via stdio — unlike File.read() the whole file
+ * is never loaded into memory.  Backed by an fopen("rb") FILE*.
+ *
+ *   frs_open(path, hwm)   open; hwm = default chunk size hint (ignored internally
+ *                          but stored so CodeLang can pass it through)
+ *   frs_read(s, n)        read up to n bytes → heap string (NUL-terminated)
+ *   frs_read_byte(s)      read one byte (0–255) or -1 at EOF
+ *   frs_read_line(s)      read up to the next '\n' → string (strip '\n'/'\r\n')
+ *   frs_read_all(s)       read all remaining bytes → string
+ *   frs_at_end(s)         1 if at EOF (or closed), 0 otherwise
+ *   frs_close(s)          fclose without freeing the struct
+ *   frs_free(s)           fclose + free the struct (double-free guard)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+#define FRS_LINE_INIT 256
+
+typedef struct {
+    uint8_t  freed;
+    FILE    *fp;     /* NULL when closed or file not found */
+    int32_t  hwm;    /* default chunk hint */
+} FileReadStream;
+
+FileReadStream *frs_open(const char *path, int32_t hwm) {
+    FileReadStream *s = (FileReadStream *)calloc(1, sizeof(FileReadStream));
+    s->freed = 0;
+    s->hwm   = hwm > 0 ? hwm : 65536;
+    if (path) s->fp = fopen(path, "rb");
+    return s;
+}
+
+/*
+ * Read up to `n` bytes from the current file position.
+ * Returns a heap-allocated, NUL-terminated string of the bytes read.
+ * Returns "" on EOF, closed stream, or n <= 0.
+ */
+char *frs_read(FileReadStream *s, int32_t n) {
+    if (!s || s->freed || !s->fp || n <= 0 || feof(s->fp)) return fs_strdup("");
+    char   *buf = (char *)malloc((size_t)n + 1);
+    int32_t got = (int32_t)fread(buf, 1, (size_t)n, s->fp);
+    buf[got] = '\0';
+    if (got == 0) { free(buf); return fs_strdup(""); }
+    return buf;
+}
+
+/* Read one byte.  Returns the byte value (0–255) or -1 at EOF / closed. */
+int32_t frs_read_byte(FileReadStream *s) {
+    if (!s || s->freed || !s->fp) return -1;
+    return fgetc(s->fp);
+}
+
+/*
+ * Read bytes from the current position up to (and consuming) the next '\n'.
+ * Returns the line content without the newline character.
+ * Strips a trailing '\r' for CRLF inputs.
+ * Returns "" when the stream is at EOF before any character is read.
+ */
+char *frs_read_line(FileReadStream *s) {
+    if (!s || s->freed || !s->fp || feof(s->fp)) return fs_strdup("");
+    size_t cap = FRS_LINE_INIT;
+    char  *buf = (char *)malloc(cap);
+    size_t len = 0;
+    int    c;
+    while ((c = fgetc(s->fp)) != EOF && c != '\n') {
+        if (len + 2 >= cap) { cap *= 2; buf = (char *)realloc(buf, cap); }
+        buf[len++] = (char)c;
+    }
+    /* EOF with no bytes consumed — signal end-of-file */
+    if (c == EOF && len == 0) { free(buf); return fs_strdup(""); }
+    /* Strip trailing '\r' for Windows CRLF */
+    if (len > 0 && buf[len - 1] == '\r') len--;
+    buf[len] = '\0';
+    return buf;
+}
+
+/*
+ * Read all remaining bytes from the current position to EOF.
+ * Returns a heap-allocated, NUL-terminated string.
+ * Returns "" if the stream is already at EOF or closed.
+ */
+char *frs_read_all(FileReadStream *s) {
+    if (!s || s->freed || !s->fp || feof(s->fp)) return fs_strdup("");
+    size_t  cap = 4096;
+    char   *out = (char *)malloc(cap);
+    size_t  len = 0;
+    uint8_t chunk[4096];
+    size_t  n;
+    while ((n = fread(chunk, 1, sizeof(chunk), s->fp)) > 0) {
+        if (len + n + 1 > cap) {
+            while (cap < len + n + 1) cap *= 2;
+            out = (char *)realloc(out, cap);
+        }
+        memcpy(out + len, chunk, n);
+        len += n;
+    }
+    out[len] = '\0';
+    return out;
+}
+
+/*
+ * Return 1 if the stream is at or past EOF (or closed), 0 otherwise.
+ * Implemented by peeking one byte and un-getting it if not at EOF.
+ */
+int32_t frs_at_end(FileReadStream *s) {
+    if (!s || s->freed || !s->fp) return 1;
+    int c = fgetc(s->fp);
+    if (c == EOF) return 1;
+    ungetc(c, s->fp);
+    return 0;
+}
+
+/* Close the underlying file without freeing the struct. */
+void frs_close(FileReadStream *s) {
+    if (!s || s->freed) return;
+    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+}
+
+/* Close the underlying file and free the struct (double-free guard). */
+void frs_free(FileReadStream *s) {
+    if (!s) return;
+    if (s->freed) { fprintf(stderr, "double-free: FileReadStream\n"); abort(); }
+    s->freed = 1;
+    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+    free(s);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * FileWriteStream — file-backed buffered writer
+ *
+ * Wraps a stdio FILE* opened for writing ("wb") or appending ("ab").
+ * All writes go through stdio's internal buffer; call fws_flush() or
+ * fws_free() (which calls fclose, which flushes) to commit data.
+ *
+ *   fws_open(path, append)   open; append=0→"wb" (truncate), append=1→"ab"
+ *   fws_write(s, text)       fputs — write a NUL-terminated string
+ *   fws_write_byte(s, b)     fputc — write one byte (0–255)
+ *   fws_flush(s)             fflush — commit buffered data to the OS
+ *   fws_close(s)             fclose without freeing the struct
+ *   fws_free(s)              fclose + free the struct (double-free guard)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+typedef struct {
+    uint8_t  freed;
+    FILE    *fp;    /* NULL when closed or path not writable */
+} FileWriteStream;
+
+FileWriteStream *fws_open(const char *path, int32_t append) {
+    FileWriteStream *s = (FileWriteStream *)calloc(1, sizeof(FileWriteStream));
+    s->freed = 0;
+    if (path) s->fp = fopen(path, append ? "ab" : "wb");
+    return s;
+}
+
+/* Write a NUL-terminated string to the stream. */
+void fws_write(FileWriteStream *s, const char *text) {
+    if (!s || s->freed || !s->fp || !text) return;
+    fputs(text, s->fp);
+}
+
+/* Write a single byte (0–255) to the stream. */
+void fws_write_byte(FileWriteStream *s, int32_t b) {
+    if (!s || s->freed || !s->fp) return;
+    fputc(b & 0xFF, s->fp);
+}
+
+/* Flush the stdio buffer to the OS. */
+void fws_flush(FileWriteStream *s) {
+    if (!s || s->freed || !s->fp) return;
+    fflush(s->fp);
+}
+
+/* Close the underlying file without freeing the struct. */
+void fws_close(FileWriteStream *s) {
+    if (!s || s->freed) return;
+    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+}
+
+/* Close the underlying file and free the struct (double-free guard).
+ * fclose() flushes the stdio buffer automatically, so an explicit flush()
+ * before free() is not required. */
+void fws_free(FileWriteStream *s) {
+    if (!s) return;
+    if (s->freed) { fprintf(stderr, "double-free: FileWriteStream\n"); abort(); }
+    s->freed = 1;
+    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+    free(s);
+}
