@@ -1,0 +1,39 @@
+# buffer_search.code
+# Tests indexOf(), lastIndexOf(), includes(), equals().
+
+import "../../../stdlib/string";
+
+fn main() {
+    const hs = "abcabc";
+    const nd = "bc";
+    const ab = "xy";
+
+    let haystack: Buffer = hs.toBuffer();
+    let needle: Buffer   = nd.toBuffer();
+    let absent: Buffer   = ab.toBuffer();
+
+    print(haystack.indexOf(needle));       # 1
+    print(haystack.lastIndexOf(needle));   # 4
+    print(haystack.indexOf(absent));       # -1
+
+    if haystack.includes(needle) == true {
+        print(1);                          # 1  (found)
+    }
+    if haystack.includes(absent) == false {
+        print(0);                          # 0  (not found)
+    }
+
+    # equals
+    let copy: Buffer = haystack.clone();
+    if haystack.equals(copy) == true {
+        print(1);                          # 1  (same content)
+    }
+    if haystack.equals(needle) == false {
+        print(0);                          # 0  (different content)
+    }
+
+    copy.free();
+    absent.free();
+    needle.free();
+    haystack.free();
+}

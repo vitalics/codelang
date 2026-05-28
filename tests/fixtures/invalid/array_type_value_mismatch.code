@@ -1,0 +1,17 @@
+# array_type_value_mismatch.code
+# Tests that a value-typed array where the initializer values don't match
+# the type annotation causes a compile-time error.
+
+type LutTable {
+    const data: int[3; 10, 20, 30] = [1, 2, 0]   # wrong — values mismatch
+    name: int
+
+    static fn new(n: int): LutTable {
+        return Self { name: n };
+    }
+}
+
+fn main() {
+    let t = LutTable.new(7);
+    print(t.getName());
+}

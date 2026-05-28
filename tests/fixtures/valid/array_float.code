@@ -1,0 +1,41 @@
+import "../../../stdlib/array";
+import "../../../stdlib/numbers";
+
+fn main() {
+    # ── FloatArray (f32) ──────────────────────────────────────────────────────
+    let fa: FloatArray = FloatArray.new();
+    fa.push(1.5);
+    fa.push(2.5);
+    fa.push(3.5);
+    print(fa.length());       # 3
+    print(fa.get(0));         # 1.5
+    print(fa.get(2));         # 3.5
+    print(fa);                # [1.5, 2.5, 3.5]
+    fa.free();
+
+    # ── DoubleArray (f64) ─────────────────────────────────────────────────────
+    let da: DoubleArray = DoubleArray.new();
+    da.push(10.1);
+    da.push(20.2);
+    da.push(30.3);
+    print(da.length());       # 3
+    print(da.get(1));         # 20.2
+    print(da);                # [10.1, 20.2, 30.3]
+    da.free();
+
+    # ── Array<Float> generic alias → FloatArray ────────────────────────────────
+    let gf: Array<Float> = [];
+    gf.push(7.0);
+    gf.push(8.0);
+    print(gf.length());       # 2
+    print(gf);                # [7, 8]
+    gf.free();
+
+    # ── Array<float> generic alias → DoubleArray ──────────────────────────────
+    let gd: Array<float> = [];
+    gd.push(100.5);
+    gd.push(200.5);
+    print(gd.length());       # 2
+    print(gd);                # [100.5, 200.5]
+    gd.free();
+}

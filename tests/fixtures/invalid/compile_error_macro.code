@@ -1,0 +1,8 @@
+# tests/fixtures/invalid/compile_error_macro.code
+# Verifies that compileError! aborts compilation with the supplied message.
+
+import "stdlib/macros";
+
+fn main() {
+    compileError!("intentional compile-time abort");
+}

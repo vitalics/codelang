@@ -1,0 +1,16 @@
+import "../../../stdlib/string";
+
+# Returns the byte count of s, or 0 if empty.
+# The using ensures Buffer is always freed, even on early return.
+fn count_bytes(const s: string): int {
+    using b: Buffer = s.toBuffer();
+    let n: int = b.length();
+    if n == 0 { return 0; }
+    return n;
+}
+
+fn main() {
+    print(count_bytes(""));        # 0 (early return, using still fires)
+    print(count_bytes("hi"));      # 2
+    print(count_bytes("hello"));   # 5
+}

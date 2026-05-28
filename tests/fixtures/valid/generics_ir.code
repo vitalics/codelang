@@ -1,0 +1,8 @@
+fn swap_pair<A, B>(const a: A, const b: B): A {
+    return a;
+}
+
+fn main() {
+    let x: int = swap_pair(10, "ignored");
+    print(x);
+}

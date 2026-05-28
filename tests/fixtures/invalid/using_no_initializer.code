@@ -1,0 +1,5 @@
+import "../../../stdlib/string";
+fn main() {
+    using b: Buffer;
+    print(b.length());
+}

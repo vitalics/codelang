@@ -1,0 +1,24 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # print() dispatches to stringarray_print → ["s0", "s1", ...]
+    let a: StringArray = StringArray.new();
+    print(a);               # []
+
+    a.push("hello");
+    a.push("world");
+    print(a);               # ["hello", "world"]
+
+    # toString via Displayable
+    let s: string = a.toString();
+    print(s);               # ["hello", "world"]
+
+    # join (no quotes, just separator)
+    let j: string = a.join(", ");
+    print(j);               # hello, world
+
+    let j2: string = a.join(" | ");
+    print(j2);              # hello | world
+
+    a.free();
+}

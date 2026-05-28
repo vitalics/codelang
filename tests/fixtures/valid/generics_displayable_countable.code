@@ -1,0 +1,20 @@
+# generics_displayable_countable.code
+# Generic function with two separate type bounds expressed as two type params:
+#   fn process<T extends Displayable, Countable>(item: T)
+#
+# Note: in CodeLang the comma separates *type parameters*, so this declares
+#   T   (bound: Displayable)   — inferred from the call argument
+#   Countable (no bound)       — unused second type param, defaults to i8*
+#
+# The body calls item.toString() and item.length() on the concrete type T;
+# both are dispatched through the built-in int / float / string method tables.
+fn process<T extends Displayable, Countable>(const item: T) {
+    print($"display: {item.toString()}, length: {item.length()}");
+}
+
+fn main() {
+    process(10);
+    process(0);
+    process(-5);
+    process(100);
+}

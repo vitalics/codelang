@@ -1,0 +1,228 @@
+# examples/021_decorators.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Decorators in CodeLang
+#
+# A decorator is a regular function — no special syntax or macro machinery.
+# Inspired by the JavaScript new decorators proposal (TC39 stage 3).
+#
+# TWO FORMS
+# ─────────
+# No-arg decorator — the function IS the decorator:
+#
+#   export fn log(ctx: DecoratorContext): Decorator { … }
+#
+#   @log
+#   fn add(a: int, b: int): int { … }
+#   # compiler calls:  log(ctx)
+#
+# Decorator with args — function receives args, returns the decorator:
+#
+#   export const fn doc(text: string): fn(DecoratorContext): Decorator {
+#       return fn(ctx: DecoratorContext): Decorator { … };
+#   }
+#
+#   @doc("Adds two integers.")
+#   fn add(a: int, b: int): int { … }
+#   # compiler calls:  doc("Adds two integers.")(ctx)
+#
+# DecoratorContext — provided by the compiler at decoration time:
+#   ctx.kind        "fn" | "type" | "enum" | "field" | "param" | "var"
+#   ctx.name        declared identifier, e.g. "add", "Point", "x"
+#   ctx.isFunction  bool
+#   ctx.isType      bool
+#   ctx.isEnum      bool
+#   ctx.isField     bool
+#   ctx.isParam     bool
+#   ctx.isVariable  bool
+#
+# All built-in decorators are defined in stdlib/decorators.code.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/decorators";
+
+# ── 1. Calling decorators as plain functions ───────────────────────────────────
+#
+# Because decorators are functions, they can be called directly in tests.
+# No magic needed — just pass a DecoratorContext value.
+
+fn main() {
+    # ── Build context objects ──────────────────────────────────────────────
+    const fnCtx = DecoratorContext {
+        kind: "fn",
+        name: "compute",
+        isFunction: true,
+        isType: false,
+        isEnum: false,
+        isField: false,
+        isParam: false,
+        isVariable: false
+    };
+
+    const typeCtx = DecoratorContext {
+        kind: "type",
+        name: "Point",
+        isFunction: false,
+        isType: true,
+        isEnum: false,
+        isField: false,
+        isParam: false,
+        isVariable: false
+    };
+
+    const fieldCtx = DecoratorContext {
+        kind: "field",
+        name: "passwordHash",
+        isFunction: false,
+        isType: false,
+        isEnum: false,
+        isField: true,
+        isParam: false,
+        isVariable: false
+    };
+
+    const paramCtx = DecoratorContext {
+        kind: "param",
+        name: "denominator",
+        isFunction: false,
+        isType: false,
+        isEnum: false,
+        isField: false,
+        isParam: true,
+        isVariable: false
+    };
+
+    const varCtx = DecoratorContext {
+        kind: "var",
+        name: "OLD_LIMIT",
+        isFunction: false,
+        isType: false,
+        isEnum: false,
+        isField: false,
+        isParam: false,
+        isVariable: true
+    };
+
+    # ── @deprecated (no-arg) ──────────────────────────────────────────────
+    print("=== @deprecated ===");
+    deprecated(fnCtx);
+    deprecated(varCtx);
+
+    # ── @log (no-arg) ─────────────────────────────────────────────────────
+    print("=== @log ===");
+    log(fnCtx);
+    log(typeCtx);
+
+    # ── @doc("text") (arg form) ────────────────────────────────────────────
+    # doc() returns a fn(DecoratorContext): Decorator.
+    # Store the returned decorator, then call it with the context.
+    print("=== @doc ===");
+    const docFn = doc("Adds two integers and returns the sum.");
+    docFn(fnCtx);
+    docFn(paramCtx);
+
+    # ── @json("flag") (arg form) ───────────────────────────────────────────
+    print("=== @json ===");
+    const skipDec = json("skip");
+    skipDec(fieldCtx);
+
+    const nameDec = json("name:user_id");
+    const idCtx = DecoratorContext {
+        kind: "field",
+        name: "id",
+        isFunction: false,
+        isType: false,
+        isEnum: false,
+        isField: true,
+        isParam: false,
+        isVariable: false
+    };
+    nameDec(idCtx);
+
+    # ── @derive("Protocol") (arg form) ────────────────────────────────────
+    print("=== @derive ===");
+    const dispDec = derive("Displayable");
+    dispDec(typeCtx);
+
+    const serDec = derive("Serialize");
+    serDec(typeCtx);
+
+    # ── @validate("constraint") (arg form) ────────────────────────────────
+    print("=== @validate ===");
+    const vDec = validate("nonZero");
+    vDec(paramCtx);
+}
+
+# ── 2. Actual usage on declarations (decorator applied by the compiler) ────────
+#
+# When you write @name or @name(args) before a declaration, the compiler
+# constructs the DecoratorContext automatically and calls the decorator.
+# The runtime effect is identical to calling it by hand above.
+
+# No-arg decorator on a function:
+@log
+@deprecated
+fn oldCompute(a: int, b: int): int {
+    return a + b;
+}
+
+# Arg decorator on a function:
+@doc("Clamps value to [lo, hi].")
+@log
+fn clamp(value: int, lo: int, hi: int): int {
+    if value < lo { return lo; }
+    if value > hi { return hi; }
+    return value;
+}
+
+# Decorator on parameters:
+fn divide(
+    @doc("The dividend.")
+    @validate("nonZero")
+    numerator: int,
+    @doc("The divisor — must not be zero.")
+    @validate("nonZero")
+    denominator: int
+): int {
+    return numerator / denominator;
+}
+
+# Decorator on a type:
+@log
+@doc("A 2-D point in screen coordinates.")
+type Point {
+    @doc("Horizontal position.")
+    x: int
+    @doc("Vertical position.")
+    y: int
+
+    export fn sum(): int { return self.x + self.y; }
+    export fn toString(): string { return $"Point({self.x}, {self.y})"; }
+}
+
+# @json on struct fields:
+@doc("User profile record.")
+type UserProfile {
+    @json("name:user_id")
+    id: int
+
+    displayName: string
+
+    @json("skip")
+    passwordHash: string
+
+    @json("skipIf:empty")
+    bio: string
+
+    export fn toString(): string {
+        return $"UserProfile(id={self.id}, name={self.displayName})";
+    }
+}
+
+# Decorator on an enum:
+@doc("Lifecycle status of a user account.")
+@derive("Displayable")
+enum Status {
+    Active,
+    Inactive,
+    Suspended,
+}

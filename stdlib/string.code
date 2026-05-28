@@ -1,0 +1,258 @@
+# stdlib/string.code
+#
+# The String type and JS-inspired string API for CodeLang.
+#
+# Usage (type alias):
+#   type s = String
+#
+# Usage (functions):
+#   const str = import "./stdlib/string"
+#   print(str.length("hello"));
+#   print(str.toUpperCase("hello"));
+
+import "./protocols";
+import "./buffer";
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+# String is a pointer to a null-terminated byte sequence (i8*).
+# This matches how C strings work and is compatible with printf / libc.
+export type String = intrinsic("i8*");
+
+# Short alias used in everyday code.
+export type string = String;
+
+# ── Length ────────────────────────────────────────────────────────────────────
+export extern fn length(const s: string): int;
+
+# ── Access ────────────────────────────────────────────────────────────────────
+# charAt(s, i)     → single-char string at index i (empty string if out of bounds)
+# at(s, i)         → like charAt but supports negative i (from end)
+# charCodeAt(s, i) → UTF-8 byte value at position i, or -1
+# fromCharCode(n)  → single-char string from code point
+export extern fn charAt(const s: string, const i: int): string;
+export extern fn at(const s: string, const i: int): string;
+export extern fn charCodeAt(const s: string, const i: int): int;
+export extern fn fromCharCode(const code: int): string;
+
+# ── Search ────────────────────────────────────────────────────────────────────
+# indexOf(s, search)     → first index, or -1
+# lastIndexOf(s, search) → last index, or -1
+# includes(s, search)    → true if found, false otherwise
+# startsWith(s, prefix)  → true if s begins with prefix
+# endsWith(s, suffix)    → true if s ends with suffix
+export extern fn indexOf(const s: string, const search: string): int;
+export extern fn lastIndexOf(const s: string, const search: string): int;
+export extern fn includes(const s: string, const search: string): bool;
+export extern fn startsWith(const s: string, const prefix: string): bool;
+export extern fn endsWith(const s: string, const suffix: string): bool;
+
+# ── Extraction ────────────────────────────────────────────────────────────────
+# slice(s, start, end) → substring [start, end), negative indices from end
+# sliceFrom(s, start)  → substring from start to end of string
+export extern fn slice(const s: string, const start: int, const end: int): string;
+export extern fn sliceFrom(const s: string, const start: int): string;
+
+# ── Case conversion ───────────────────────────────────────────────────────────
+export extern fn toUpperCase(const s: string): string;
+export extern fn toLowerCase(const s: string): string;
+
+# ── Whitespace ────────────────────────────────────────────────────────────────
+export extern fn trim(const s: string): string;
+export extern fn trimStart(const s: string): string;
+export extern fn trimEnd(const s: string): string;
+
+# ── Padding ───────────────────────────────────────────────────────────────────
+# padStart(s, width, fill) → pad left with fill repeated until total width
+# padEnd(s, width, fill)   → pad right
+export extern fn padStart(const s: string, const width: int, const fill: string): string;
+export extern fn padEnd(const s: string, const width: int, const fill: string): string;
+
+# ── Repeat ────────────────────────────────────────────────────────────────────
+export extern fn repeat(const s: string, const n: int): string;
+
+# ── Replace ───────────────────────────────────────────────────────────────────
+export extern fn replace(const s: string, const from: string, const to: string): string;
+export extern fn replaceAll(const s: string, const from: string, const to: string): string;
+
+# ── Concatenation ─────────────────────────────────────────────────────────────
+export extern fn concat(const a: string, const b: string): string;
+
+# ── C stdlib helpers (not exported — used internally by extensions) ───────────
+# atoi converts a decimal string to an integer (returns 0 for non-numeric input).
+extern fn atoi(const s: string): int;
+
+# ── Mutable string primitives ─────────────────────────────────────────────────
+# string_alloc(n)         → allocate a zero-filled string of n bytes (+ NUL)
+# string_set_byte(s,i,v)  → set byte at index i to value v (0-255)
+extern fn string_alloc(const n: int): string;
+extern fn string_set_byte(const s: string, const i: int, const v: int);
+
+# ── Extensions ────────────────────────────────────────────────────────────────
+
+# Displayable: a string is its own representation.
+string extends Displayable {
+    export fn toString(): string {
+        return self;
+    }
+}
+
+# Countable: number of bytes in the string (UTF-8 code units).
+string extends Countable<int> {
+    export fn length(): int {
+        return length(self);
+    }
+}
+
+# Numeric: parse the string as a decimal integer (atoi semantics).
+#   "42"  → 42
+#   "-7"  → -7
+#   "abc" → 0   (non-numeric input)
+string extends Numeric {
+    export fn toNumber(): int {
+        return atoi(self);
+    }
+}
+
+# Logical: empty string is falsy, any non-empty string is truthy.
+string extends Logical {
+    export fn toBoolean(): bool {
+        let l = length(self);
+        if l != 0 {
+            return true;
+        }
+        return false;
+    }
+}
+
+# Indexable: single-character string at position `index`.
+#   Returns Some(char) if index is in bounds, None otherwise.
+#   Negative indices count from the end: at(-1) → last character.
+string extends Indexable {
+    export fn at(const index: int): Option<string> {
+        let len: int = length(self);
+        let i: int = index;
+        if index < 0 {
+            i = len + index;
+        }
+        if i >= 0 && i < len {
+            return Option::Some(at(self, i));
+        }
+        return Option::None;
+    }
+}
+
+# charAt(i): returns the character at `i`, or "" if out of bounds.
+# Prefer at(i) for safe access; charAt is kept for compatibility.
+string extends {
+    export fn atSafe(const index: int): Option<string> { return self.at(index); }
+}
+
+# Character access and code methods — mirrors JS String API.
+#   s.charAt(i)     → single-char string at index i (empty string if out of bounds)
+#   s.charCodeAt(i) → UTF-8 byte value at position i, or -1 if out of bounds
+string extends {
+    export fn charAt(const index: int): string {
+        return charAt(self, index);
+    }
+    export fn charCodeAt(const index: int): int {
+        return charCodeAt(self, index);
+    }
+}
+
+# Search / test convenience methods.
+#   s.indexOf(search)    → first index, or -1
+#   s.includes(search)   → true if found
+#   s.startsWith(prefix) → true if s begins with prefix
+#   s.endsWith(suffix)   → true if s ends with suffix
+string extends {
+    export fn indexOf(const search: string): int {
+        return indexOf(self, search);
+    }
+    export fn includes(const search: string): bool {
+        return includes(self, search);
+    }
+    export fn startsWith(const prefix: string): bool {
+        return startsWith(self, prefix);
+    }
+    export fn endsWith(const suffix: string): bool {
+        return endsWith(self, suffix);
+    }
+}
+
+# Transformation methods.
+#   s.toUpperCase()        → uppercase copy
+#   s.toLowerCase()        → lowercase copy
+#   s.trim()               → strip leading and trailing whitespace
+#   s.repeat(n)            → s repeated n times
+#   s.replace(from, to)    → first occurrence replaced
+#   s.replaceAll(from, to) → all occurrences replaced
+#   s.concat(other)        → s + other (same as s += other)
+#   s.slice(start, end)    → substring [start, end)
+#   s.sliceFrom(start)     → substring from start to end
+string extends {
+    export fn toUpperCase(): string {
+        return toUpperCase(self);
+    }
+    export fn toLowerCase(): string {
+        return toLowerCase(self);
+    }
+    export fn trim(): string {
+        return trim(self);
+    }
+    export fn repeat(const n: int): string {
+        return repeat(self, n);
+    }
+    export fn replace(const from: string, const to: string): string {
+        return replace(self, from, to);
+    }
+    export fn replaceAll(const from: string, const to: string): string {
+        return replaceAll(self, from, to);
+    }
+    export fn concat(const other: string): string {
+        return concat(self, other);
+    }
+    export fn slice(const start: int, const end: int): string {
+        return slice(self, start, end);
+    }
+    export fn sliceFrom(const start: int): string {
+        return sliceFrom(self, start);
+    }
+}
+
+# ByteConvertible: encode the string as a raw byte sequence.
+#   Returns a heap-allocated Buffer object containing one byte per UTF-8 code
+#   unit (NUL terminator excluded).  The caller owns the result and must call
+#   .free() when done to avoid a memory leak.
+string extends {
+    export fn toBuffer(): Buffer {
+        return string_to_buffer(self);
+    }
+}
+
+# ── Mutable string factory + mutation API ─────────────────────────────────────
+#
+#   let buf = String.new(5);  // allocate 5-byte zero-filled buffer
+#   buf.set(0, 72);           // 'H'
+#   buf.set(1, 105);          // 'i'
+#   print(buf);               // prints "Hi" (stops at first NUL)
+#
+# `String.new(n)` is a static factory — it takes no receiver.
+# `buf.set(i, v)` mutates byte at position i; v is clamped to [0, 255] by the C layer.
+String extends {
+    export static fn new(const n: int): string {
+        return string_alloc(n);
+    }
+    export fn set(const i: int, const v: int) {
+        string_set_byte(self, i, v);
+    }
+}
+
+# ── Defaultable ───────────────────────────────────────────────────────────────
+# The default value for string is the empty string "".
+#   String.default() → ""
+
+String extends Defaultable {
+    export static fn default(): string {
+        return "";
+    }
+}

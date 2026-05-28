@@ -1,0 +1,31 @@
+import "../../../stdlib/function";
+
+fn double(x: int): int { return x * 2; }
+fn square(x: int): int { return x * x; }
+fn inc(x: int): int { return x + 1; }
+
+fn main() {
+    # Function<int, int>.call() via Callable protocol
+    const f: Function<int, int> = double;
+    print(f.call(5));    # 10
+    print(f.call(0));    # 0
+
+    # Reassign and call
+    const g: Function<int, int> = square;
+    print(g.call(4));    # 16
+
+    # call() on compose result (Function<int,int> value)
+    const h: Function<int, int> = compose(double, inc);  # double(inc(x))
+    print(h.call(3));    # double(4) = 8
+
+    # switch on .call() result
+    const k: Function<int, int> = square;
+    let msg = switch k.call(5) {
+        25 => "five-squared",
+        else => "wrong",
+    };
+    print(msg);   # five-squared
+
+    # .call() inside apply
+    print(apply(double, f.call(3)));   # apply(double, 6) = 12
+}

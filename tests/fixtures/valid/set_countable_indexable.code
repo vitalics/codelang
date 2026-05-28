@@ -1,0 +1,120 @@
+# tests/fixtures/valid/set_countable_indexable.code
+#
+# Exercises Countable (length()) and Indexable / at() for all six Set types.
+#
+# Expected output (24 lines):
+#   3          — IntSet length()
+#   10         — IntSet at(0)
+#   20         — IntSet at(1)
+#   30         — IntSet at(2)
+#   3          — StringSet length()
+#   apple      — StringSet at(0)
+#   banana     — StringSet at(1)
+#   cherry     — StringSet at(2)
+#   2          — BoolSet length()
+#   false      — BoolSet at(0)
+#   true       — BoolSet at(1)
+#   3          — FloatSet length()
+#   3          — DoubleSet length()
+#   3          — NumberSet length()
+#   30         — IntSet at(-1) wraps to at(2)
+#   banana     — StringSet at(-2) wraps to at(1)
+#   0          — IntSet at(99) out-of-bounds → None → unwrapOr(0)
+#   2          — length() matches size()
+#   2          — IntIntMap length()
+#   2          — IntStringMap length()
+#   2          — StringIntMap length()
+#   2          — StringStringMap length()
+
+import "../../../stdlib/set";
+import "../../../stdlib/map";
+
+fn main() {
+    # ── IntSet: length() and at() ─────────────────────────────────────────────
+    let s1: IntSet = IntSet.new();
+    s1.add(30);
+    s1.add(10);
+    s1.add(20);
+    # sorted order: 10, 20, 30
+    print(s1.length());                 # 3
+    print(s1.at(0).unwrapOr(0));        # 10
+    print(s1.at(1).unwrapOr(0));        # 20
+    print(s1.at(2).unwrapOr(0));        # 30
+
+    # ── StringSet: length() and at() (Indexable protocol) ─────────────────────
+    let s2: StringSet = StringSet.new();
+    s2.add("cherry");
+    s2.add("apple");
+    s2.add("banana");
+    # sorted order: apple, banana, cherry
+    print(s2.length());                 # 3
+    print(s2.at(0).unwrapOr(""));       # apple
+    print(s2.at(1).unwrapOr(""));       # banana
+    print(s2.at(2).unwrapOr(""));       # cherry
+
+    # ── BoolSet: length() and at() ────────────────────────────────────────────
+    let s3: BoolSet = BoolSet.new();
+    s3.add(false);
+    s3.add(true);
+    # sorted order: false, true
+    print(s3.length());         # 2
+    print(s3.at(0));            # false
+    print(s3.at(1));            # true
+
+    # ── FloatSet: length() ────────────────────────────────────────────────────
+    let s4: FloatSet = FloatSet.new();
+    s4.add(1.5);
+    s4.add(2.5);
+    s4.add(3.5);
+    print(s4.length());         # 3
+
+    # ── DoubleSet: length() ───────────────────────────────────────────────────
+    let s5: DoubleSet = DoubleSet.new();
+    s5.add(1.1);
+    s5.add(2.2);
+    s5.add(3.3);
+    print(s5.length());         # 3
+
+    # ── NumberSet: length() ───────────────────────────────────────────────────
+    let s6: NumberSet = NumberSet.new();
+    s6.add(1);
+    s6.add(2);
+    s6.add(3);
+    print(s6.length());         # 3
+
+    # ── Negative and OOB indices ──────────────────────────────────────────────
+    print(s1.at(-1).unwrapOr(0));       # 30  (last element)
+    print(s2.at(-2).unwrapOr(""));      # banana (second-to-last)
+    print(s1.at(99).unwrapOr(0));       # 0   (OOB → None → default)
+
+    # ── length() matches size() ───────────────────────────────────────────────
+    let s7: IntSet = IntSet.new();
+    s7.add(5);
+    s7.add(7);
+    let sz = s7.size();
+    let ln = s7.length();
+    if sz == ln {
+        print(sz);              # 2
+    }
+
+    # ── Map Countable: length() ───────────────────────────────────────────────
+    let m1: IntIntMap = IntIntMap.new();
+    m1.put(1, 100);
+    m1.put(2, 200);
+    print(m1.length());         # 2
+
+    let m2: IntStringMap = IntStringMap.new();
+    m2.put(1, "one");
+    m2.put(2, "two");
+    print(m2.length());         # 2
+
+    let m3: StringIntMap = StringIntMap.new();
+    m3.put("a", 1);
+    m3.put("b", 2);
+    print(m3.length());         # 2
+
+    let m4: StringStringMap = StringStringMap.new();
+    m4.put("x", "ex");
+    m4.put("y", "why");
+    print(m4.length());         # 2
+}

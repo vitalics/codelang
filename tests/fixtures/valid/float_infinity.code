@@ -1,0 +1,15 @@
+import "../../../stdlib/numbers";
+
+fn main(): void {
+    const posInf: float = Float64.inf;
+    const negInf: float = Float64.negInf;
+
+    print(posInf);
+    print(negInf);
+
+    # Comparisons
+    const a: bool = posInf > 1000.0;
+    const b: bool = negInf < -1000.0;
+    print(a);
+    print(b);
+}

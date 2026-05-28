@@ -1,0 +1,93 @@
+# point_ord.code
+# Extends the Point type (from operator_overload) with:
+#   - Ord  : eq(other) → bool   — enables == and !=
+#   - Cmp  : cmp(other) → int   — enables <, >, <=, >= (x-coordinate ordering)
+#
+# Encoding: hi 32 bits = x,  lo 32 bits = y
+#   point_pack(x, y)  = (x << 32) | (y & 0xFFFFFFFF)
+
+import "../../../stdlib/operators";
+
+export type Point = intrinsic("i64");
+
+extern fn point_pack(const x: int, const y: int): Point;
+extern fn point_x(const p: Point): int;
+extern fn point_y(const p: Point): int;
+
+# ── Ord: equality ─────────────────────────────────────────────────────────────
+# Two Points are equal when both x and y coordinates match.
+
+Point extends Ord {
+    export fn eq(const other: Point): bool {
+        if point_x(self) == point_x(other) {
+            if point_y(self) == point_y(other) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+# ── Cmp: total ordering by x coordinate, then y ──────────────────────────────
+
+Point extends Cmp {
+    export fn cmp(const other: Point): int {
+        const sx: int = point_x(self);
+        const ox: int = point_x(other);
+        if sx < ox { return 0 - 1; }   # -1 = less
+        if sx > ox { return 1; }        # +1 = greater
+        const sy: int = point_y(self);
+        const oy: int = point_y(other);
+        if sy < oy { return 0 - 1; }
+        if sy > oy { return 1; }
+        return 0;                       #  0 = equal
+    }
+}
+
+fn main() {
+    const a: Point = point_pack(3, 4);
+    const b: Point = point_pack(3, 4);
+    const c: Point = point_pack(1, 2);
+    const d: Point = point_pack(5, 0);
+
+    # == dispatch through Point_eq
+    if a == b {
+        print(1);   # equal → 1
+    }
+
+    if a == c {
+        print(99);  # NOT equal — should not print
+    }
+
+    # != dispatch (xor of eq)
+    if a != c {
+        print(2);   # not equal → 2
+    }
+
+    # < dispatch through Point_cmp (x-coordinate first)
+    # c.x=1 < a.x=3 → c < a
+    if c < a {
+        print(3);   # 3
+    }
+
+    # > dispatch
+    if d > a {
+        print(4);   # d.x=5 > a.x=3 → d > a → 4
+    }
+
+    # <= : a <= b (equal)
+    if a <= b {
+        print(5);   # 5
+    }
+
+    # >= : a >= c (a.x=3 >= c.x=1)
+    if a >= c {
+        print(6);   # 6
+    }
+
+    # same-x, different-y ordering: a=(3,4) vs e=(3,1) → a > e by y
+    const e: Point = point_pack(3, 1);
+    if a > e {
+        print(7);   # 7
+    }
+}

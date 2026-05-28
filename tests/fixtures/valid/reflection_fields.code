@@ -1,0 +1,73 @@
+import "../../../stdlib/reflection";
+import "../../../stdlib/numbers";
+import "../../../stdlib/string";
+
+# A struct with a mix of field modifiers and methods to reflect over.
+type Account {
+    using resource: int          # isDisposable = 1
+    const balance: int           # isConst = 1
+    name: string                 # plain mutable field
+
+    export fn deposit(amount: int) {
+        # method body omitted — we only need reflection metadata
+    }
+
+    export const fn getBalance(): int {
+        return self.balance;
+    }
+
+    fn internalReset() {
+        # non-exported method
+    }
+}
+
+fn main() {
+    const a: Account = Account_new(42, 0, "alice");
+    const info = typeInfo(a);
+    print(info.name());              # Account
+
+    const members: Array<Field> = info.fields();
+    print(members.length());         # 6  (3 fields + 3 methods)
+
+    # ── field 0: using resource: int ─────────────────────────────────────────
+    const m0: Field = members.get(0);
+    print(m0.name());                # resource
+    print(m0.typeName());            # int
+    print(m0.isFunction());          # 0
+    print(m0.isConst());             # 0
+    print(m0.isDisposable());        # 1
+    print(m0.returnType());          # int
+
+    # ── field 1: const balance: int ──────────────────────────────────────────
+    const m1: Field = members.get(1);
+    print(m1.name());                # balance
+    print(m1.isConst());             # 1
+    print(m1.isDisposable());        # 0
+
+    # ── field 2: name: string ─────────────────────────────────────────────────
+    const m2: Field = members.get(2);
+    print(m2.name());                # name
+    print(m2.typeName());            # string
+    print(m2.isConst());             # 0
+
+    # ── method 3: export fn deposit ──────────────────────────────────────────
+    const m3: Field = members.get(3);
+    print(m3.name());                # deposit
+    print(m3.isFunction());          # 1
+    print(m3.isExportable());        # 1
+    print(m3.isConst());             # 0
+
+    # ── method 4: export const fn getBalance ─────────────────────────────────
+    const m4: Field = members.get(4);
+    print(m4.name());                # getBalance
+    print(m4.isFunction());          # 1
+    print(m4.isExportable());        # 1
+    print(m4.isConst());             # 1
+    print(m4.returnType());          # int
+
+    # ── method 5: fn internalReset ───────────────────────────────────────────
+    const m5: Field = members.get(5);
+    print(m5.name());                # internalReset
+    print(m5.isFunction());          # 1
+    print(m5.isExportable());        # 0
+}

@@ -1,0 +1,59 @@
+import "stdlib/math";
+import "stdlib/string";
+
+# ── stdlib/math.code — demo ───────────────────────────────────────────────────
+
+fn main() {
+    # ── Constants ─────────────────────────────────────────────────────────────
+    print("=== Constants ===");
+    print(Math.PI);          # 3.14159…
+    print(Math.E);           # 2.71828…
+    print(Math.TAU);         # 6.28318…  (2π)
+    print(Math.SQRT2);       # 1.41421…
+
+    # ── Rounding ──────────────────────────────────────────────────────────────
+    print("=== Rounding ===");
+    print(Math.floor(2.9));  # 2
+    print(Math.ceil(2.1));   # 3
+    print(Math.round(2.5));  # 3
+    print(Math.trunc(-2.9)); # -2
+    print(Math.sign(-5.0));  # -1
+
+    # ── Powers and roots ──────────────────────────────────────────────────────
+    print("=== Powers ===");
+    print(Math.sqrt(2.0));          # 1.41421…
+    print(Math.pow(2.0, 8.0));      # 256
+    print(Math.log2(256.0));        # 8
+    print(Math.exp(1.0));           # 2.71828…
+
+    # ── Trigonometry ──────────────────────────────────────────────────────────
+    print("=== Trigonometry ===");
+    const angle: float = Math.toRadians(45.0);   # 45° in radians
+    print(Math.sin(angle));                       # 0.70710…
+    print(Math.cos(angle));                       # 0.70710…
+    print(Math.toDegrees(Math.acos(0.5)));        # 60.0 (60°)
+
+    # ── Min / max / clamp ─────────────────────────────────────────────────────
+    print("=== Min/Max/Clamp ===");
+    print(Math.min(10, 3));          # 3
+    print(Math.max(10, 3));          # 10
+    print(Math.clamp(150, 0, 100));  # 100 — caps at upper bound
+    print(Math.clampF(0.5, 0.0, 1.0)); # 0.5
+
+    # ── Geometry helpers ──────────────────────────────────────────────────────
+    print("=== Geometry ===");
+    # Hypotenuse of a 3-4-5 right triangle
+    print(Math.hypot(3.0, 4.0));     # 5
+
+    # Circle area: π r²
+    const r: float = 5.0;
+    const area: float = Math.PI * r * r;
+    print(area);                     # 78.5398…
+
+    # ── Seeded random sequence ────────────────────────────────────────────────
+    print("=== Random (seed=1) ===");
+    Math.seedRandom(1);
+    print(Math.random());
+    print(Math.random());
+    print(Math.random());
+}

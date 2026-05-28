@@ -1,0 +1,706 @@
+# stdlib/set.code
+#
+# IntSet    — heap-allocated, ordered set of 32-bit integers.
+# StringSet — heap-allocated, ordered set of string pointers.
+# BoolSet   — heap-allocated set of boolean values (at most {false, true}).
+#
+# All three types are backed by sorted dynamic arrays for predictable
+# iteration order and O(log n) membership tests.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let s: IntSet = IntSet.new();     # empty set
+#
+#   s.add(3)                          # add element (no-op if already present)
+#   s.remove(3)                       # remove element (no-op if absent)
+#   s.contains(3)                     # true / false
+#   s.size()                          # number of distinct elements
+#
+#   print(s)                          # {1, 2, 3}
+#   s.toString()                      # "{1, 2, 3}"
+#
+#   s.free()                          # release heap memory
+#   using s: IntSet = IntSet.new();   # auto-dispose on scope exit
+#
+# Generic alias:
+#   let s: Set<int>    = IntSet.new();
+#   let s: Set<string> = StringSet.new();
+#   let s: Set<bool>   = BoolSet.new();
+
+import "./protocols";
+import "./boolean";
+import "./option";
+
+# ════════════════════════════════════════════════════════════════════════════════
+# IntSet — ordered set of 32-bit integers
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type IntSet = intrinsic("%IntSet*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn intset_new(): IntSet;
+export extern fn intset_free(const s: IntSet);
+export extern fn intset_size(const s: IntSet): int;
+export extern fn intset_contains(const s: IntSet, const v: int): int;
+export extern fn intset_add(s: IntSet, const v: int);
+export extern fn intset_remove(s: IntSet, const v: int);
+export extern fn intset_print(const s: IntSet);
+export extern fn intset_to_string(const s: IntSet): string;
+export extern fn intset_at(const s: IntSet, const index: int): int;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+IntSet extends {
+
+    # new(): static factory — creates an empty IntSet.
+    export static fn new(): IntSet {
+        return intset_new();
+    }
+
+    # size(): number of distinct elements.
+    export fn size(): int {
+        return intset_size(self);
+    }
+
+    # contains(v): true if v is a member of this set.
+    export fn contains(const v: int): bool {
+        let r = intset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # add(v): insert v.  No-op if v is already present.
+    export fn add(const v: int) {
+        intset_add(self, v);
+    }
+
+    # remove(v): delete v.  No-op if v is absent.
+    export fn remove(const v: int) {
+        intset_remove(self, v);
+    }
+
+    # at(index): Some(element) at sorted position `index`, or None if out of bounds.
+    # Negative indices count from the end: at(-1) → last element.
+    export fn at(const index: int): Option<int> {
+        let len: int = intset_size(self);
+        let i: int = index;
+        if index < 0 {
+            i = len + index;
+        }
+        if i >= 0 && i < len {
+            return Option::Some(intset_at(self, i));
+        }
+        return Option::None;
+    }
+
+    # atSafe(index): backward-compatible alias for at(index).
+    export fn atSafe(const index: int): Option<int> { return self.at(index); }
+
+    # free(): release the heap memory owned by this IntSet.
+    export fn free() {
+        intset_free(self);
+    }
+}
+
+IntSet extends Countable {
+    export fn length(): int {
+        return intset_size(self);
+    }
+}
+
+IntSet extends Displayable {
+    export fn toString(): string {
+        return intset_to_string(self);
+    }
+}
+
+IntSet extends Disposable {
+    export fn dispose() {
+        intset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# StringSet — ordered set of string pointers (lexicographic order)
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type StringSet = intrinsic("%StringSet*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stringset_new(): StringSet;
+export extern fn stringset_free(const s: StringSet);
+export extern fn stringset_size(const s: StringSet): int;
+export extern fn stringset_contains(const s: StringSet, const v: string): int;
+export extern fn stringset_add(s: StringSet, const v: string);
+export extern fn stringset_remove(s: StringSet, const v: string);
+export extern fn stringset_print(const s: StringSet);
+export extern fn stringset_to_string(const s: StringSet): string;
+export extern fn stringset_at(const s: StringSet, const index: int): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+StringSet extends {
+
+    export static fn new(): StringSet {
+        return stringset_new();
+    }
+
+    export fn size(): int {
+        return stringset_size(self);
+    }
+
+    export fn contains(const v: string): bool {
+        let r = stringset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    export fn add(const v: string) {
+        stringset_add(self, v);
+    }
+
+    export fn remove(const v: string) {
+        stringset_remove(self, v);
+    }
+
+    # free(): release the heap memory owned by this StringSet.
+    export fn free() {
+        stringset_free(self);
+    }
+}
+
+StringSet extends Countable {
+    export fn length(): int {
+        return stringset_size(self);
+    }
+}
+
+StringSet extends Indexable {
+    export fn at(const index: int): Option<string> {
+        let len: int = stringset_size(self);
+        let i: int = index;
+        if index < 0 {
+            i = len + index;
+        }
+        if i >= 0 && i < len {
+            return Option::Some(stringset_at(self, i));
+        }
+        return Option::None;
+    }
+}
+
+StringSet extends {
+    # atSafe(index): backward-compatible alias for at(index).
+    export fn atSafe(const index: int): Option<string> { return self.at(index); }
+}
+
+StringSet extends Displayable {
+    export fn toString(): string {
+        return stringset_to_string(self);
+    }
+}
+
+StringSet extends Disposable {
+    export fn dispose() {
+        stringset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# BoolSet — set of boolean values  (at most two members: false and/or true)
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type BoolSet = intrinsic("%BoolSet*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn boolset_new(): BoolSet;
+export extern fn boolset_free(const s: BoolSet);
+export extern fn boolset_size(const s: BoolSet): int;
+export extern fn boolset_contains(const s: BoolSet, const v: bool): int;
+export extern fn boolset_add(s: BoolSet, const v: bool);
+export extern fn boolset_remove(s: BoolSet, const v: bool);
+export extern fn boolset_print(const s: BoolSet);
+export extern fn boolset_to_string(const s: BoolSet): string;
+export extern fn boolset_at(const s: BoolSet, const index: int): bool;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+BoolSet extends {
+
+    export static fn new(): BoolSet {
+        return boolset_new();
+    }
+
+    export fn size(): int {
+        return boolset_size(self);
+    }
+
+    export fn contains(const v: bool): bool {
+        let r = boolset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    export fn add(const v: bool) {
+        boolset_add(self, v);
+    }
+
+    export fn remove(const v: bool) {
+        boolset_remove(self, v);
+    }
+
+    # at(index): element at sorted position `index` (false < true).
+    export fn at(const index: int): bool {
+        return boolset_at(self, index);
+    }
+
+    # free(): release the heap memory owned by this BoolSet.
+    export fn free() {
+        boolset_free(self);
+    }
+}
+
+BoolSet extends Countable {
+    export fn length(): int {
+        return boolset_size(self);
+    }
+}
+
+BoolSet extends Displayable {
+    export fn toString(): string {
+        return boolset_to_string(self);
+    }
+}
+
+BoolSet extends Disposable {
+    export fn dispose() {
+        boolset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# FloatSet — ordered set of 32-bit single-precision floats (f32).
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type FloatSet = intrinsic("%FloatSet*");
+
+export extern fn floatset_new(): FloatSet;
+export extern fn floatset_free(const s: FloatSet);
+export extern fn floatset_size(const s: FloatSet): int;
+export extern fn floatset_contains(const s: FloatSet, const v: Float): int;
+export extern fn floatset_add(s: FloatSet, const v: Float);
+export extern fn floatset_remove(s: FloatSet, const v: Float);
+export extern fn floatset_print(const s: FloatSet);
+export extern fn floatset_to_string(const s: FloatSet): string;
+export extern fn floatset_at(const s: FloatSet, const index: int): Float;
+
+FloatSet extends {
+
+    export static fn new(): FloatSet {
+        return floatset_new();
+    }
+
+    export fn size(): int {
+        return floatset_size(self);
+    }
+
+    export fn contains(const v: Float): bool {
+        let r = floatset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    export fn add(const v: Float) {
+        floatset_add(self, v);
+    }
+
+    export fn remove(const v: Float) {
+        floatset_remove(self, v);
+    }
+
+    # at(index): element at sorted position `index` (0-based, negative counts from end).
+    export fn at(const index: int): Float {
+        return floatset_at(self, index);
+    }
+
+    # free(): release the heap memory owned by this FloatSet.
+    export fn free() {
+        floatset_free(self);
+    }
+}
+
+FloatSet extends Countable {
+    export fn length(): int {
+        return floatset_size(self);
+    }
+}
+
+FloatSet extends Displayable {
+    export fn toString(): string {
+        return floatset_to_string(self);
+    }
+}
+
+FloatSet extends Disposable {
+    export fn dispose() {
+        floatset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# DoubleSet — ordered set of 64-bit double-precision floats (f64).
+# Maps to Set<float> / Set<Float64> since `float = Float64 = double` in CodeLang.
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type DoubleSet = intrinsic("%DoubleSet*");
+
+export extern fn doubleset_new(): DoubleSet;
+export extern fn doubleset_free(const s: DoubleSet);
+export extern fn doubleset_size(const s: DoubleSet): int;
+export extern fn doubleset_contains(const s: DoubleSet, const v: float): int;
+export extern fn doubleset_add(s: DoubleSet, const v: float);
+export extern fn doubleset_remove(s: DoubleSet, const v: float);
+export extern fn doubleset_print(const s: DoubleSet);
+export extern fn doubleset_to_string(const s: DoubleSet): string;
+export extern fn doubleset_at(const s: DoubleSet, const index: int): float;
+
+DoubleSet extends {
+
+    export static fn new(): DoubleSet {
+        return doubleset_new();
+    }
+
+    export fn size(): int {
+        return doubleset_size(self);
+    }
+
+    export fn contains(const v: float): bool {
+        let r = doubleset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    export fn add(const v: float) {
+        doubleset_add(self, v);
+    }
+
+    export fn remove(const v: float) {
+        doubleset_remove(self, v);
+    }
+
+    # at(index): element at sorted position `index` (0-based, negative counts from end).
+    export fn at(const index: int): float {
+        return doubleset_at(self, index);
+    }
+
+    # free(): release the heap memory owned by this DoubleSet.
+    export fn free() {
+        doubleset_free(self);
+    }
+}
+
+DoubleSet extends Countable {
+    export fn length(): int {
+        return doubleset_size(self);
+    }
+}
+
+DoubleSet extends Displayable {
+    export fn toString(): string {
+        return doubleset_to_string(self);
+    }
+}
+
+DoubleSet extends Disposable {
+    export fn dispose() {
+        doubleset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# NumberSet — ordered set of arbitrary-precision Number values.
+# Elements are sorted by numeric value using the Number comparison runtime.
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type NumberSet = intrinsic("%NumberSet*");
+
+export extern fn numberset_new(): NumberSet;
+export extern fn numberset_free(const s: NumberSet);
+export extern fn numberset_size(const s: NumberSet): int;
+export extern fn numberset_contains(const s: NumberSet, const v: Number): int;
+export extern fn numberset_add(s: NumberSet, v: Number);
+export extern fn numberset_remove(s: NumberSet, const v: Number);
+export extern fn numberset_print(const s: NumberSet);
+export extern fn numberset_to_string(const s: NumberSet): string;
+export extern fn numberset_at(const s: NumberSet, const index: int): Number;
+
+NumberSet extends {
+
+    export static fn new(): NumberSet {
+        return numberset_new();
+    }
+
+    export fn size(): int {
+        return numberset_size(self);
+    }
+
+    export fn contains(const v: Number): bool {
+        let r = numberset_contains(self, v);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    export fn add(v: Number) {
+        numberset_add(self, v);
+    }
+
+    export fn remove(const v: Number) {
+        numberset_remove(self, v);
+    }
+
+    # at(index): element at sorted position `index` (0-based, negative counts from end).
+    export fn at(const index: int): Number {
+        return numberset_at(self, index);
+    }
+
+    # free(): release the heap memory owned by this NumberSet.
+    export fn free() {
+        numberset_free(self);
+    }
+}
+
+NumberSet extends Countable {
+    export fn length(): int {
+        return numberset_size(self);
+    }
+}
+
+NumberSet extends Displayable {
+    export fn toString(): string {
+        return numberset_to_string(self);
+    }
+}
+
+NumberSet extends Disposable {
+    export fn dispose() {
+        numberset_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Generic Set<T> alias
+#
+# Set<T> is a compile-time alias that resolves to the concrete set type for T:
+#   Set<int>    → IntSet    (%IntSet*)
+#   Set<string> → StringSet (%StringSet*)
+#   Set<bool>   → BoolSet   (%BoolSet*)
+#   Set<Float>  → FloatSet  (%FloatSet*)
+#   Set<float>  → DoubleSet (%DoubleSet*)
+#   Set<Number> → NumberSet (%NumberSet*)
+#
+# The %Set sentinel is never materialised in LLVM IR; the IR generator
+# resolves the concrete type from the type argument.
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type Set<T> = intrinsic("%Set");
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Safe (Option-returning) accessors for all set types.
+#
+#   let v: Option<int> = s.atSafe(0);
+#   switch v {
+#       Option::Some(x) => print(x),
+#       Option::None    => print("out of bounds"),
+#   }
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── BoolSet safe accessor (atSafe) ───────────────────────────────────────────
+# BoolSet.at() still returns bool; atSafe provides the Option-based alternative.
+
+BoolSet extends {
+    # atSafe(i): Option<bool> — Some(element) or None if i is out of bounds.
+    export fn atSafe(const i: int): Option<bool> {
+        let len: int = boolset_size(self);
+        let idx: int = i;
+        if i < 0 {
+            idx = len + i;
+        }
+        if idx >= 0 && idx < len {
+            return Option::Some(boolset_at(self, idx));
+        }
+        return Option::None;
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Higher-Order Functions for IntSet
+#
+# Sets iterate elements in sorted order (ascending).
+# HOF match JavaScript's Set/Array conventions and Rust's Iterator trait.
+#
+# Quick reference:
+#
+#   s.forEach(fn(x: int): void { print(x); })   # side-effects over each element
+#   s.every(isPositive)                           # true if ALL satisfy predicate
+#   s.some(isEven)                                # true if ANY satisfies predicate
+#   s.filter(isEven)                              # new IntSet: keep matching
+#   s.find(isEven)                                # Option<int>: first match
+# ════════════════════════════════════════════════════════════════════════════════
+
+IntSet extends {
+
+    # forEach(f): call f(element) for each element in ascending order.
+    export fn forEach(const f: fn(int): void) {
+        let i: int = 0;
+        let sz: int = intset_size(self);
+        while i < sz {
+            f(intset_at(self, i));
+            i = i + 1;
+        }
+    }
+
+    # every(f): true if f(element) returns true for ALL elements.
+    export fn every(const f: fn(int): bool): bool {
+        let i: int = 0;
+        let sz: int = intset_size(self);
+        while i < sz {
+            if !f(intset_at(self, i)) {
+                return false;
+            }
+            i = i + 1;
+        }
+        return true;
+    }
+
+    # some(f): true if f(element) returns true for AT LEAST ONE element.
+    export fn some(const f: fn(int): bool): bool {
+        let i: int = 0;
+        let sz: int = intset_size(self);
+        while i < sz {
+            if f(intset_at(self, i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    # filter(f): new IntSet containing only elements for which f returns true.
+    # Caller is responsible for freeing the returned set.
+    export fn filter(const f: fn(int): bool): IntSet {
+        let sz: int = intset_size(self);
+        let result: IntSet = intset_new();
+        let i: int = 0;
+        while i < sz {
+            let v: int = intset_at(self, i);
+            if f(v) {
+                intset_add(result, v);
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # find(f): first element (ascending) for which f returns true, wrapped in Some.
+    export fn find(const f: fn(int): bool): Option<int> {
+        let sz: int = intset_size(self);
+        let i: int = 0;
+        while i < sz {
+            let v: int = intset_at(self, i);
+            if f(v) {
+                return Option::Some(v);
+            }
+            i = i + 1;
+        }
+        return Option::None;
+    }
+
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Higher-Order Functions for StringSet
+# ════════════════════════════════════════════════════════════════════════════════
+
+StringSet extends {
+
+    # forEach(f): call f(element) for each element in lexicographic order.
+    export fn forEach(const f: fn(string): void) {
+        let i: int = 0;
+        let sz: int = stringset_size(self);
+        while i < sz {
+            f(stringset_at(self, i));
+            i = i + 1;
+        }
+    }
+
+    # every(f): true if f(element) returns true for ALL elements.
+    export fn every(const f: fn(string): bool): bool {
+        let i: int = 0;
+        let sz: int = stringset_size(self);
+        while i < sz {
+            if !f(stringset_at(self, i)) {
+                return false;
+            }
+            i = i + 1;
+        }
+        return true;
+    }
+
+    # some(f): true if f(element) returns true for AT LEAST ONE element.
+    export fn some(const f: fn(string): bool): bool {
+        let i: int = 0;
+        let sz: int = stringset_size(self);
+        while i < sz {
+            if f(stringset_at(self, i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    # filter(f): new StringSet containing only elements for which f returns true.
+    export fn filter(const f: fn(string): bool): StringSet {
+        let sz: int = stringset_size(self);
+        let result: StringSet = stringset_new();
+        let i: int = 0;
+        while i < sz {
+            let v: string = stringset_at(self, i);
+            if f(v) {
+                stringset_add(result, v);
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # find(f): first element for which f returns true, wrapped in Some.
+    export fn find(const f: fn(string): bool): Option<string> {
+        let sz: int = stringset_size(self);
+        let i: int = 0;
+        while i < sz {
+            let v: string = stringset_at(self, i);
+            if f(v) {
+                return Option::Some(v);
+            }
+            i = i + 1;
+        }
+        return Option::None;
+    }
+
+}

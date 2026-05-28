@@ -1,0 +1,61 @@
+fn classify(s: string): string {
+    # Block arm — return exits the enclosing function directly
+    let mapped = switch s {
+        "qwe" => {
+            return "got qwe";
+        },
+        "asd" => "hello",
+        else  => "world",
+    };
+    return mapped;
+}
+
+fn main() {
+    # ── String patterns ───────────────────────────────────────────────────────
+    const s: string = "other";
+    let mapped = switch s {
+        "qwe" => "got qwe",
+        "asd" => "hello",
+        else  => "world",
+    };
+    print(mapped);   # world
+
+    print(classify("asd"));   # hello  (expression arm)
+    print(classify("qwe"));   # got qwe (block arm — return exits classify)
+    print(classify("zzz"));   # world  (else arm)
+
+    # ── Integer patterns ─────────────────────────────────────────────────────
+    const n: int = 2;
+    let label = switch n {
+        1 => "one",
+        2 => "two",
+        3 => "three",
+        else => "other",
+    };
+    print(label);    # two
+
+    # ── Bool patterns ────────────────────────────────────────────────────────
+    const b: bool = true;
+    let verdict = switch b {
+        true  => "yes",
+        false => "no",
+    };
+    print(verdict);  # yes
+
+    # ── First arm matches ────────────────────────────────────────────────────
+    const s2: string = "qwe";
+    let r2 = switch s2 {
+        "qwe" => "matched",
+        else  => "nope",
+    };
+    print(r2);       # matched
+
+    # ── Else catches unknown ─────────────────────────────────────────────────
+    const s3: string = "zzz";
+    let r3 = switch s3 {
+        "aaa" => "a",
+        "bbb" => "b",
+        else  => "default",
+    };
+    print(r3);       # default
+}

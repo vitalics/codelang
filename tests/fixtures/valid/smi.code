@@ -1,0 +1,12 @@
+# SMI (Small Integer) optimisation fixture.
+#
+# const bindings with integer literals that fit in [0, 127] get an i8 alloca.
+# const bindings outside that range get i32.
+# let bindings always get i32 (promoted, safe for reassignment).
+
+fn main() {
+  const small = 42;
+  const big = 200;
+  let mutable_val = 5;
+  print("smi ok");
+}

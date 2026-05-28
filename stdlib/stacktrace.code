@@ -1,0 +1,67 @@
+# stdlib/stacktrace.code
+# Call-stack snapshot and formatting.
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#
+#   Stacktrace   — opaque snapshot of the call stack at a point in time.
+#                  Backed by `struct Stacktrace` in runtime/stacktrace.c.
+#
+# ── API ───────────────────────────────────────────────────────────────────────
+#
+#   Stacktrace.capture()      → Stacktrace   capture the current call stack
+#   st.depth()                → int          number of frames
+#   st.frame(i)               → string       symbol for frame i (0 = outermost)
+#   st.format()               → string       multi-line human-readable string
+#   st.toString()             → string       alias for format()  (Displayable)
+#
+# ── Usage ─────────────────────────────────────────────────────────────────────
+#
+#   import "stdlib/stacktrace";
+#
+#   const st: Stacktrace = Stacktrace.capture();
+#   print(st.depth());      # e.g. 5
+#   print(st.frame(0));     # outermost frame symbol
+#   print(st.format());     # all frames, newline-separated
+
+import "./protocols";
+
+# ── Stacktrace type ───────────────────────────────────────────────────────────
+
+export type Stacktrace = intrinsic("%Stacktrace*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stacktrace_capture(): Stacktrace;
+export extern fn stacktrace_depth(const st: Stacktrace): int;
+export extern fn stacktrace_frame(const st: Stacktrace, const i: int): string;
+export extern fn stacktrace_format(const st: Stacktrace): string;
+
+# ── Stacktrace extension ──────────────────────────────────────────────────────
+
+Stacktrace extends Displayable {
+    # Capture the current call stack and return a new Stacktrace.
+    export static fn capture(): Stacktrace {
+        return stacktrace_capture();
+    }
+
+    # Number of frames in the snapshot.
+    export fn depth(): int {
+        return stacktrace_depth(self);
+    }
+
+    # Symbol string for frame `i` (0 = outermost frame after capture).
+    # Returns "<unknown>" for out-of-range indices.
+    export fn frame(const i: int): string {
+        return stacktrace_frame(self, i);
+    }
+
+    # Multi-line formatted string of all frames, one per line.
+    export fn format(): string {
+        return stacktrace_format(self);
+    }
+
+    # Displayable — print(st) outputs the full formatted stacktrace.
+    export fn toString(): string {
+        return stacktrace_format(self);
+    }
+}

@@ -1,0 +1,16 @@
+import "../../../stdlib/string";
+
+fn log_exit() { print("exit"); }
+
+fn classify(const x: int): int {
+    defer log_exit();
+    if x < 0 { return 0 - 1; }
+    if x == 0 { return 0; }
+    return 1;
+}
+
+fn main() {
+    print(classify(0 - 5));
+    print(classify(0));
+    print(classify(3));
+}

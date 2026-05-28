@@ -1,0 +1,30 @@
+# array_type_dynamic.code
+# Tests the int[] shorthand syntax for dynamic arrays inside a struct.
+# int[] is sugar for IntArray — the field stores an IntArray pointer.
+
+import "../../../stdlib/array";
+
+type Stack {
+    data: int[]
+    size: int
+
+    static fn new(): Stack {
+        return Self { data: IntArray.new(), size: 0 };
+    }
+
+    fn push(v: int): void {
+        self.data.push(v);
+    }
+
+    fn len(): int {
+        return self.data.length();
+    }
+}
+
+fn main() {
+    let s = Stack.new();
+    s.push(10);
+    s.push(20);
+    s.push(30);
+    print(s.len());
+}

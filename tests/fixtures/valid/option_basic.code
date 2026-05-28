@@ -1,0 +1,38 @@
+# option_basic.code
+# Tests for stdlib/option.code — Option<T> enum with inline methods.
+
+import "stdlib/option";
+
+fn main() {
+    # ── Construction ─────────────────────────────────────────────────────────
+    let some_int: Option<int>    = Option::Some(42);
+    let none_int: Option<int>    = Option::None;
+    let some_str: Option<string> = Option::Some("hello");
+    let none_str: Option<string> = Option::None;
+
+    # ── isSome() ──────────────────────────────────────────────────────────────
+    print(some_int.isSome());    # true
+    print(none_int.isSome());    # false
+    print(some_str.isSome());    # true
+    print(none_str.isSome());    # false
+
+    # ── isNone() ──────────────────────────────────────────────────────────────
+    print(some_int.isNone());    # false
+    print(none_int.isNone());    # true
+
+    # ── unwrapOr() ────────────────────────────────────────────────────────────
+    let v1: int    = some_int.unwrapOr(0);
+    let v2: int    = none_int.unwrapOr(99);
+    let v3: string = some_str.unwrapOr("default");
+    let v4: string = none_str.unwrapOr("default");
+    print(v1);          # 42
+    print(v2);          # 99
+    print(v3);          # hello
+    print(v4);          # default
+
+    # ── switch pattern-matching ───────────────────────────────────────────────
+    let r1: int = switch some_int { Option::Some(v) => v, Option::None => -1 };
+    let r2: int = switch none_int { Option::Some(v) => v, Option::None => -1 };
+    print(r1);          # 42
+    print(r2);          # -1
+}

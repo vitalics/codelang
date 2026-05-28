@@ -1,0 +1,7 @@
+fn numtest(a: Number, b: Number): Number {
+  return a * b;
+}
+
+fn main() {
+  print(numtest(9999999999, 9999999999));
+}

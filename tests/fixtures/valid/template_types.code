@@ -1,0 +1,12 @@
+# template_types.code
+# Template strings interpolating different types.
+fn main() {
+    let n = 42;
+    let f = 3.14;
+    let s = "world";
+    let b = true;
+    print($"int: {n}");
+    print($"float: {f}");
+    print($"string: {s}");
+    print($"bool: {b}");
+}

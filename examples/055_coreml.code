@@ -1,0 +1,55 @@
+import "stdlib/npu/apple_coreml";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CoreML + INT8/INT4 quantization example
+#
+# Demonstrates:
+#   - Loading the apple_coreml module on macOS
+#   - INT8 symmetric quantization of a Matrix
+#   - INT4 quantization of a Matrix
+#   - Inspecting rows, cols, scale, zero-point
+#   - Reading individual quantized elements
+# ─────────────────────────────────────────────────────────────────────────────
+
+fn main(): void {
+    print("── CoreML + Quantization ─────────────────────────────────────────");
+
+    # Build a 2×3 weight matrix filled with 0.5 (exactly representable as f32).
+    # With scale=0.5 and zero_point=0:
+    #   q_i = round(0.5 / 0.5) + 0 = 1  for every element
+    const w: Matrix = Matrix.new(2, 3);
+    w.fill(0.5);
+    print("source matrix:");
+    print(w);
+
+    # ── INT8 quantization ─────────────────────────────────────────────────────
+    print("── INT8 quantization (scale=0.5, zp=0) ──────────────────────────");
+    const q8: QuantizedMatrix = QuantizedMatrix.quantizeINT8(w, 0.5, 0);
+    print("rows:");
+    print(q8.rows());
+    print("cols:");
+    print(q8.cols());
+    print("q8[0,0] (expect 1):");
+    print(q8.getINT8(0, 0));
+    print("q8[1,2] (expect 1):");
+    print(q8.getINT8(1, 2));
+    print(q8);
+    q8.free();
+
+    # ── INT4 quantization ─────────────────────────────────────────────────────
+    # With values = 0.5, scale = 0.5: q_i = round(0.5/0.5) = 1  (fits in [-8,7])
+    print("── INT4 quantization (scale=0.5, zp=0) ──────────────────────────");
+    const q4: QuantizedMatrix = QuantizedMatrix.quantizeINT4(w, 0.5, 0);
+    print("q4[0,0] (expect 1):");
+    print(q4.getINT4(0, 0));
+    print(q4);
+    q4.free();
+
+    # ── CoreMLModel (load attempt — path does not exist, model will be null) ──
+    print("── CoreMLModel load (null model, no crash) ───────────────────────");
+    const mdl: CoreMLModel = CoreMLModel.load("nonexistent.mlpackage");
+    mdl.free();
+
+    print("── done ──────────────────────────────────────────────────────────");
+    w.free();
+}

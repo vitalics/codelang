@@ -1,0 +1,84 @@
+# examples/033_memory_ops.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Memory / address primitives
+#
+#   addressOf(expr)    → Int64   runtime address of a value
+#   sizeOf!(T)         → int     compile-time byte size of T
+#   typeId!(T)         → Int64   compile-time stable hash of the type name
+#   typeAddress(expr)  → Int64   runtime address of the TypeInfo descriptor
+#
+# Primary use case: type-tagged, address-based generic containers for
+# array scaling — knowing the element type and its memory location lets
+# a generic allocator resize, copy, or cast buffers without boxing every
+# element in an Any wrapper.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/memory";
+import "stdlib/numbers";
+
+type Point {
+    x: int
+    y: int
+}
+
+fn main() {
+    # ── sizeOf! — compile-time element sizes ──────────────────────────────────
+    const sz_bool   = sizeOf!(bool);    # 1
+    const sz_int    = sizeOf!(int);     # 4
+    const sz_float  = sizeOf!(float);   # 8  (float = Float64 = double)
+    const sz_str    = sizeOf!(string);  # 8  (pointer)
+    const sz_int64  = sizeOf!(Int64);   # 8
+    const sz_point  = sizeOf!(Point);   # 8  (i32 + i32 = 8, no trailing pad)
+
+    print(sz_bool);    # 1
+    print(sz_int);     # 4
+    print(sz_float);   # 8
+    print(sz_str);     # 8
+    print(sz_int64);   # 8
+    print(sz_point);   # 8
+
+    # ── typeId! — stable compile-time type identifiers ────────────────────────
+    # Equal types always hash to the same constant, so these can be stored in
+    # a typed-array entry header and checked at runtime.
+    const id_int   = typeId!(int);
+    const id_str   = typeId!(string);
+    const id_bool  = typeId!(bool);
+    const id_point = typeId!(Point);
+
+    # Different types → different IDs (with overwhelming probability)
+    print(id_int == id_int);   # true  — same type, same id
+    print(id_int == id_str);   # false — int ≠ string
+    print(id_int == id_bool);  # false — int ≠ bool
+
+    # ── addressOf — runtime memory address ────────────────────────────────────
+    const x: int = 42;
+    const addr_x = addressOf(x);      # address of x's stack slot
+
+    # Address is non-zero for any live variable
+    print(addr_x != 0);    # true
+
+    # Two different variables have different addresses
+    const y: int = 99;
+    const addr_y = addressOf(y);
+    print(addr_x != addr_y);   # true
+
+    # Struct (heap-allocated) — addressOf gives the heap pointer as Int64
+    const p = Point_new(3, 7);
+    const addr_p = addressOf(p);
+    print(addr_p != 0);    # true
+
+    # ── Using sizeOf! for stride-based index arithmetic ───────────────────────
+    # Simulate a typed array: `base + index * element_size`
+    const elem_size = sizeOf!(int);     # 4
+    const base_addr = addressOf(x);     # some address
+
+    const idx0 = base_addr + 0 * elem_size;
+    const idx1 = base_addr + 1 * elem_size;
+
+    # Consecutive indices are exactly elem_size bytes apart
+    print(idx1 - idx0 == elem_size);    # true
+
+    # ── compileLog! sanity check ───────────────────────────────────────────────
+    compileLog!("sizeOf!(int)=", sizeOf!(int), " sizeOf!(Point)=", sizeOf!(Point));
+    compileLog!("typeId!(int)=", typeId!(int));
+}

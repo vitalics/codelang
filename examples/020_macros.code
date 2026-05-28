@@ -1,0 +1,146 @@
+# examples/020_macros.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Macros in CodeLang
+#
+# Two flavours, inspired by JAI and Rust:
+#
+#   macro name!(…) { … }
+#     Code-template macro.  Expanded at the call site before type-checking.
+#     Hygienic: macro-local bindings do not leak into the caller's scope.
+#     Think: Rust's `macro_rules!` — named parameters instead of token trees.
+#
+#   const macro name!(…) { … }
+#     Compile-time macro.  Evaluated by the compiler before IR generation.
+#     Can inspect types, emit diagnostics and generate new declarations.
+#     Think: JAI's `#run` / `#insert` + Rust's proc-macros, without a
+#     separate compilation step.
+#
+# Invocation — trailing `!` marks a macro call:
+#   assert!(x > 0, "must be positive")
+#   size_of!(int)
+#
+# Parameter kinds — use the five stdlib meta-types from stdlib/macros:
+#
+#   $x: Expr     — captures an unevaluated expression (call-by-name / lazy)
+#   $x: Ident    — captures an identifier token
+#   $x: Type     — captures a type reference
+#   $x: Block    — captures a `{ … }` block
+#   $x: Literal  — captures a compile-time literal (string / number / bool)
+#   ...$xs: Expr — variadic: zero or more expressions (spread with `for … in`)
+#
+# The following macros are provided by stdlib/macros and used directly here:
+#   assert!       — runtime condition check, panics on failure
+#   todo!         — marks unimplemented code paths (panics at runtime)
+#   unreachable!  — marks logically impossible paths (panics at runtime)
+#   dbg!          — transparent debug-print wrapper around any expression
+#   stringify!    — source text of an expression as a compile-time string
+#   static_assert! — compile-time condition check, aborts compilation on failure
+#   size_of!      — byte size of a type (compile-time const int)
+#   type_name!    — source name of a type (compile-time string)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/macros";
+
+# ── 1. Variadic macro ─────────────────────────────────────────────────────────
+
+# log! — structured log line with a level tag and zero or more values.
+# Each value is printed inline without heap allocation.
+#
+#   log!("info", user.id, request.path);
+#   log!("warn", "retries left:", retries);
+macro log!($level: Literal, ...$parts: Expr) {
+    print($"[{$level}]");
+    for $part in $parts {
+        print($" {$part}");
+    }
+    print("\n");
+}
+
+# ── 2. Code-generating macro ──────────────────────────────────────────────────
+
+# unroll! — compile-time loop unrolling.
+# Repeats $body exactly $n times with no runtime counter variable.
+# Inspired by JAI's `#insert` inside a #run loop.
+#
+#   unroll!(4, {
+#       buf.push(0);
+#   });
+#   # expands to:
+#   buf.push(0); buf.push(0); buf.push(0); buf.push(0);
+const macro unroll!($n: const int, $body: MacroBlock) {
+    const macro __loop!($i: const int) {
+        if $i > 0 {
+            emit $body;
+            __loop!($i - 1);
+        }
+    }
+    __loop!($n);
+}
+
+# ── 3. Derive-style macro (JAI #modify / Rust #[derive(…)]) ──────────────────
+
+# derive_display! — auto-generates a `toString(): string` method for a type.
+# The macro receives a Type reference, inspects its name at compile time and
+# emits an extension block into the program — no boilerplate by hand.
+#
+#   @derive(Displayable)
+#   type Point { x: int  y: int }
+#   # Point now implements Displayable
+#   print(p.toString());              # "[Point]"
+const macro derive_display!($T: Type) {
+    emit {
+        $T extends Displayable {
+            export fn toString(): string {
+                return $"[{type_name!($T)}]";
+            }
+        }
+    };
+}
+
+# ── 4. Demo ───────────────────────────────────────────────────────────────────
+
+# Compile-time platform check — fails to compile on 16-bit targets.
+static_assert!(size_of!(int) >= 4, "CodeLang requires at least a 32-bit int");
+
+# @derive(Displayable) attaches a toString() implementation to Point
+# without writing the extension block by hand.
+@derive(Displayable)
+type Point {
+    x: int
+    y: int
+    export fn sum(): int { return self.x + self.y; }
+}
+
+fn main() {
+    const p = Point { x: 3, y: 4 };
+
+    # ── assert! (from stdlib/macros) ───────────────────────────────────────
+    assert!(p.x == 3);
+    assert!(p.y > 0, "y must be positive");
+    assert!(p.sum() == 7, "sum must equal x + y");
+
+    # ── dbg! (from stdlib/macros) — transparent debugging ─────────────────
+    # prints:  dbg[p.sum()] = 7
+    # returns: 7  (same type as the expression)
+    const s = dbg!(p.sum());
+    assert!(s == 7);
+
+    # ── log! — variadic structured logging ────────────────────────────────
+    # prints:  [info] x=3 y=4
+    log!("info", $"x={p.x}", $"y={p.y}");
+
+    # ── @derive(Displayable) — auto-generated toString ─────────────────────
+    # prints:  [Point]
+    print(p.toString());
+
+    # ── todo! / unreachable! (from stdlib/macros) ─────────────────────────
+    # Uncomment to trigger a runtime panic with a clear message:
+    # todo!("magnitude not yet implemented");
+    # unreachable!("all directions handled above");
+
+    # ── size_of! / type_name! (from stdlib/macros) ────────────────────────
+    # Resolved entirely before code generation; no runtime cost.
+    const int_bytes  = size_of!(int);    # 4
+    const bool_bytes = size_of!(bool);   # 1
+    log!("debug", $"int={int_bytes} bytes, bool={bool_bytes} bytes");
+}

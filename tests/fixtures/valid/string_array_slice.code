@@ -1,0 +1,52 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: StringArray = StringArray.new();
+    a.push("a");
+    a.push("b");
+    a.push("c");
+    a.push("d");
+    a.push("e");
+
+    # slice(start, end)
+    let s1: StringArray = a.slice(1, 4);
+    print(s1.length());     # 3
+    print(s1.get(0));       # b
+    print(s1.get(1));       # c
+    print(s1.get(2));       # d
+
+    # slice with negative indices
+    let s2: StringArray = a.slice(-3, -1);
+    print(s2.length());     # 2
+    print(s2.get(0));       # c
+    print(s2.get(1));       # d
+
+    # sliceFrom
+    let s3: StringArray = a.sliceFrom(3);
+    print(s3.length());     # 2
+    print(s3.get(0));       # d
+    print(s3.get(1));       # e
+
+    # clone
+    let c: StringArray = a.clone();
+    print(c.length());      # 5
+    print(c.get(0));        # a
+    print(c.get(4));        # e
+
+    # concat
+    let b: StringArray = StringArray.new();
+    b.push("f");
+    b.push("g");
+    let ab: StringArray = a.concat(b);
+    print(ab.length());     # 7
+    print(ab.get(5));       # f
+    print(ab.get(6));       # g
+
+    a.free();
+    b.free();
+    s1.free();
+    s2.free();
+    s3.free();
+    c.free();
+    ab.free();
+}

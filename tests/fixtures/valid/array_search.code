@@ -1,0 +1,28 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: IntArray = IntArray.new();
+    a.push(10);
+    a.push(20);
+    a.push(30);
+    a.push(20);
+    a.push(40);
+
+    # indexOf
+    print(a.indexOf(20));       # 1  (first occurrence)
+    print(a.indexOf(99));       # -1 (not found)
+
+    # lastIndexOf
+    print(a.lastIndexOf(20));   # 3  (last occurrence)
+    print(a.lastIndexOf(10));   # 0
+
+    # includes — returns bool; compare explicitly
+    if a.includes(20) == true {
+        print(1);               # 1 (found)
+    }
+    if a.includes(99) == false {
+        print(0);               # 0 (not found)
+    }
+
+    a.free();
+}

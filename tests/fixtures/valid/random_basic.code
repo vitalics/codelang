@@ -1,0 +1,96 @@
+import "stdlib/random";
+import "stdlib/array";
+
+fn main() {
+    # ── Core float — range checks ──────────────────────────────────────────────
+    Random.seed(42);
+    const f1: float = Random.float();
+    const f2: float = Random.float();
+    print(f1 >= 0.0);    # true
+    print(f1 < 1.0);     # true
+    print(f2 >= 0.0);    # true
+
+    # ── uniform — range checks ────────────────────────────────────────────────
+    Random.seed(42);
+    const u: float = Random.uniform(10.0, 20.0);
+    print(u >= 10.0);    # true
+    print(u < 20.0);     # true
+
+    # ── randInt — range checks ────────────────────────────────────────────────
+    Random.seed(42);
+    const d1: int = Random.randInt(1, 6);
+    const d2: int = Random.randInt(1, 6);
+    const d3: int = Random.randInt(1, 6);
+    print(d1 >= 1);      # true
+    print(d1 <= 6);      # true
+    print(d2 >= 1);      # true
+    print(d3 >= 1);      # true
+
+    # ── randInt fixed boundary ────────────────────────────────────────────────
+    const fixed: int = Random.randInt(7, 7);
+    print(fixed);        # 7
+
+    # ── bool ──────────────────────────────────────────────────────────────────
+    Random.seed(0);
+    const b1: bool = Random.bool();
+    const b2: bool = Random.bool();
+    print(b1);   # deterministic for seed 0
+    print(b2);
+
+    # ── coin ──────────────────────────────────────────────────────────────────
+    print(Random.coin(1.0));   # true  (probability 1.0)
+    print(Random.coin(0.0));   # false (probability 0.0)
+
+    # ── gauss — not NaN ───────────────────────────────────────────────────────
+    Random.seed(42);
+    const g: float = Random.gauss(0.0, 1.0);
+    print(g == g);   # true (NaN != NaN, so this checks not-NaN)
+
+    # ── exponential — always positive ─────────────────────────────────────────
+    Random.seed(42);
+    const e: float = Random.exponential(1.0);
+    print(e > 0.0);  # true
+
+    # ── triangular — within bounds ────────────────────────────────────────────
+    Random.seed(42);
+    const tri: float = Random.triangular(0.0, 10.0, 5.0);
+    print(tri >= 0.0);   # true
+    print(tri <= 10.0);  # true
+
+    # ── shuffleInts — sum must be preserved ───────────────────────────────────
+    Random.seed(42);
+    let arr: int[] = [1, 2, 3, 4, 5];
+    Random.shuffleInts(arr);
+    const s0: int = arr.get(0);
+    const s1: int = arr.get(1);
+    const s2: int = arr.get(2);
+    const s3: int = arr.get(3);
+    const s4: int = arr.get(4);
+    const sum: int = s0 + s1 + s2 + s3 + s4;
+    print(sum);           # 15  (1+2+3+4+5, shuffle preserves elements)
+
+    # ── chooseInt — element from non-empty array ──────────────────────────────
+    Random.seed(42);
+    let nums: int[] = [10, 20, 30];
+    const choice: Option<int> = Random.chooseInt(nums);
+    print(choice.isSome());           # true
+    const val: int = choice.unwrapOr(-1);
+    print(val >= 10);                 # true
+    print(val <= 30);                 # true
+
+    # ── chooseInt — empty array returns None ──────────────────────────────────
+    let empty: int[] = [];
+    const noneVal: Option<int> = Random.chooseInt(empty);
+    print(noneVal.isNone());          # true
+
+    # ── shuffleStrings — length preserved ─────────────────────────────────────
+    Random.seed(1);
+    let words: string[] = ["apple", "banana", "cherry"];
+    Random.shuffleStrings(words);
+    print(words.length());            # 3
+
+    # ── chooseString ─────────────────────────────────────────────────────────
+    Random.seed(1);
+    const w: Option<string> = Random.chooseString(words);
+    print(w.isSome());                # true
+}

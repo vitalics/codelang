@@ -1,0 +1,68 @@
+import "stdlib/os";
+
+# ── stdlib/os.code — demo ─────────────────────────────────────────────────────
+#
+# Demonstrates the OS namespace: system info, memory, CPU, GPU and NPU.
+# Output is machine-specific; run on any POSIX system.
+
+fn main() {
+    # ── Compile-time constants ────────────────────────────────────────────────
+    print("=== Build target ===");
+    print(OS.arch());           # e.g. "arm64"
+    print(OS.platform());       # e.g. "darwin"
+    print(OS.endianness());     # "LE" on all common desktop architectures
+    print(OS.devNull());        # "/dev/null"
+
+    # ── OS identity ───────────────────────────────────────────────────────────
+    print("=== OS identity ===");
+    print(OS.osType());         # "Darwin", "Linux", …
+    print(OS.release());        # kernel release string
+    print(OS.hostname());       # machine hostname
+
+    # ── Memory ────────────────────────────────────────────────────────────────
+    print("=== Memory ===");
+    print(OS.totalmem());       # total RAM in bytes (Int64)
+    print(OS.freemem());        # available RAM in bytes (Int64)
+
+    # ── CPU ───────────────────────────────────────────────────────────────────
+    print("=== CPU ===");
+    print(OS.cpuCount());       # logical core count
+    print(OS.cpuModel());       # e.g. "Apple M3 Pro"
+    print(OS.cpuSpeed());       # MHz  (0 on Apple Silicon — not exposed)
+
+    # ── User ──────────────────────────────────────────────────────────────────
+    print("=== User ===");
+    print(OS.username());       # current login name
+    print(OS.uid());            # POSIX UID
+    print(OS.gid());            # POSIX GID
+
+    # ── File system helpers ───────────────────────────────────────────────────
+    print("=== Paths ===");
+    print(OS.homedir());        # home directory
+    print(OS.tmpdir());         # temporary directory
+
+    # ── GPU ───────────────────────────────────────────────────────────────────
+    print("=== GPU ===");
+    print(OS.gpuCount());       # 1 on Apple Silicon (integrated)
+    print(OS.gpuModel(0));      # e.g. "Apple M3 Pro GPU"
+
+    # GPU sub-namespace — compile-time guard
+    print("=== GPU.isAvailable ===");
+    print(GPU.isAvailable());   # true on macOS / Linux / Windows
+    print(GPU.count());         # number of GPU devices
+    print(GPU.model(0));        # e.g. "Apple M3 Pro GPU"
+
+    # ── NPU / Neural Engine ───────────────────────────────────────────────────
+    print("=== NPU ===");
+    print(OS.hasNpu());         # true on Apple M-series, Qualcomm, Intel Meteor Lake+
+    print(OS.npuName());        # e.g. "Apple M3 Pro Neural Engine"
+
+    # NPU sub-namespace — compile-time guard
+    print("=== NPU.isAvailable ===");
+    print(NPU.isAvailable());   # true on Apple Silicon
+    print(NPU.name());          # e.g. "Apple M3 Pro Neural Engine"
+
+    # ── Uptime ────────────────────────────────────────────────────────────────
+    print("=== Uptime ===");
+    print(OS.uptime());         # seconds since boot (Int64)
+}

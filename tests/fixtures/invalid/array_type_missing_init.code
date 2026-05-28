@@ -1,0 +1,17 @@
+# array_type_missing_init.code
+# Tests that declaring a value-typed array (with typeValues) but omitting
+# the required `= [...]` initializer causes a compile-time error.
+
+type Table2 {
+    const data: int[3; 1, 2, 3]   # typeValues declared but no = [...] initializer
+    id: int
+
+    static fn new(i: int): Table2 {
+        return Self { id: i };
+    }
+}
+
+fn main() {
+    let t = Table2.new(1);
+    print(t.id);
+}

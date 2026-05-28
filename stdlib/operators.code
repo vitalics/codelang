@@ -1,0 +1,150 @@
+# stdlib/operators.code
+#
+# Binary operator protocols and their implementation for the Number type.
+#
+# ── Usage ─────────────────────────────────────────────────────────────────────
+#
+#   import "./operators";
+#
+#   const a: Number = 10;
+#   const b: Number = 3;
+#
+#   print(a.add(b));          # 13
+#   print(a.sub(b));          # 7
+#   print(a.mul(b));          # 30
+#   print(a.div(b));          # 3.333...
+#   print(a.mod(b));          # 1
+#
+#   # Operator syntax works the same as before for Number:
+#   print(a + b);             # 13
+#
+# ── Custom-type operator overloading ──────────────────────────────────────────
+#
+# Any type that defines add/sub/mul/div/mod extension methods gets the
+# corresponding operator (+, -, *, /, %) for free.  The compiler dispatches
+# `a + b` to `TypeName_add(a, b)` whenever the type has an `add` extension
+# method (and is not Number or a primitive — those have built-in paths).
+#
+#   type Vec2 = intrinsic("...");
+#
+#   Vec2 extends BinaryAdd {
+#       export fn add(const other: Vec2): Vec2 { ... }
+#   }
+#
+#   let v3 = v1 + v2;        # dispatches to Vec2_add(v1, v2)
+#
+# ── Note on protocol signatures ───────────────────────────────────────────────
+# CodeLang does not yet have generic/Self types.  The signatures below are
+# written for Number as the primary use case.  When implementing for a custom
+# type T, substitute T for Number in the parameter and return type.
+
+import "./numbers";
+import "./protocols";
+
+# ── Binary operator protocols ─────────────────────────────────────────────────
+
+export protocol BinaryAdd {
+    fn add(const other: Self): Self;
+}
+
+export protocol BinarySub {
+    fn sub(const other: Self): Self;
+}
+
+export protocol BinaryMul {
+    fn mul(const other: Self): Self;
+}
+
+export protocol BinaryDiv {
+    fn div(const other: Self): Self;
+}
+
+export protocol BinaryMod {
+    fn mod(const other: Self): Self;
+}
+
+# ── Number implements BinaryAdd ───────────────────────────────────────────────
+#
+# The method bodies use the built-in operators (self + other, etc.).
+# For Number, those operators dispatch to C-runtime calls (number_add etc.)
+# directly — no extra extern fn declarations are needed.
+
+Number extends BinaryAdd {
+    export fn add(const other: Number): Number {
+        return self + other;
+    }
+}
+
+# ── Number implements BinarySub ───────────────────────────────────────────────
+
+Number extends BinarySub {
+    export fn sub(const other: Number): Number {
+        return self - other;
+    }
+}
+
+# ── Number implements BinaryMul ───────────────────────────────────────────────
+
+Number extends BinaryMul {
+    export fn mul(const other: Number): Number {
+        return self * other;
+    }
+}
+
+# ── Number implements BinaryDiv ───────────────────────────────────────────────
+
+Number extends BinaryDiv {
+    export fn div(const other: Number): Number {
+        return self / other;
+    }
+}
+
+# ── Number implements BinaryMod ───────────────────────────────────────────────
+
+Number extends BinaryMod {
+    export fn mod(const other: Number): Number {
+        return self % other;
+    }
+}
+
+# ── Three-way comparison (Cmp / PartialCmp) ───────────────────────────────────
+#
+# number_cmp returns -1, 0, or +1.  Types that implement Cmp or PartialCmp
+# enable the <, >, <=, >= operators; the IR generator dispatches them by
+# calling TypeName_cmp / TypeName_partialCmp and comparing the i32 result to 0.
+
+extern fn number_cmp(const a: Number, const b: Number): int;
+
+Number extends Cmp {
+    export fn cmp(const other: Number): int {
+        return number_cmp(self, other);
+    }
+}
+
+Number extends PartialCmp {
+    export fn partialCmp(const other: Number): int {
+        return number_cmp(self, other);
+    }
+}
+
+# ── Equality protocol (Ord) ───────────────────────────────────────────────────
+#
+# Types that implement Ord provide an `eq` extension method.
+# The IR generator replaces == and != on such types with TypeName_eq calls.
+#
+# For Number the body uses the built-in == which dispatches to number_eq (the
+# isNumberTy fast path), so there is no infinite recursion.
+#
+# Note: only one of Ord / PartialOrd should be implemented per type because both
+# protocols share the `eq` method name — implementing both would produce
+# duplicate LLVM function definitions.  Use Ord for total equality (integers,
+# Number) and PartialOrd for types where equality may be undefined (floats, etc).
+
+Number extends Ord {
+    export fn eq(const other: Number): bool {
+        if self == other {
+            return true;
+        }
+        return false;
+    }
+}

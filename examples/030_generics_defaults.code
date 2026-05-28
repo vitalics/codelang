@@ -1,0 +1,50 @@
+# examples/030_generics_defaults.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generic type parameter defaults — N extends Supertype = Default
+#
+# Syntax:
+#   TypeParam ::= name ('extends' Bound)? ('=' Default)?
+#
+# Examples in this file:
+#   protocol Countable<N extends Int = Int>   — N defaults to Int (i32)
+#   type     Array<T, N extends Int = Int>    — N defaults to Int
+#   type     Matrix<T, R extends Int, C extends Int = Int>
+#
+# Semantics
+#   • `N extends Int`         → N must be a sub-type of Int (currently doc-only)
+#   • `N extends Int = Int`   → same, but when N is omitted the compiler
+#                               substitutes the default (Int / i32) automatically
+#   • Defaults are resolved via the same TypeEnv used for explicit type args
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/numbers";
+import "stdlib/protocols";
+import "stdlib/array";
+
+# ── 1. Use Array<T> (1 arg — N defaults to Int) ────────────────────────────────
+fn demo_array_defaults() {
+    # Array<int> — same as Array<int, Int>; length() returns int
+    let a: Array<int> = IntArray.new();
+    a.push(10);
+    a.push(20);
+    a.push(30);
+
+    const n: int = a.length();     # Countable<Int>.length() → int
+    print(n);                       # 3
+}
+
+# ── 2. Use Array<T, N> explicitly ─────────────────────────────────────────────
+fn demo_array_explicit_n() {
+    # Array<int, Int32> — explicit N, same wire type as above
+    let b: Array<int, Int32> = IntArray.new();
+    b.push(1);
+    b.push(2);
+
+    const len: int = b.length();
+    print(len);                     # 2
+}
+
+fn main() {
+    demo_array_defaults();
+    demo_array_explicit_n();
+}

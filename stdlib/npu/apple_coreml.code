@@ -1,0 +1,175 @@
+# stdlib/npu/apple_coreml.code
+#
+# Core ML inference + INT8/INT4 quantization for Apple platforms.
+#
+# ── Platform guard ────────────────────────────────────────────────────────────
+# This module requires macOS (Core ML framework).
+# On other operating systems compilation is aborted with a clear error.
+#
+# The guard is implemented via switch_import! — the else arm imports
+# _unsupported.code which contains a top-level compileError!.
+#
+# ── Recommended import pattern ────────────────────────────────────────────────
+#
+#   import "stdlib/npu/apple_coreml";
+#
+#   fn main(): void {
+#       const model: CoreMLModel = CoreMLModel.load("MyNet.mlpackage");
+#       const w: Matrix = Matrix.new(2, 2);
+#       # ... fill w ...
+#       const q: QuantizedMatrix = QuantizedMatrix.quantizeINT8(w, 0.5, 0);
+#       print(q);
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   CoreMLModel    — opaque handle to a compiled Core ML model
+#   QuantizedMatrix — row-major INT8 matrix with per-tensor scale + zero-point
+#
+# ── Backend ───────────────────────────────────────────────────────────────────
+#   Core ML prediction  → MLModel_predict (coreml_model_predict in runtime/npu_coreml.c)
+#   INT8 quantization   → symmetric per-tensor  (rounds to nearest, clips)
+#   INT4 quantization   → symmetric per-tensor  (4-bit range: -8 .. 7)
+#   Dequantize          → scale * (q - zero_point)
+#   GEMM on ANE         → dispatched by Core ML when model targets "neuralNetwork"
+#
+# macOS link: -framework CoreML -framework Foundation
+
+# ── Platform guard ────────────────────────────────────────────────────────────
+const _platform_guard = switch_import! compile.os() {
+    "darwin" => "./npu_darwin_noop",
+    else     => "./_unsupported",
+};
+
+import "../numbers";
+import "../protocols";
+import "../npu";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# CoreMLModel — opaque handle to a loaded .mlpackage / .mlmodel.
+# Backed by runtime/npu_coreml.c → coreml_model_t (wraps MLModel*).
+export type CoreMLModel = intrinsic("%CoreMLModel*");
+
+# QuantizedMatrix — row-major INT8 buffer with quantization metadata.
+# Layout: { int8_t* data; int rows; int cols; float scale; int32_t zero_point; int bits; }
+export type QuantizedMatrix = intrinsic("%QuantizedMatrix*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/npu_coreml.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Core ML model lifecycle ───────────────────────────────────────────────────
+extern fn coreml_model_load(path: string): CoreMLModel;
+extern fn coreml_model_free(model: CoreMLModel);
+
+# Predict via Matrix buffers: input and output are Matrix opaque pointers.
+extern fn coreml_model_predict_matrix(
+    model: CoreMLModel,
+    input: Matrix,
+    output: Matrix
+);
+
+# ── INT8 quantization via Matrix ──────────────────────────────────────────────
+# Symmetric per-tensor: q = round(x / scale) + zero_point, clipped to [-128, 127].
+extern fn coreml_quantize_int8_matrix(
+    m: Matrix,
+    scale: Float,
+    zero_point: int
+): QuantizedMatrix;
+
+# INT4 quantization via Matrix: q in [-8, 7], packed two nibbles per byte.
+extern fn coreml_quantize_int4_matrix(
+    m: Matrix,
+    scale: Float,
+    zero_point: int
+): QuantizedMatrix;
+
+# ── QuantizedMatrix element access ────────────────────────────────────────────
+extern fn coreml_qmatrix_rows(q: QuantizedMatrix): int;
+extern fn coreml_qmatrix_cols(q: QuantizedMatrix): int;
+extern fn coreml_qmatrix_scale(q: QuantizedMatrix): Float;
+extern fn coreml_qmatrix_zero_point(q: QuantizedMatrix): int;
+# Read back a single INT8 element (value in [-128, 127]).
+extern fn coreml_qmatrix_get_int8(q: QuantizedMatrix, row: int, col: int): int;
+# Get INT4 nibble (value in [-8, 7]).
+extern fn coreml_qmatrix_get_int4(q: QuantizedMatrix, row: int, col: int): int;
+extern fn coreml_qmatrix_free(q: QuantizedMatrix);
+extern fn coreml_qmatrix_to_string(q: QuantizedMatrix): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CoreMLModel extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+CoreMLModel extends {
+
+    # Load a compiled .mlpackage or .mlmodel from disk.
+    # path must be an absolute or relative path to the model bundle directory.
+    export static fn load(path: string): CoreMLModel {
+        return coreml_model_load(path);
+    }
+
+    # Release the model handle.  Must not be used after free().
+    export fn free() { coreml_model_free(self); }
+
+    # Run inference.
+    # input  — Matrix containing the flat float32 input
+    # output — pre-allocated Matrix that will receive the model output
+    export fn predict(input: Matrix, output: Matrix) {
+        coreml_model_predict_matrix(self, input, output);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QuantizedMatrix extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+QuantizedMatrix extends {
+
+    # ── Quantize Matrix → INT8 ───────────────────────────────────────────────
+    # Symmetric per-tensor quantization.
+    # scale      — typically max(|x|) / 127
+    # zero_point — 0 for symmetric (affine quantization uses non-zero)
+    export static fn quantizeINT8(
+        m: Matrix, scale: Float, zero_point: int
+    ): QuantizedMatrix {
+        return coreml_quantize_int8_matrix(m, scale, zero_point);
+    }
+
+    # ── Quantize Matrix → INT4 ───────────────────────────────────────────────
+    # 4-bit symmetric quantization; data packed two nibbles per byte.
+    # scale — typically max(|x|) / 7
+    export static fn quantizeINT4(
+        m: Matrix, scale: Float, zero_point: int
+    ): QuantizedMatrix {
+        return coreml_quantize_int4_matrix(m, scale, zero_point);
+    }
+
+    # ── Dimensions ───────────────────────────────────────────────────────────
+
+    export fn rows(): int        { return coreml_qmatrix_rows(self); }
+    export fn cols(): int        { return coreml_qmatrix_cols(self); }
+    export fn scale(): Float     { return coreml_qmatrix_scale(self); }
+    export fn zeroPoint(): int   { return coreml_qmatrix_zero_point(self); }
+
+    # ── Element access ───────────────────────────────────────────────────────
+
+    # Read quantized INT8 value at (row, col): range [-128, 127].
+    export fn getINT8(row: int, col: int): int {
+        return coreml_qmatrix_get_int8(self, row, col);
+    }
+
+    # Read quantized INT4 nibble at (row, col): range [-8, 7].
+    export fn getINT4(row: int, col: int): int {
+        return coreml_qmatrix_get_int4(self, row, col);
+    }
+
+    # ── Memory ───────────────────────────────────────────────────────────────
+
+    export fn free() { coreml_qmatrix_free(self); }
+}
+
+QuantizedMatrix extends Displayable {
+    export fn toString(): string { return coreml_qmatrix_to_string(self); }
+}

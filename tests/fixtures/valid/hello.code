@@ -1,0 +1,11 @@
+fn main() {
+  print("Hello, CodeLang!");
+  print(fibo(100));
+}
+
+const fn fibo(const n: Number): Number {
+  if n <= 1 {
+    return n;
+  }
+  return fibo(n - 1) + fibo(n - 2);
+}

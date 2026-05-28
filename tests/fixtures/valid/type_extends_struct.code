@@ -1,0 +1,34 @@
+# type_extends_struct.code
+#
+# Demonstrates flat struct inheritance:
+#   type Point3D extends Point { z: int }
+#
+# All parent fields (x, y) are embedded at the start of Point3D's layout.
+# The child adds z and a static factory that uses spread to copy parent fields.
+
+type Point {
+  x: int
+  y: int
+
+  static fn new(x: int, y: int): Point {
+    return Self { x: x, y: y };
+  }
+}
+
+type Point3D extends Point {
+  z: int
+
+  static fn new(x: int, y: int, z: int): Point3D {
+    const p = Point.new(x, y);
+    return Self { ...p, z: z };
+  }
+
+  fn sum(): int {
+    return self.x + self.y + self.z;
+  }
+}
+
+fn main() {
+  const p = Point3D.new(1, 2, 3);
+  print(p.sum());
+}

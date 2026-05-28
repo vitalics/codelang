@@ -1,0 +1,13 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # Minimal fixture to verify IR structure:
+    # - %IntArray = type opaque forward declaration is present
+    # - intarray_new is called with the right signature
+    # - intarray_push takes (%IntArray*, i32)
+    # - intarray_length returns i32
+    let a: IntArray = IntArray.new();
+    a.push(42);
+    print(a.length());
+    a.free();
+}

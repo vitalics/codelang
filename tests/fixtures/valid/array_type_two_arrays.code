@@ -1,0 +1,23 @@
+# array_type_two_arrays.code
+# Tests a struct with two fixed-size array fields of different sizes.
+# Verifies that both arrays appear in the LLVM struct type and that
+# a non-array field following them is accessible via the correct GEP index.
+
+type Pair {
+    left: int[3]
+    right: int[4]
+    tag: int
+
+    static fn new(t: int): Pair {
+        return Self { tag: t };
+    }
+
+    fn getTag(): int {
+        return self.tag;
+    }
+}
+
+fn main() {
+    let p = Pair.new(7);
+    print(p.getTag());
+}

@@ -1,0 +1,16 @@
+# float_methods.code
+# Built-in methods on float (double): toString().
+#
+# float.toString()  → decimal string representation
+fn main() {
+    let a: float = 3.14;
+    let b: float = 0.0;
+    let c: float = -2.5;
+
+    const sa = a.toString();
+    const sb = b.toString();
+    const sc = c.toString();
+    print(sa);
+    print(sb);
+    print(sc);
+}

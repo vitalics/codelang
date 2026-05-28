@@ -1,0 +1,68 @@
+# examples/031_const_fields.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Two orthogonal `const` features for struct fields
+#
+# ── 1. `const` field modifier ──────────────────────────────────────────────────
+#
+#   type Pixel {
+#       const x: int      ← field modifier: read-only after construction
+#       const y: int      ← only the struct's `new` / initializer may set it
+#       color: string     ← mutable field (default)
+#   }
+#
+#   The modifier is stored in FieldDeclaration.readonly and propagates into
+#   the reflection metadata (isConst = 1).
+#
+# ── 2. `const T` type qualifier ────────────────────────────────────────────────
+#
+#   type Pixel {
+#       const x: const int    ← read-only field + fixed-width type (no upscale)
+#       const y: const int
+#       color: string
+#   }
+#
+#   `const int`    → i32   (same LLVM type as int — constraint is type-system only)
+#   `const Number` → i64   (prevents %Number* heap allocation / BigInt promotion)
+#
+#   The qualifier is stored in TypeReference.constQualified and in
+#   the field entry as constType=true (affects reflection isConst flag).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/numbers";
+
+# ── Type with read-only field modifier ────────────────────────────────────────
+
+type Point {
+    const x: int       # read-only; can only be written by the constructor
+    const y: int
+}
+
+# ── Type with both field modifier and const-qualified type ────────────────────
+# `const int` pins the representation: x and y will never be auto-promoted to
+# a wider integer type or to Number/BigInt at runtime.
+
+type ImmutablePoint {
+    const x: const int     # readonly field of pinned type
+    const y: const int
+}
+
+# ── Type that uses const Number to prevent BigInt upscaling ───────────────────
+# Normally a `Number` field auto-promotes on overflow.
+# `const Number` instead forces a fixed i64 representation.
+
+type FixedCounter {
+    const count: const Number
+}
+
+fn main() {
+    const p = Point { x: 10, y: 20 };
+    print(p.x);     # 10
+    print(p.y);     # 20
+
+    const ip = ImmutablePoint { x: 3, y: 4 };
+    print(ip.x);    # 3
+    print(ip.y);    # 4
+
+    const fc = FixedCounter { count: 42 };
+    print(fc.count);   # 42
+}

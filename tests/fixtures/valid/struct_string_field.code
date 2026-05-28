@@ -1,0 +1,23 @@
+# struct_string_field.code
+#
+# Tests struct with a string field and a method that accesses it.
+#
+# IR expectations:
+#   %Person = type { i8* }
+#   define private %Person* @Person_new(i8* %arg.0)
+#   define private i8* @Person_greet(%Person* %self.0)
+
+type Person = {
+    name: string
+    fn greet(): string {
+        return self.name;
+    }
+};
+
+fn main() {
+    let p: Person = Person_new("Alice");
+    let n: string = p.name;
+    let g: string = p.greet();
+    print(n);
+    print(g);
+}

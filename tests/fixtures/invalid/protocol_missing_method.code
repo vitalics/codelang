@@ -1,0 +1,15 @@
+# Invalid: Number extends Drawable but does not implement the required draw() method.
+
+protocol Drawable {
+    fn draw(): void;
+}
+
+Number extends Drawable {
+    fn toString(): string {
+        return "number";
+    }
+}
+
+const fn main() {
+    print("should not compile");
+}

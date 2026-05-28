@@ -1,0 +1,10 @@
+const str = import "../../../stdlib/string";
+
+fn main() {
+  print(str.length(""));
+  print(str.at("hello", 0 - 1));
+  print(str.slice("hello", 0, 0));
+  print(str.repeat("ab", 0));
+  print(str.indexOf("abc", "abc"));
+  print(str.concat("", "hello"));
+}

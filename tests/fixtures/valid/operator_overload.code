@@ -1,0 +1,75 @@
+# operator_overload.code
+# Demonstrates operator overloading via BinaryAdd/Sub/Mul for a custom 2D
+# integer point type implemented on top of two i32 fields packed into an i64.
+#
+# Encoding: hi 32 bits = x,  lo 32 bits = y
+#   pack(x, y)  = (x << 32) | (y & 0xFFFFFFFF)
+#   x(p)        = p >> 32
+#   y(p)        = p & 0xFFFFFFFF
+#
+# We use plain i64 as the backing LLVM type for Point.
+
+import "../../../stdlib/operators";
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+export type Point = intrinsic("i64");
+
+# ── C helpers ─────────────────────────────────────────────────────────────────
+extern fn point_pack(const x: int, const y: int): Point;
+extern fn point_x(const p: Point): int;
+extern fn point_y(const p: Point): int;
+
+# ── Extension methods ─────────────────────────────────────────────────────────
+
+Point extends {
+    export fn x(): int { return point_x(self); }
+    export fn y(): int { return point_y(self); }
+}
+
+Point extends BinaryAdd {
+    export fn add(const other: Point): Point {
+        return point_pack(point_x(self) + point_x(other),
+                          point_y(self) + point_y(other));
+    }
+}
+
+Point extends BinarySub {
+    export fn sub(const other: Point): Point {
+        return point_pack(point_x(self) - point_x(other),
+                          point_y(self) - point_y(other));
+    }
+}
+
+Point extends BinaryMul {
+    export fn mul(const other: Point): Point {
+        return point_pack(point_x(self) * point_x(other),
+                          point_y(self) * point_y(other));
+    }
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+fn main() {
+    const a: Point = point_pack(3, 4);
+    const b: Point = point_pack(1, 2);
+
+    # + operator dispatches to Point_add
+    const sum: Point = a + b;
+    print(sum.x());    # 4
+    print(sum.y());    # 6
+
+    # - operator dispatches to Point_sub
+    const diff: Point = a - b;
+    print(diff.x());   # 2
+    print(diff.y());   # 2
+
+    # * operator dispatches to Point_mul
+    const prod: Point = a * b;
+    print(prod.x());   # 3
+    print(prod.y());   # 8
+
+    # method-call syntax works too
+    const also: Point = a.add(b);
+    print(also.x());   # 4
+    print(also.y());   # 6
+}

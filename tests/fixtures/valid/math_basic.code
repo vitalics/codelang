@@ -1,0 +1,70 @@
+import "stdlib/math";
+
+fn main() {
+    # ── Constants ─────────────────────────────────────────────────────────────
+    print(Math.PI);        # 3.141592653589793
+    print(Math.E);         # 2.718281828459045
+    print(Math.SQRT2);     # 1.4142135623730951
+    print(Math.LN2);       # 0.6931471805599453
+    print(Math.TAU);       # 6.283185307179586
+
+    # ── Rounding ──────────────────────────────────────────────────────────────
+    print(Math.floor(4.7));   # 4.0
+    print(Math.ceil(4.2));    # 5.0
+    print(Math.round(4.5));   # 5.0
+    print(Math.trunc(-4.9));  # -4.0
+    print(Math.sign(-7.3));   # -1.0
+    print(Math.sign(0.0));    # 0.0
+    print(Math.sign(3.14));   # 1.0
+
+    # ── Absolute value ────────────────────────────────────────────────────────
+    print(Math.abs(-42));     # 42
+    print(Math.absF(-3.5));   # 3.5
+
+    # ── Powers / roots ────────────────────────────────────────────────────────
+    print(Math.sqrt(9.0));    # 3.0
+    print(Math.cbrt(27.0));   # 3.0
+    print(Math.pow(2.0, 10.0)); # 1024.0
+    print(Math.exp(1.0));     # 2.718281828459045 (≈ e)
+    print(Math.exp2(8.0));    # 256.0
+
+    # ── Logarithms ────────────────────────────────────────────────────────────
+    print(Math.log(Math.E));   # 1.0
+    print(Math.log2(1024.0));  # 10.0
+    print(Math.log10(1000.0)); # 3.0
+    print(Math.log1p(0.0));    # 0.0
+
+    # ── Trigonometry ──────────────────────────────────────────────────────────
+    print(Math.sin(0.0));      # 0.0
+    print(Math.cos(0.0));      # 1.0
+    print(Math.atan2(1.0, 1.0)); # 0.7853981633974483 (π/4)
+
+    # ── Hyperbolic ────────────────────────────────────────────────────────────
+    print(Math.tanh(0.0));     # 0.0
+
+    # ── Min / max / clamp ─────────────────────────────────────────────────────
+    print(Math.min(3, 7));     # 3
+    print(Math.max(3, 7));     # 7
+    print(Math.minF(3.5, 7.5)); # 3.5
+    print(Math.maxF(3.5, 7.5)); # 7.5
+    print(Math.clamp(15, 0, 10));  # 10
+    print(Math.clamp(-5, 0, 10));  # 0
+    print(Math.clampF(0.8, 0.0, 1.0)); # 0.8
+
+    # ── Misc ──────────────────────────────────────────────────────────────────
+    print(Math.hypot(3.0, 4.0));    # 5.0
+    print(Math.fmod(10.0, 3.0));    # 1.0
+    print(Math.toRadians(180.0));   # 3.141592653589793
+    print(Math.toDegrees(Math.PI)); # 180.0
+
+    # ── IEEE 754 queries ──────────────────────────────────────────────────────
+    print(Math.isNaN(0.0));        # false
+    print(Math.isFinite(1.0));     # true
+    print(Math.isInfinite(1.0));   # false
+
+    # ── Random (seeded for determinism) ───────────────────────────────────────
+    Math.seedRandom(42);
+    const r: float = Math.random();
+    print(Math.isFinite(r));       # true
+    print(r >= 0.0);               # true
+}

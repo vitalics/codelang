@@ -1,0 +1,6 @@
+# template_basic.code
+# Basic template string: interpolating a string variable.
+fn main() {
+    let name = "world";
+    print($"hello {name}");
+}

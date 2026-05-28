@@ -1,0 +1,71 @@
+# stdlib/errors.code
+#
+# Standard error enums for the CodeLang standard library.
+#
+# These enums are used as the E parameter in Result<T, E> to give callers
+# structured error information instead of bare error codes.
+#
+# Usage:
+#   import "stdlib/errors";
+#
+#   fn safe_div(a: int, b: int): Result<int, MathError> {
+#       if b == 0 {
+#           return Result::Err(MathError::DivisionByZero);
+#       }
+#       return Result::Ok(a / b);
+#   }
+#
+#   switch safe_div(10, 0) {
+#       Result::Ok(v)  => print(v),
+#       Result::Err(e) => switch e {
+#           MathError::DivisionByZero => print("division by zero"),
+#       },
+#   }
+
+# ── Index / bounds errors ─────────────────────────────────────────────────────
+
+export enum IndexError {
+    OutOfBounds,
+    NegativeIndex,
+}
+
+# ── Key / lookup errors ───────────────────────────────────────────────────────
+
+export enum KeyError {
+    NotFound,
+}
+
+# ── Memory / pointer errors ───────────────────────────────────────────────────
+
+export enum MemError {
+    NullPointer,
+    UseAfterFree,
+    AllocationFailed,
+}
+
+# ── Arithmetic errors ─────────────────────────────────────────────────────────
+
+export enum MathError {
+    DivisionByZero,
+    Overflow,
+    Underflow,
+}
+
+# ── Parse errors ──────────────────────────────────────────────────────────────
+
+export enum ParseError {
+    InvalidInput,
+    UnexpectedEnd,
+    Overflow,
+}
+
+# ── IO errors ─────────────────────────────────────────────────────────────────
+
+export enum IoError {
+    NotFound,
+    PermissionDenied,
+    AlreadyExists,
+    UnexpectedEof,
+    WriteError,
+    ReadError,
+}

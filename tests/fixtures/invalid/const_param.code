@@ -1,0 +1,8 @@
+fn process(const val: string) {
+  val = "changed";
+  print(val);
+}
+
+fn main() {
+  print("test");
+}

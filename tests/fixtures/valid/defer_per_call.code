@@ -1,0 +1,15 @@
+import "../../../stdlib/string";
+
+fn step_n(const n: int) { print(n); }
+
+# defers run once per call, not once per program
+fn run_step(const n: int) {
+    defer step_n(n);
+    print(0 - n);    # body: negative
+}
+
+fn main() {
+    run_step(1);  # body: -1, defer: 1
+    run_step(2);  # body: -2, defer: 2
+    run_step(3);  # body: -3, defer: 3
+}

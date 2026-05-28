@@ -1,0 +1,21 @@
+# callable_type.code
+#
+# Demonstrates callable struct types:
+#   type MyType extends Callable<int, int> { call(n: int): int { … } }
+#
+# MyType(500) desugars to @MyType_call(500) in LLVM IR.
+# Template literal $"text {expr}" is used for formatted output.
+
+import "stdlib/protocols";
+
+type MyType extends Callable<int, int> {
+  call(value: int): int {
+    print($"This is value: {value}");
+    return 5;
+  }
+}
+
+fn main() {
+  const result = MyType(500);
+  print(result);
+}

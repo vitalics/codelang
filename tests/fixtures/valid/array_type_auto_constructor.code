@@ -1,0 +1,15 @@
+# array_type_auto_constructor.code
+# Tests that the auto-generated constructor for a struct with a fixed-size
+# array field excludes the array from the constructor parameters.
+# The struct literal is used directly without an explicit static fn new().
+
+type Ring {
+    data: int[8]
+    head: int
+    tail: int
+}
+
+fn main() {
+    let r = Ring { head: 0, tail: 0 };
+    print(r.head);
+}

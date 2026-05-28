@@ -1,0 +1,19 @@
+# c_interop_strlen.code
+#
+# Runtime tests for strlen().
+# strlen counts raw UTF-8 bytes, not Unicode codepoints.
+#
+# Expected output (4 lines):
+#   13   ← strlen("Hello, World!")
+#    0   ← strlen("")  (empty string)
+#    3   ← strlen("abc")
+#   12   ← strlen("Привет") — 6 Cyrillic codepoints × 2 bytes each
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    print(strlen("Hello, World!"));
+    print(strlen(""));
+    print(strlen("abc"));
+    print(strlen("Привет"));
+}

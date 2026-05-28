@@ -1,0 +1,49 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: StringArray = StringArray.new();
+    a.push("c");
+    a.push("a");
+    a.push("b");
+
+    # pop — returns Option<string>
+    print(a.pop().unwrapOr(""));    # b
+    print(a.length());              # 2
+
+    # unshift (prepend)
+    a.unshift("z");
+    print(a.get(0));        # z
+    print(a.length());      # 3
+
+    # shift (remove first) — returns Option<string>
+    print(a.shift().unwrapOr(""));  # z
+    print(a.length());              # 2
+
+    # fill
+    a.fill("x");
+    print(a.get(0));        # x
+    print(a.get(1));        # x
+
+    # reverse
+    let r: StringArray = StringArray.new();
+    r.push("one");
+    r.push("two");
+    r.push("three");
+    r.reverse();
+    print(r.get(0));        # three
+    print(r.get(2));        # one
+
+    # sort (alphabetically)
+    let s: StringArray = StringArray.new();
+    s.push("banana");
+    s.push("apple");
+    s.push("cherry");
+    s.sort();
+    print(s.get(0));        # apple
+    print(s.get(1));        # banana
+    print(s.get(2));        # cherry
+
+    a.free();
+    r.free();
+    s.free();
+}

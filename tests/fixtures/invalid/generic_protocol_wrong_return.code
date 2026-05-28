@@ -1,0 +1,26 @@
+# Invalid: type extends a generic protocol with an explicit type arg <int>,
+# but the implementation returns the wrong type (string instead of int).
+#
+# Container<int> requires fn size(): int,
+# but MyBox declares fn size(): string.
+#
+# With the explicit arg bound, the validator CAN and MUST catch this.
+
+protocol Container<T> {
+    fn size(): T;
+}
+
+type MyBox {
+    n: int
+}
+
+MyBox extends Container<int> {
+    export fn size(): string {
+        return "big";
+    }
+}
+
+fn main() {
+    let b = MyBox { n: 42 };
+    print(b.size());
+}

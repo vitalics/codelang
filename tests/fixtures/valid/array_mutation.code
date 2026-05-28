@@ -1,0 +1,53 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: IntArray = IntArray.new();
+    a.push(3);
+    a.push(1);
+    a.push(4);
+    a.push(1);
+    a.push(5);
+
+    # pop — returns Option<int>
+    print(a.pop().unwrapOr(0));     # 5
+    print(a.length());              # 4
+
+    # unshift (prepend)
+    a.unshift(0);
+    print(a.get(0));        # 0
+    print(a.length());      # 5
+
+    # shift (remove first) — returns Option<int>
+    print(a.shift().unwrapOr(0));   # 0
+    print(a.length());              # 4
+
+    # fill
+    a.fill(42);
+    print(a.get(0));        # 42
+    print(a.get(3));        # 42
+
+    # reverse
+    let r: IntArray = IntArray.new();
+    r.push(1);
+    r.push(2);
+    r.push(3);
+    r.reverse();
+    print(r.get(0));        # 3
+    print(r.get(2));        # 1
+
+    # sort
+    let s: IntArray = IntArray.new();
+    s.push(5);
+    s.push(2);
+    s.push(8);
+    s.push(1);
+    s.sort();
+    print(s.get(0));        # 1
+    print(s.get(1));        # 2
+    print(s.get(2));        # 5
+    print(s.get(3));        # 8
+
+    a.free();
+    r.free();
+    s.free();
+}

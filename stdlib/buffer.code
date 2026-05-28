@@ -1,0 +1,228 @@
+# stdlib/buffer.code
+#
+# Buffer — a heap-allocated view of raw byte data.
+#
+# Created via string.toBuffer(); the result holds one byte per UTF-8 code unit
+# of the original string (NUL terminator is excluded).
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let b: Buffer = someString.toBuffer();
+#
+#   b.length()              # number of bytes
+#   b.get(0)                # byte at index 0         (u8, 0–255)
+#   b.at(0)                 # alias for get(); negative indices count from end
+#   b.set(0, 42)            # mutate byte at index 0
+#
+#   b.indexOf(needle)       # first position of needle Buffer, or -1
+#   b.lastIndexOf(needle)   # last position of needle Buffer, or -1
+#   b.includes(needle)      # true if needle appears anywhere
+#   b.equals(other)         # true if identical byte content
+#
+#   b.slice(start, end)     # new Buffer [start, end); negative indices OK
+#   b.sliceFrom(start)      # new Buffer from start to end
+#   b.clone()               # full copy
+#   b.concat(other)         # new Buffer = self ++ other
+#
+#   b.fill(value)           # set every byte to `value` (mutates in-place)
+#   b.reverse()             # reverse in-place
+#
+#   b.toUtf8()              # interpret bytes as UTF-8 → string
+#   b.toString()            # "[b0, b1, ...]"  (Displayable)
+#
+#   b.free()                # release heap memory (also: b.dispose())
+#
+# With `using` (auto-dispose):
+#   using b: Buffer = someString.toBuffer();
+#   # b.dispose() is called automatically on every return path
+
+import "./numbers";
+import "./protocols";
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+# Buffer is a pointer to a heap-allocated struct { uint8_t *data; int32_t len }.
+# %Buffer is an opaque struct in LLVM IR; all operations go through C runtime.
+export type Buffer = intrinsic("%Buffer*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+export extern fn string_to_buffer(const s: string): Buffer;
+
+export extern fn buffer_length(const b: Buffer): int;
+export extern fn buffer_get(const b: Buffer, const i: int): u8;
+export extern fn buffer_set(const b: Buffer, const i: int, const v: u8);
+export extern fn buffer_free(const b: Buffer);
+export extern fn buffer_print(const b: Buffer);
+
+export extern fn buffer_new(const len: int): Buffer;
+export extern fn buffer_slice(const b: Buffer, const start: int, const end: int): Buffer;
+export extern fn buffer_concat(const a: Buffer, const b: Buffer): Buffer;
+export extern fn buffer_to_string(const b: Buffer): string;
+export extern fn buffer_index_of(const haystack: Buffer, const needle: Buffer): int;
+export extern fn buffer_last_index_of(const haystack: Buffer, const needle: Buffer): int;
+export extern fn buffer_equals(const a: Buffer, const b: Buffer): int;
+
+# Avoid circular import (buffer.code cannot import string.code).
+# concat and int_to_string are defined in runtime/string.c and also exported
+# by stdlib/string.code — declaring them here is safe (duplicate IR declares
+# for identical signatures are valid LLVM IR).
+extern fn concat(const a: string, const b: string): string;
+extern fn int_to_string(const n: int): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+Buffer extends {
+
+    # length(): number of bytes in the sequence (NUL terminator excluded).
+    export fn length(): int {
+        return buffer_length(self);
+    }
+
+    # get(i): byte value at index i (0-based).
+    # Returns 0 for out-of-bounds indices instead of crashing.
+    export fn get(const i: int): u8 {
+        return buffer_get(self, i);
+    }
+
+    # set(i, v): write byte value v at index i.
+    # Out-of-bounds writes are silently ignored.
+    export fn set(const i: int, const v: u8) {
+        buffer_set(self, i, v);
+    }
+
+    # free(): release the heap memory owned by this Buffer object.
+    export fn free() {
+        buffer_free(self);
+    }
+
+    # indexOf(needle): first position of needle in self, or -1.
+    export fn indexOf(const needle: Buffer): int {
+        return buffer_index_of(self, needle);
+    }
+
+    # lastIndexOf(needle): last position of needle in self, or -1.
+    export fn lastIndexOf(const needle: Buffer): int {
+        return buffer_last_index_of(self, needle);
+    }
+
+    # includes(needle): true if needle appears anywhere in self.
+    export fn includes(const needle: Buffer): bool {
+        let idx = buffer_index_of(self, needle);
+        if idx >= 0 {
+            return true;
+        }
+        return false;
+    }
+
+    # equals(other): true if self and other have identical byte content.
+    export fn equals(const other: Buffer): bool {
+        if buffer_equals(self, other) == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new Buffer containing bytes [start, end).
+    # Negative indices count from the end.
+    export fn slice(const start: int, const end: int): Buffer {
+        return buffer_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new Buffer from start to end of self.
+    # Negative indices count from the end.
+    export fn sliceFrom(const start: int): Buffer {
+        return buffer_slice(self, start, buffer_length(self));
+    }
+
+    # clone(): full copy of self.
+    export fn clone(): Buffer {
+        return buffer_slice(self, 0, buffer_length(self));
+    }
+
+    # concat(other): new Buffer = self ++ other.
+    export fn concat(const other: Buffer): Buffer {
+        return buffer_concat(self, other);
+    }
+
+    # fill(value): set every byte to `value` (mutates in-place).
+    export fn fill(const value: u8) {
+        let len = buffer_length(self);
+        let i = 0;
+        while i < len {
+            buffer_set(self, i, value);
+            i = i + 1;
+        }
+    }
+
+    # reverse(): reverse bytes in-place.
+    export fn reverse() {
+        let len = buffer_length(self);
+        let half = len / 2;
+        let i = 0;
+        let tmp: u8 = 0;
+        while i < half {
+            tmp = buffer_get(self, i);
+            buffer_set(self, i, buffer_get(self, len - 1 - i));
+            buffer_set(self, len - 1 - i, tmp);
+            i = i + 1;
+        }
+    }
+
+    # toUtf8(): interpret the raw bytes as a UTF-8 sequence and return a string.
+    export fn toUtf8(): string {
+        return buffer_to_string(self);
+    }
+}
+
+# ── ByteIndexable conformance ─────────────────────────────────────────────────
+# at(i): byte value at index i; negative indices count from end.
+
+Buffer extends ByteIndexable {
+    export fn at(const index: int): u8 {
+        let len = buffer_length(self);
+        let i = index;
+        if i < 0 {
+            i = len + i;
+        }
+        # After normalization, negative means index is before the start → out of bounds
+        if i < 0 {
+            return 0;
+        }
+        if i >= len {
+            return 0;
+        }
+        return buffer_get(self, i);
+    }
+}
+
+# length() on Buffer also satisfies Countable — defined in the core block above.
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+# toString() produces "[b0, b1, b2, ...]" — the same format as buffer_print.
+
+Buffer extends Displayable {
+    export fn toString(): string {
+        let len = buffer_length(self);
+        let result = "[";
+        let i = 0;
+        let b: u8 = 0;
+        while i < len {
+            if i != 0 {
+                result = concat(result, ", ");
+            }
+            b = buffer_get(self, i);
+            result = concat(result, int_to_string(b));
+            i = i + 1;
+        }
+        result = concat(result, "]");
+        return result;
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+# dispose() is an alias for free(); enables `using b: Buffer = ...` syntax.
+
+Buffer extends Disposable {
+    export fn dispose() {
+        buffer_free(self);
+    }
+}

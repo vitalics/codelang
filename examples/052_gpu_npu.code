@@ -1,0 +1,77 @@
+import "stdlib/os";
+
+# ── GPU and NPU capability detection ─────────────────────────────────────────
+#
+# Demonstrates the GPU / NPU sub-namespaces:
+#
+#   GPU.isAvailable()  — compile-time bool: does this target have a GPU?
+#   GPU.count()        — runtime: how many GPU devices are visible?
+#   GPU.model(i)       — runtime: model string of the i-th GPU (0-based)
+#
+#   NPU.isAvailable()  — compile-time bool: does this target have a Neural Engine?
+#   NPU.name()         — runtime: human-readable NPU name
+#
+# isAvailable() is a `const fn` — the compiler evaluates it at build time.
+# An `if (GPU.isAvailable())` block is dead-code-eliminated on a headless
+# server without a GPU, so there is zero runtime overhead.
+#
+# Expected output on Apple M2 Pro:
+#   GPU available (compile-time): true
+#   GPU count    : 1
+#   Primary GPU  : Apple M2 Pro GPU
+#   NPU available (compile-time): true
+#   Neural Engine: Apple M2 Pro Neural Engine
+
+fn sep(const title: string) {
+    print($"── {title} ──");
+}
+
+fn main() {
+    # ── GPU sub-namespace ─────────────────────────────────────────────────────
+    sep("GPU");
+
+    # Bind isAvailable() — a compile-time bool — to a local, then display.
+    const gpuPresent: bool = GPU.isAvailable();
+    print($"  GPU available (compile-time): {gpuPresent}");
+
+    if (GPU.isAvailable()) {
+        # Count and model are runtime queries available only when a GPU exists.
+        const gpuCount: int    = GPU.count();
+        const gpuModel: string = GPU.model(0);
+        print($"  GPU count    : {gpuCount}");
+        print($"  Primary GPU  : {gpuModel}");
+    }
+
+    # ── NPU sub-namespace ─────────────────────────────────────────────────────
+    sep("NPU / Neural Engine");
+
+    const npuPresent: bool = NPU.isAvailable();
+    print($"  NPU available (compile-time): {npuPresent}");
+
+    if (NPU.isAvailable()) {
+        const npuName: string = NPU.name();
+        print($"  Neural Engine: {npuName}");
+    }
+
+    # ── Legacy OS namespace (still works) ─────────────────────────────────────
+    # OS.gpuCount() / OS.hasNpu() remain available; the sub-namespaces are the
+    # recommended API when you need compile-time guards.
+    sep("Legacy OS namespace");
+
+    const legacyGpuCount: int    = OS.gpuCount();
+    const legacyGpuModel: string = OS.gpuModel(0);
+    const legacyHasNpu:   bool   = OS.hasNpu();
+    const legacyNpuName:  string = OS.npuName();
+
+    print($"  OS.gpuCount()  : {legacyGpuCount}");
+    print($"  OS.gpuModel(0) : {legacyGpuModel}");
+    print($"  OS.hasNpu()    : {legacyHasNpu}");
+    print($"  OS.npuName()   : {legacyNpuName}");
+
+    # ── One-line capability summary ───────────────────────────────────────────
+    sep("Summary");
+
+    const arch: string = OS.arch();
+    const plat: string = OS.platform();
+    print($"  {arch}-{plat}  gpu={gpuPresent}  npu={npuPresent}");
+}

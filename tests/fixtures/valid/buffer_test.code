@@ -1,0 +1,20 @@
+import "../../../stdlib/string";
+
+fn main() {
+    let s: string = "hello";
+    let b: Buffer = s.toBuffer();
+
+    # number of bytes (NUL excluded)
+    print(b.length());       # 5
+
+    # individual byte values (ASCII codes)
+    print(b.get(0));         # 104  'h'
+    print(b.get(1));         # 101  'e'
+    print(b.get(4));         # 111  'o'
+
+    # out-of-bounds returns 0
+    print(b.get(5));         # 0
+    print(b.get(0 - 1));     # 0   (negative index)
+
+    b.free();
+}

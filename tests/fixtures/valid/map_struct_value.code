@@ -1,0 +1,39 @@
+import "../../../stdlib/map";
+
+# ── User-defined type used as map VALUE ───────────────────────────────────────
+
+type Point {
+    x: int
+    y: int
+}
+
+fn main() {
+    let p1: Point = Point {x: 10, y: 20};
+    let p2: Point = Point {x: 30, y: 40};
+
+    # ── Map<int, Point> → IntPtrMap ───────────────────────────────────────────
+    let im: Map<int, Point> = IntPtrMap.new();
+    im.put(1, p1);
+    im.put(2, p2);
+    print(im.size());                   # 2
+    print(im.contains(1));              # true
+    print(im.contains(5));              # false
+    let got1: Point = im.get(1);
+    print(got1.x);                      # 10
+    im.remove(2);
+    print(im.size());                   # 1
+    im.free();
+
+    # ── Map<string, Point> → StringPtrMap ─────────────────────────────────────
+    let sm: Map<string, Point> = StringPtrMap.new();
+    sm.put("alice", p1);
+    sm.put("bob", p2);
+    print(sm.size());                   # 2
+    print(sm.contains("alice"));        # true
+    print(sm.contains("carol"));        # false
+    let got2: Point = sm.get("alice");
+    print(got2.y);                      # 20
+    sm.remove("bob");
+    print(sm.size());                   # 1
+    sm.free();
+}

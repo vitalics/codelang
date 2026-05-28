@@ -1,0 +1,28 @@
+# Tests that a parameter typed `string | Code` accepts both a plain string
+# and a Code value (both are i8* at the LLVM level).
+#
+# The helper function `describe` has a union-typed parameter.
+# We call it with a string literal and with a Code binding in turn.
+
+import "../../../stdlib/reflection";
+
+# A function with a union-typed parameter: string | Code.
+# At the LLVM level the parameter is i8* regardless of which variant is passed.
+fn describe(const label: string, const src: string | Code): void {
+    print(label);
+    print(src);
+}
+
+fn main() {
+    # Call 1: pass a plain string literal
+    describe("from string:", "hello from string");
+
+    # Call 2: pass a Code value (same LLVM type — i8*)
+    const code: Code = "hello from Code";
+    describe("from Code:", code);
+
+    # Call 3: template literal into Code
+    const name = "world";
+    const generated: Code = $"hello {name}";
+    describe("from template:", generated);
+}

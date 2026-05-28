@@ -1,0 +1,16 @@
+import "../../../stdlib/string";
+
+# Two using bindings in the same function — both must be freed (b2 before b1).
+# If either free is skipped or done twice, clang AddressSanitizer would catch it;
+# here we simply verify the observable output is correct and exit code is 0.
+fn sum_lengths(const a: string, const b: string): int {
+    using b1: Buffer = a.toBuffer();
+    using b2: Buffer = b.toBuffer();
+    return b1.length() + b2.length();
+}
+
+fn main() {
+    print(sum_lengths("hi", "world"));     # 2 + 5 = 7
+    print(sum_lengths("", "abc"));         # 0 + 3 = 3
+    print(sum_lengths("hello", "hello"));  # 5 + 5 = 10
+}

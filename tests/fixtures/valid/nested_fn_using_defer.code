@@ -1,0 +1,28 @@
+import "../../../stdlib/string";
+
+# nested_fn_using_defer.code
+#
+# `using` synthesises `defer dispose()` at the point of declaration.
+# An explicit `defer` registered *after* that fires first (LIFO order).
+#
+# process(s):
+#   1. `using b` registers defer b.dispose()  [slot 0]
+#   2. `defer report_done()` registers second  [slot 1]
+#   3. return b.length()
+#   → LIFO flush: report_done() fires (prints "done"), then b.dispose() (silent)
+#   → return value reaches caller → print(value)
+#
+# Expected output: done / 5 / done / 0
+
+fn report_done() { print("done"); }
+
+fn main() {
+    fn process(const s: string): int {
+        using b: Buffer = s.toBuffer();   # synthesises defer b.dispose()  [first]
+        defer report_done();              # explicit defer                  [second → fires first]
+        return b.length();
+    }
+
+    print(process("hello"));   # done (from defer), then 5 (from print)
+    print(process(""));        # done (from defer), then 0 (from print)
+}

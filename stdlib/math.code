@@ -1,0 +1,391 @@
+# stdlib/math.code
+# Mathematical functions and constants — inspired by JS Math and Python math.
+#
+# Import:
+#   import "stdlib/math";
+#
+# ── Constants ─────────────────────────────────────────────────────────────────
+#   Math.PI         # π ≈ 3.14159265358979…
+#   Math.E          # e ≈ 2.71828182845904…
+#   Math.LN2        # ln 2 ≈ 0.6931471805599453
+#   Math.LN10       # ln 10 ≈ 2.302585092994046
+#   Math.LOG2E      # log₂ e ≈ 1.4426950408889634
+#   Math.LOG10E     # log₁₀ e ≈ 0.4342944819032518
+#   Math.SQRT2      # √2 ≈ 1.4142135623730951
+#   Math.TAU        # τ = 2π ≈ 6.283185307179586
+#
+# ── Rounding ──────────────────────────────────────────────────────────────────
+#   Math.floor(x)              # → float, toward −∞
+#   Math.ceil(x)               # → float, toward +∞
+#   Math.round(x)              # → float, to nearest integer
+#   Math.trunc(x)              # → float, toward 0
+#   Math.sign(x)               # → float: −1.0 | 0.0 | 1.0
+#   Math.signInt(x)            # → int:   −1 | 0 | 1
+#
+# ── Absolute value ────────────────────────────────────────────────────────────
+#   Math.abs(x: int)           # → int
+#   Math.absF(x: float)        # → float
+#
+# ── Powers / roots ────────────────────────────────────────────────────────────
+#   Math.sqrt(x)               # √x
+#   Math.cbrt(x)               # ∛x
+#   Math.pow(x, y)             # xʸ
+#   Math.exp(x)                # eˣ
+#   Math.exp2(x)               # 2ˣ
+#   Math.expm1(x)              # eˣ − 1, accurate near 0
+#
+# ── Logarithms ────────────────────────────────────────────────────────────────
+#   Math.log(x)                # natural log ln(x)
+#   Math.log2(x)               # log₂(x)
+#   Math.log10(x)              # log₁₀(x)
+#   Math.log1p(x)              # ln(1+x), accurate near 0
+#
+# ── Trigonometry (radians) ────────────────────────────────────────────────────
+#   Math.sin(x)   Math.asin(x)
+#   Math.cos(x)   Math.acos(x)
+#   Math.tan(x)   Math.atan(x)
+#   Math.atan2(y, x)
+#
+# ── Hyperbolic ────────────────────────────────────────────────────────────────
+#   Math.sinh(x)   Math.asinh(x)
+#   Math.cosh(x)   Math.acosh(x)
+#   Math.tanh(x)   Math.atanh(x)
+#
+# ── Min / max / clamp ─────────────────────────────────────────────────────────
+#   Math.min(a, b)             # int min
+#   Math.max(a, b)             # int max
+#   Math.minF(a, b)            # float min
+#   Math.maxF(a, b)            # float max
+#   Math.clamp(x, lo, hi)      # int clamp
+#   Math.clampF(x, lo, hi)     # float clamp
+#
+# ── Misc ──────────────────────────────────────────────────────────────────────
+#   Math.hypot(a, b)           # √(a²+b²)
+#   Math.fmod(x, y)            # IEEE remainder
+#   Math.copysign(mag, sign)   # magnitude of mag, sign of sign
+#   Math.toRadians(deg)        # degrees → radians
+#   Math.toDegrees(rad)        # radians → degrees
+#
+# ── IEEE 754 queries ──────────────────────────────────────────────────────────
+#   Math.isNaN(x)              # → bool
+#   Math.isFinite(x)           # → bool
+#   Math.isInfinite(x)         # → bool
+#
+# ── Random ────────────────────────────────────────────────────────────────────
+#   Math.random()              # uniform float in [0.0, 1.0)
+#   Math.seedRandom(seed)      # seed the RNG (int)
+
+import "./numbers";
+
+# ── Math type ─────────────────────────────────────────────────────────────────
+# Pure-static namespace — never instantiated.
+
+export type Math = intrinsic("i8*");
+
+# ── Raw C bindings ────────────────────────────────────────────────────────────
+
+# Constants
+extern fn math_pi():     float;
+extern fn math_e():      float;
+extern fn math_ln2():    float;
+extern fn math_ln10():   float;
+extern fn math_log2e():  float;
+extern fn math_log10e(): float;
+extern fn math_sqrt2():  float;
+extern fn math_tau():    float;
+
+# Rounding
+extern fn math_floor(const x: float): float;
+extern fn math_ceil(const x: float):  float;
+extern fn math_round(const x: float): float;
+extern fn math_trunc(const x: float): float;
+extern fn math_sign_f(const x: float): float;
+extern fn math_sign_i(const x: int):   int;
+
+# Absolute value
+extern fn math_abs_f(const x: float): float;
+extern fn math_abs_i(const x: int):   int;
+
+# Power / roots
+extern fn math_sqrt(const x: float): float;
+extern fn math_cbrt(const x: float): float;
+extern fn math_pow(const x: float, const y: float): float;
+extern fn math_exp(const x: float):   float;
+extern fn math_exp2(const x: float):  float;
+extern fn math_expm1(const x: float): float;
+
+# Logarithms
+extern fn math_log(const x: float):   float;
+extern fn math_log2(const x: float):  float;
+extern fn math_log10(const x: float): float;
+extern fn math_log1p(const x: float): float;
+
+# Trigonometry
+extern fn math_sin(const x: float):  float;
+extern fn math_cos(const x: float):  float;
+extern fn math_tan(const x: float):  float;
+extern fn math_asin(const x: float): float;
+extern fn math_acos(const x: float): float;
+extern fn math_atan(const x: float): float;
+extern fn math_atan2(const y: float, const x: float): float;
+
+# Hyperbolic
+extern fn math_sinh(const x: float):  float;
+extern fn math_cosh(const x: float):  float;
+extern fn math_tanh(const x: float):  float;
+extern fn math_asinh(const x: float): float;
+extern fn math_acosh(const x: float): float;
+extern fn math_atanh(const x: float): float;
+
+# Min / max / clamp
+extern fn math_min_f(const a: float, const b: float): float;
+extern fn math_max_f(const a: float, const b: float): float;
+extern fn math_min_i(const a: int,   const b: int):   int;
+extern fn math_max_i(const a: int,   const b: int):   int;
+extern fn math_clamp_f(const x: float, const lo: float, const hi: float): float;
+extern fn math_clamp_i(const x: int,   const lo: int,   const hi: int):   int;
+
+# Misc
+extern fn math_hypot(const a: float, const b: float): float;
+extern fn math_fmod(const x: float, const y: float):  float;
+extern fn math_copysign(const mag: float, const sign: float): float;
+
+# Angle conversion
+extern fn math_to_radians(const deg: float): float;
+extern fn math_to_degrees(const rad: float): float;
+
+# IEEE 754 queries (return int 0/1 — avoid bool→i1 codegen complications)
+extern fn math_is_nan(const x: float):      int;
+extern fn math_is_finite(const x: float):   int;
+extern fn math_is_infinite(const x: float): int;
+
+# Random
+extern fn math_random(): float;
+extern fn math_seed_random(const seed: int);
+
+# ── Math namespace (static constants + methods) ───────────────────────────────
+
+Math extends {
+
+    # ── Constants ─────────────────────────────────────────────────────────────
+
+    export static const PI:      float = math_pi();
+    export static const E:       float = math_e();
+    export static const LN2:     float = math_ln2();
+    export static const LN10:    float = math_ln10();
+    export static const LOG2E:   float = math_log2e();
+    export static const LOG10E:  float = math_log10e();
+    export static const SQRT2:   float = math_sqrt2();
+    export static const TAU:     float = math_tau();    # 2π
+
+    # ── Rounding ──────────────────────────────────────────────────────────────
+
+    # floor(x) — round toward −∞
+    export static fn floor(const x: float): float {
+        return math_floor(x);
+    }
+
+    # ceil(x) — round toward +∞
+    export static fn ceil(const x: float): float {
+        return math_ceil(x);
+    }
+
+    # round(x) — round to nearest integer (half away from zero)
+    export static fn round(const x: float): float {
+        return math_round(x);
+    }
+
+    # trunc(x) — round toward 0 (drop the fractional part)
+    export static fn trunc(const x: float): float {
+        return math_trunc(x);
+    }
+
+    # sign(x) — returns −1.0, 0.0, or 1.0
+    export static fn sign(const x: float): float {
+        return math_sign_f(x);
+    }
+
+    # signInt(x) — integer sign: −1, 0, or 1
+    export static fn signInt(const x: int): int {
+        return math_sign_i(x);
+    }
+
+    # ── Absolute value ────────────────────────────────────────────────────────
+
+    # abs(n) — absolute value of an int
+    export static fn abs(const n: int): int {
+        return math_abs_i(n);
+    }
+
+    # absF(x) — absolute value of a float
+    export static fn absF(const x: float): float {
+        return math_abs_f(x);
+    }
+
+    # ── Powers / roots ────────────────────────────────────────────────────────
+
+    # sqrt(x) — square root √x
+    export static fn sqrt(const x: float): float {
+        return math_sqrt(x);
+    }
+
+    # cbrt(x) — cube root ∛x
+    export static fn cbrt(const x: float): float {
+        return math_cbrt(x);
+    }
+
+    # pow(x, y) — xʸ
+    export static fn pow(const x: float, const y: float): float {
+        return math_pow(x, y);
+    }
+
+    # exp(x) — eˣ
+    export static fn exp(const x: float): float {
+        return math_exp(x);
+    }
+
+    # exp2(x) — 2ˣ
+    export static fn exp2(const x: float): float {
+        return math_exp2(x);
+    }
+
+    # expm1(x) — eˣ − 1, numerically stable near 0
+    export static fn expm1(const x: float): float {
+        return math_expm1(x);
+    }
+
+    # ── Logarithms ────────────────────────────────────────────────────────────
+
+    # log(x) — natural logarithm ln(x)
+    export static fn log(const x: float): float {
+        return math_log(x);
+    }
+
+    # log2(x) — base-2 logarithm
+    export static fn log2(const x: float): float {
+        return math_log2(x);
+    }
+
+    # log10(x) — base-10 logarithm
+    export static fn log10(const x: float): float {
+        return math_log10(x);
+    }
+
+    # log1p(x) — ln(1+x), numerically stable near 0
+    export static fn log1p(const x: float): float {
+        return math_log1p(x);
+    }
+
+    # ── Trigonometry ──────────────────────────────────────────────────────────
+    # All angles in radians.  Use toRadians/toDegrees to convert.
+
+    export static fn sin(const x: float): float  { return math_sin(x); }
+    export static fn cos(const x: float): float  { return math_cos(x); }
+    export static fn tan(const x: float): float  { return math_tan(x); }
+    export static fn asin(const x: float): float { return math_asin(x); }
+    export static fn acos(const x: float): float { return math_acos(x); }
+    export static fn atan(const x: float): float { return math_atan(x); }
+
+    # atan2(y, x) — angle of the vector (x, y), result in (−π, π]
+    export static fn atan2(const y: float, const x: float): float {
+        return math_atan2(y, x);
+    }
+
+    # ── Hyperbolic functions ──────────────────────────────────────────────────
+
+    export static fn sinh(const x: float): float  { return math_sinh(x); }
+    export static fn cosh(const x: float): float  { return math_cosh(x); }
+    export static fn tanh(const x: float): float  { return math_tanh(x); }
+    export static fn asinh(const x: float): float { return math_asinh(x); }
+    export static fn acosh(const x: float): float { return math_acosh(x); }
+    export static fn atanh(const x: float): float { return math_atanh(x); }
+
+    # ── Min / max / clamp ─────────────────────────────────────────────────────
+
+    # min(a, b) — int minimum
+    export static fn min(const a: int, const b: int): int {
+        return math_min_i(a, b);
+    }
+
+    # max(a, b) — int maximum
+    export static fn max(const a: int, const b: int): int {
+        return math_max_i(a, b);
+    }
+
+    # minF(a, b) — float minimum (NaN-safe via fmin)
+    export static fn minF(const a: float, const b: float): float {
+        return math_min_f(a, b);
+    }
+
+    # maxF(a, b) — float maximum (NaN-safe via fmax)
+    export static fn maxF(const a: float, const b: float): float {
+        return math_max_f(a, b);
+    }
+
+    # clamp(x, lo, hi) — constrain int x to [lo, hi]
+    export static fn clamp(const x: int, const lo: int, const hi: int): int {
+        return math_clamp_i(x, lo, hi);
+    }
+
+    # clampF(x, lo, hi) — constrain float x to [lo, hi]
+    export static fn clampF(const x: float, const lo: float, const hi: float): float {
+        return math_clamp_f(x, lo, hi);
+    }
+
+    # ── Misc ──────────────────────────────────────────────────────────────────
+
+    # hypot(a, b) — Euclidean distance √(a²+b²), avoids overflow
+    export static fn hypot(const a: float, const b: float): float {
+        return math_hypot(a, b);
+    }
+
+    # fmod(x, y) — floating-point remainder (same sign as x)
+    export static fn fmod(const x: float, const y: float): float {
+        return math_fmod(x, y);
+    }
+
+    # copysign(mag, sign) — magnitude of mag with the sign of sign
+    export static fn copysign(const mag: float, const sign: float): float {
+        return math_copysign(mag, sign);
+    }
+
+    # toRadians(deg) — convert degrees to radians
+    export static fn toRadians(const deg: float): float {
+        return math_to_radians(deg);
+    }
+
+    # toDegrees(rad) — convert radians to degrees
+    export static fn toDegrees(const rad: float): float {
+        return math_to_degrees(rad);
+    }
+
+    # ── IEEE 754 queries ──────────────────────────────────────────────────────
+
+    # isNaN(x) — true when x is Not-a-Number
+    export static fn isNaN(const x: float): bool {
+        return math_is_nan(x) == 1;
+    }
+
+    # isFinite(x) — true when x is neither ±Inf nor NaN
+    export static fn isFinite(const x: float): bool {
+        return math_is_finite(x) == 1;
+    }
+
+    # isInfinite(x) — true when x is +Inf or −Inf
+    export static fn isInfinite(const x: float): bool {
+        return math_is_infinite(x) == 1;
+    }
+
+    # ── Random ────────────────────────────────────────────────────────────────
+
+    # random() — uniform float in [0.0, 1.0)
+    # Not cryptographically secure.
+    export static fn random(): float {
+        return math_random();
+    }
+
+    # seedRandom(seed) — seed the RNG for reproducible sequences
+    export static fn seedRandom(const seed: int) {
+        math_seed_random(seed);
+    }
+}

@@ -1,0 +1,57 @@
+import "./types";
+
+/**
+ * Formats a greeting message for the given name.
+ *
+ * This is a compile-time function — it has no side effects and
+ * can be evaluated at compile time by the optimizer.
+ *
+ * @param name - the name to include in the greeting
+ * @returns a greeting string of the form "Hello, <name>!"
+ *
+ * @example
+ * fn main() {
+ *   let msg = greet("World");
+ *   print(msg);
+ * }
+ */
+export const fn greet(const name: string): string {
+  return "Hello!";
+}
+
+/**
+ * Logs a message to standard output.
+ *
+ * Unlike `greet`, this function has a side effect (I/O) and therefore
+ * cannot be declared `const fn`.
+ *
+ * @param message - the text to print
+ */
+export fn log(message: string) {
+  print(message);
+}
+
+/**
+ * Computes the absolute value of an integer.
+ *
+ * @param n     - input value
+ * @returns the absolute value of `n` (always ≥ 0)
+ *
+ * @example
+ * fn main() {
+ *   print("done");
+ * }
+ */
+export const fn abs(n: int): int {
+  return n;
+}
+
+// This private helper is intentionally left without a doc comment.
+fn _setup() {
+  print("booting...");
+}
+
+fn main() {
+  _setup();
+  print("Hello from documented.code!");
+}

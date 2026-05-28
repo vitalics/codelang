@@ -1,0 +1,1103 @@
+# stdlib/tui.code
+#
+# Ratatui-inspired TUI framework for CodeLang.
+#
+# ── Concepts ──────────────────────────────────────────────────────────────────
+#
+#   Tui        — terminal manager; owns two Buffers for double-buffering
+#   Buffer     — off-screen cell grid (DISTINCT from stdlib/buffer.Buffer which
+#                is a byte buffer; here Buffer = %TuiBuffer*, i.e. a 2-D grid
+#                of styled terminal cells)
+#   Rect       — rectangular area: { x, y, width, height } (0-based)
+#   Style      — visual attributes: fg color, bg color, modifier flags
+#   Frame      — snapshot passed to render code; wraps Buffer + Rect
+#   Widget     — protocol for anything that can render itself into a Buffer area
+#
+# ── Built-in widgets ──────────────────────────────────────────────────────────
+#
+#   Block      — bordered container with an optional title
+#   Paragraph  — wrapping text block
+#   List       — scrollable item list (use renderStateful for selection/scroll)
+#   Gauge      — progress bar (0-100 %)
+#   Tabs       — horizontal tab bar
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/tui";
+#
+#   fn main() {
+#       using tui: Tui = Tui.init();
+#
+#       let running: bool = true;
+#       while running {
+#           tui.beginFrame();
+#
+#           let area: Rect = tui.area();
+#           let b: Block = Block.default()
+#               .title(" My App ")
+#               .borderType(BorderType.Rounded());
+#           b.render(area, tui.buffer());
+#
+#           let inner: Rect = b.inner(area);
+#           Paragraph.new("Hello from CodeLang TUI!")
+#               .style(Style.default().fg(Color.BrightGreen()))
+#               .render(inner, tui.buffer());
+#
+#           tui.endFrame();
+#           const key = tui.readKey();
+#           if key == "q" || key == "ctrl-c" { running = false; }
+#       }
+#   }
+#
+# ── Double-buffering ──────────────────────────────────────────────────────────
+#
+#   Tui keeps two Buffers: `current` (drawn into each frame) and `prev`
+#   (what was last sent to the terminal).  endFrame() emits only the cells
+#   that changed, then copies current → prev for the next diff.
+#
+# ── Notes ─────────────────────────────────────────────────────────────────────
+#
+#   • Always call tui.beginFrame() before rendering and tui.endFrame() after.
+#   • Coords in Rect are 0-based. (0,0) = top-left of the terminal.
+#   • Terminal.enableRaw() is called by Tui.init() automatically.
+#   • On Windows 10+ ANSI sequences work after enableRaw() sets
+#     ENABLE_VIRTUAL_TERMINAL_PROCESSING.
+#   • If your program imports both stdlib/tui and stdlib/buffer, use the full
+#     module path to disambiguate: stdlib/buffer exports `Buffer` (%Buffer*)
+#     while stdlib/tui exports `Buffer` (%TuiBuffer*).  Importing only one of
+#     them in each file avoids the naming conflict.
+
+import "./terminal";
+import "./c-interop";
+
+# ── C runtime bindings (runtime/tui.c) ───────────────────────────────────────
+
+# Intrinsic type: TUI cell buffer (%TuiBuffer*).
+# DISTINCT from stdlib/buffer.Buffer (%Buffer* = raw byte buffer).
+export type Buffer = intrinsic("%TuiBuffer*");
+
+extern fn tui_buffer_new(w: C_Int, h: C_Int): Buffer;
+extern fn tui_buffer_free(buf: Buffer);
+extern fn tui_buffer_reset(buf: Buffer);
+extern fn tui_buffer_width(buf: Buffer): C_Int;
+extern fn tui_buffer_height(buf: Buffer): C_Int;
+extern fn tui_buffer_set_cell(buf: Buffer, x: C_Int, y: C_Int, sym: C_Str,
+                               fg: C_Int, bg: C_Int, mods: C_Int);
+extern fn tui_buffer_get_symbol(buf: Buffer, x: C_Int, y: C_Int): C_Str;
+extern fn tui_buffer_get_fg(buf: Buffer, x: C_Int, y: C_Int): C_Int;
+extern fn tui_buffer_get_bg(buf: Buffer, x: C_Int, y: C_Int): C_Int;
+extern fn tui_buffer_get_mods(buf: Buffer, x: C_Int, y: C_Int): C_Int;
+extern fn tui_buffer_write_str(buf: Buffer, x: C_Int, y: C_Int, max_width: C_Int,
+                                s: C_Str, fg: C_Int, bg: C_Int, mods: C_Int);
+extern fn tui_buffer_fill_area(buf: Buffer, x: C_Int, y: C_Int, w: C_Int, h: C_Int,
+                                sym: C_Str, fg: C_Int, bg: C_Int, mods: C_Int);
+extern fn tui_buffer_render_diff(current: Buffer, prev: Buffer);
+extern fn tui_buffer_render_full(buf: Buffer);
+extern fn tui_buffer_copy(src: Buffer, dst: Buffer);
+extern fn tui_paragraph_render(text: C_Str, fg: C_Int, bg: C_Int, mods: C_Int,
+                                x: C_Int, y: C_Int, w: C_Int, h: C_Int,
+                                buf: Buffer, do_wrap: C_Int);
+extern fn tui_gauge_render(buf: Buffer,
+                            x: C_Int, y: C_Int, w: C_Int,
+                            ratio: C_Int, label: C_Str,
+                            empty_fg: C_Int, empty_bg: C_Int, empty_mods: C_Int,
+                            filled_fg: C_Int, filled_bg: C_Int, filled_mods: C_Int);
+extern fn tui_str_display_width(s: C_Str): C_Int;
+extern fn tui_str_char_at(s: C_Str, i: C_Int): C_Str;
+
+# String helpers from runtime/string.c
+extern fn concat(const a: string, const b: string): string;
+extern fn int_to_string(const n: int): string;
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Modifier flags — bitmask values for Style.mods
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Modifier {
+}
+
+Modifier extends {
+    export static fn Bold():      int { return 1; }
+    export static fn Underline(): int { return 2; }
+    export static fn Reversed():  int { return 4; }
+    export static fn Dim():       int { return 8; }
+    export static fn Italic():    int { return 16; }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Style — foreground, background, modifier flags
+#
+#   let s: Style = Style.default().fg(Color.Green()).bold();
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Style {
+    fg:   int   # Color.* constant, or -1 for terminal default
+    bg:   int   # Color.* constant, or -1 for terminal default
+    mods: int   # Modifier bitmask
+}
+
+Style extends {
+
+    # Style with no colour and no modifiers.
+    export static fn default(): Style {
+        return Style { fg: -1, bg: -1, mods: 0 };
+    }
+
+    # Set foreground colour.  Accepts a Color.* constant.
+    export fn fg(color: int): Style {
+        return Style { fg: color, bg: self.bg, mods: self.mods };
+    }
+
+    # Set background colour.  Accepts a Color.* constant.
+    export fn bg(color: int): Style {
+        return Style { fg: self.fg, bg: color, mods: self.mods };
+    }
+
+    # Add a modifier flag (Modifier.*).
+    export fn addModifier(m: int): Style {
+        return Style { fg: self.fg, bg: self.bg, mods: self.mods | m };
+    }
+
+    # Remove a modifier flag.
+    export fn removeModifier(m: int): Style {
+        return Style { fg: self.fg, bg: self.bg, mods: self.mods & (255 ^ m) };
+    }
+
+    # Convenience builders for individual modifiers.
+    export fn bold(): Style      { return self.addModifier(1); }
+    export fn underline(): Style { return self.addModifier(2); }
+    export fn reversed(): Style  { return self.addModifier(4); }
+    export fn dim(): Style       { return self.addModifier(8); }
+    export fn italic(): Style    { return self.addModifier(16); }
+
+    # Swap fg and bg (useful for highlights).
+    export fn swapColors(): Style {
+        return Style { fg: self.bg, bg: self.fg, mods: self.mods };
+    }
+
+    # Patch only the non-default fields of `other` onto self.
+    export fn patch(other: Style): Style {
+        let nfg = self.fg;
+        let nbg = self.bg;
+        let nm  = self.mods | other.mods;
+        if other.fg != -1 { nfg = other.fg; }
+        if other.bg != -1 { nbg = other.bg; }
+        return Style { fg: nfg, bg: nbg, mods: nm };
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Rect — rectangular screen region (0-based coordinates)
+#
+#   Rect { x: 0, y: 0, width: 80, height: 24 }
+#   let inner = area.inner(1);   # shrink by 1 on every side
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Rect {
+    x:      int   # 0-based left column
+    y:      int   # 0-based top row
+    width:  int
+    height: int
+}
+
+Rect extends {
+
+    # Full terminal area.
+    export static fn full(): Rect {
+        const w = Terminal.cols();
+        const h = Terminal.rows();
+        return Rect { x: 0, y: 0, width: w, height: h };
+    }
+
+    # Exclusive right edge: x + width.
+    export fn right(): int { return self.x + self.width; }
+
+    # Exclusive bottom edge: y + height.
+    export fn bottom(): int { return self.y + self.height; }
+
+    # True if the rect has zero area.
+    export fn isEmpty(): bool {
+        if self.width == 0  { return true; }
+        if self.height == 0 { return true; }
+        return false;
+    }
+
+    # Shrink every side by `margin` cells.
+    # Returns an empty Rect if the area is too small.
+    export fn inner(margin: int): Rect {
+        let dbl = margin * 2;
+        if self.width  <= dbl { return Rect { x: self.x, y: self.y, width: 0, height: 0 }; }
+        if self.height <= dbl { return Rect { x: self.x, y: self.y, width: 0, height: 0 }; }
+        return Rect {
+            x:      self.x + margin,
+            y:      self.y + margin,
+            width:  self.width  - dbl,
+            height: self.height - dbl
+        };
+    }
+
+    # Clip this rect to the intersection with `other`.
+    # Returns an empty Rect if they do not overlap.
+    export fn intersect(other: Rect): Rect {
+        let x1 = self.x;
+        let y1 = self.y;
+        let x2 = self.x + self.width;
+        let y2 = self.y + self.height;
+        if x1 < other.x             { x1 = other.x; }
+        if y1 < other.y             { y1 = other.y; }
+        if x2 > other.x + other.width  { x2 = other.x + other.width; }
+        if y2 > other.y + other.height { y2 = other.y + other.height; }
+        if x2 <= x1 || y2 <= y1 {
+            return Rect { x: x1, y: y1, width: 0, height: 0 };
+        }
+        return Rect { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+    }
+
+    # Split horizontally: returns [top, bottom] as two Rects given the top height.
+    export fn splitTop(top_h: int): Rect {
+        if top_h >= self.height { return self; }
+        return Rect { x: self.x, y: self.y, width: self.width, height: top_h };
+    }
+
+    export fn splitBottom(top_h: int): Rect {
+        if top_h >= self.height {
+            return Rect { x: self.x, y: self.y + self.height, width: self.width, height: 0 };
+        }
+        return Rect {
+            x:      self.x,
+            y:      self.y + top_h,
+            width:  self.width,
+            height: self.height - top_h
+        };
+    }
+
+    # Split vertically: returns left given the left width.
+    export fn splitLeft(left_w: int): Rect {
+        if left_w >= self.width { return self; }
+        return Rect { x: self.x, y: self.y, width: left_w, height: self.height };
+    }
+
+    export fn splitRight(left_w: int): Rect {
+        if left_w >= self.width {
+            return Rect { x: self.x + self.width, y: self.y, width: 0, height: self.height };
+        }
+        return Rect {
+            x:      self.x + left_w,
+            y:      self.y,
+            width:  self.width - left_w,
+            height: self.height
+        };
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Buffer — 2-D cell grid backed by runtime/tui.c
+#
+# This is the TUI cell buffer (%TuiBuffer*), NOT the byte buffer from
+# stdlib/buffer (%Buffer*).  The two types share the name `Buffer` but live
+# in separate modules and never collide unless both are imported in one file.
+# ══════════════════════════════════════════════════════════════════════════════
+
+Buffer extends {
+
+    # Allocate a new cell buffer of `width` × `height` cells.
+    export static fn new(width: int, height: int): Buffer {
+        return tui_buffer_new(width, height);
+    }
+
+    # Free the buffer's memory.
+    export fn free() {
+        tui_buffer_free(self);
+    }
+
+    # Column count.
+    export fn width(): int { return tui_buffer_width(self); }
+
+    # Row count.
+    export fn height(): int { return tui_buffer_height(self); }
+
+    # Reset every cell to a space with default style.
+    # Call this at the start of each frame (Tui.beginFrame calls it).
+    export fn reset() {
+        tui_buffer_reset(self);
+    }
+
+    # Write one cell at buffer coordinates (x, y).
+    export fn setCell(x: int, y: int, sym: string, style: Style) {
+        tui_buffer_set_cell(self, x, y, sym, style.fg, style.bg, style.mods);
+    }
+
+    # Read the symbol stored in cell (x, y).
+    export fn getSymbol(x: int, y: int): string {
+        return tui_buffer_get_symbol(self, x, y);
+    }
+
+    # Write a UTF-8 string starting at (x, y), limited to max_width cells.
+    # Does not wrap — stops at max_width or right edge of buffer.
+    export fn writeStr(x: int, y: int, max_width: int, s: string, style: Style) {
+        tui_buffer_write_str(self, x, y, max_width, s, style.fg, style.bg, style.mods);
+    }
+
+    # Fill every cell in `area` with `sym` and `style`.
+    export fn fillArea(area: Rect, sym: string, style: Style) {
+        tui_buffer_fill_area(self, area.x, area.y, area.width, area.height,
+                             sym, style.fg, style.bg, style.mods);
+    }
+
+    # Diff-render: emit ANSI only for cells that differ from `prev`.
+    # `prev` is the buffer from the last rendered frame.
+    export fn renderDiff(prev: Buffer) {
+        tui_buffer_render_diff(self, prev);
+    }
+
+    # Full render: emit ANSI for every cell (ignores previous state).
+    export fn renderFull() {
+        tui_buffer_render_full(self);
+    }
+
+    # Copy this buffer's cells into `dst` (for post-render swap).
+    export fn copyTo(dst: Buffer) {
+        tui_buffer_copy(self, dst);
+    }
+}
+
+Buffer extends Disposable {
+    export fn dispose() {
+        tui_buffer_free(self);
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Widget protocol — implemented by all drawable types
+# ══════════════════════════════════════════════════════════════════════════════
+
+export protocol Widget {
+    fn render(area: Rect, buf: Buffer);
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Frame — passed to render code; thin wrapper around Buffer + Rect
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Frame {
+    buf:  Buffer
+    area: Rect
+}
+
+Frame extends {
+    # The full drawable area for this frame.
+    export fn area(): Rect { return self.area; }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Tui — terminal manager (double-buffered, owns raw mode)
+#
+#   using tui: Tui = Tui.init();
+#   while running {
+#       tui.beginFrame();
+#       # ... render widgets into tui.buffer() ...
+#       tui.endFrame();
+#       const key = tui.readKey();
+#   }
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Tui {
+    current: Buffer   # drawn into each frame
+    prev:    Buffer   # what was last flushed to the terminal
+    area:    Rect
+}
+
+Tui extends {
+
+    # Initialise the TUI: enable raw mode, hide cursor, clear screen,
+    # allocate two cell buffers sized to the current terminal.
+    export static fn init(): Tui {
+        Terminal.enableRaw();
+        Terminal.hideCursor();
+        Terminal.clear();
+        const w   = Terminal.cols();
+        const h   = Terminal.rows();
+        const a   = Rect { x: 0, y: 0, width: w, height: h };
+        const cur = Buffer.new(w, h);
+        const prv = Buffer.new(w, h);
+        return Tui { current: cur, prev: prv, area: a };
+    }
+
+    # The full terminal area for this frame.
+    export fn area(): Rect { return self.area; }
+
+    # The draw buffer — pass this to widget render() calls.
+    export fn buffer(): Buffer { return self.current; }
+
+    # Prepare a new frame: reset the current buffer to blank cells.
+    # Call once at the top of the render loop.
+    export fn beginFrame() {
+        self.current.reset();
+    }
+
+    # Flush the current frame: diff-render to the terminal, then swap buffers.
+    # Call once after all widgets have been rendered.
+    export fn endFrame() {
+        self.current.renderDiff(self.prev);
+        self.current.copyTo(self.prev);
+    }
+
+    # Read the next key press (blocks until a key is available).
+    # Returns the same key name strings as Terminal.readKey().
+    export fn readKey(): string {
+        return Terminal.readKey();
+    }
+
+    # Check the terminal size; if it changed, reallocate the buffers and
+    # return true.  The caller should re-render the full frame after resize.
+    export fn resize(): Tui {
+        const w = Terminal.cols();
+        const h = Terminal.rows();
+        const sa = self.area;
+        if w == sa.width { if h == sa.height { return self; } }
+        self.current.free();
+        self.prev.free();
+        const a   = Rect { x: 0, y: 0, width: w, height: h };
+        const cur = Buffer.new(w, h);
+        const prv = Buffer.new(w, h);
+        return Tui { current: cur, prev: prv, area: a };
+    }
+
+    # Restore the terminal to normal mode and free buffers.
+    # Called automatically by `using` via dispose().
+    export fn quit() {
+        Terminal.clear();
+        Terminal.showCursor();
+        Terminal.disableRaw();
+        Terminal.moveTo(1, 1);
+        self.current.free();
+        self.prev.free();
+    }
+}
+
+Tui extends Disposable {
+    export fn dispose() { self.quit(); }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Borders — bitmask flags for which sides of a Block to draw
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Borders {
+}
+
+Borders extends {
+    export static fn None():   int { return 0; }
+    export static fn Top():    int { return 1; }
+    export static fn Right():  int { return 2; }
+    export static fn Bottom(): int { return 4; }
+    export static fn Left():   int { return 8; }
+    export static fn All():    int { return 15; }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BorderType — box-drawing style
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type BorderType {
+}
+
+BorderType extends {
+    export static fn Plain():   int { return 0; }   # ┌─┐ │ └─┘
+    export static fn Rounded(): int { return 1; }   # ╭─╮ │ ╰─╯
+    export static fn Double():  int { return 2; }   # ╔═╗ ║ ╚═╝
+    export static fn Thick():   int { return 3; }   # ┏━┓ ┃ ┗━┛
+}
+
+# ── Block border character lookup ─────────────────────────────────────────────
+# component: 0=top-left  1=top-fill  2=top-right  3=right
+#            4=bot-right 5=bot-fill  6=bot-left   7=left
+
+fn blockChar(border_type: int, component: int): string {
+    if border_type == 2 {
+        if component == 0 { return "╔"; }
+        if component == 1 { return "═"; }
+        if component == 2 { return "╗"; }
+        if component == 3 { return "║"; }
+        if component == 4 { return "╝"; }
+        if component == 5 { return "═"; }
+        if component == 6 { return "╚"; }
+        return "║";
+    }
+    if border_type == 1 {
+        if component == 0 { return "╭"; }
+        if component == 1 { return "─"; }
+        if component == 2 { return "╮"; }
+        if component == 3 { return "│"; }
+        if component == 4 { return "╯"; }
+        if component == 5 { return "─"; }
+        if component == 6 { return "╰"; }
+        return "│";
+    }
+    if border_type == 3 {
+        if component == 0 { return "┏"; }
+        if component == 1 { return "━"; }
+        if component == 2 { return "┓"; }
+        if component == 3 { return "┃"; }
+        if component == 4 { return "┛"; }
+        if component == 5 { return "━"; }
+        if component == 6 { return "┗"; }
+        return "┃";
+    }
+    # Plain (default)
+    if component == 0 { return "┌"; }
+    if component == 1 { return "─"; }
+    if component == 2 { return "┐"; }
+    if component == 3 { return "│"; }
+    if component == 4 { return "┘"; }
+    if component == 5 { return "─"; }
+    if component == 6 { return "└"; }
+    return "│";
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Block — bordered container with optional title
+#
+#   let b: Block = Block.default()
+#       .title(" Status ")
+#       .borderType(BorderType.Double())
+#       .borderStyle(Style.default().fg(Color.BrightBlue()));
+#   b.render(area, buf);
+#   let inner: Rect = b.inner(area);   # area inside the borders
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Block {
+    title:        string
+    borders:      int    # Borders.* flags
+    border_type:  int    # BorderType.* constant
+    border_style: Style
+    title_style:  Style
+    style:        Style  # applied to the inner background
+}
+
+Block extends {
+
+    export static fn default(): Block {
+        return Block {
+            title:        "",
+            borders:      15,
+            border_type:  0,
+            border_style: Style.default(),
+            title_style:  Style.default(),
+            style:        Style.default()
+        };
+    }
+
+    # Set the title string (shown on the top border).
+    export fn title(t: string): Block {
+        return Block {
+            title:        t,
+            borders:      self.borders,
+            border_type:  self.border_type,
+            border_style: self.border_style,
+            title_style:  self.title_style,
+            style:        self.style
+        };
+    }
+
+    # Set which borders to draw (Borders.* bitmask).
+    export fn borders(b: int): Block {
+        return Block {
+            title:        self.title,
+            borders:      b,
+            border_type:  self.border_type,
+            border_style: self.border_style,
+            title_style:  self.title_style,
+            style:        self.style
+        };
+    }
+
+    # Set the border drawing style (BorderType.*).
+    export fn borderType(t: int): Block {
+        return Block {
+            title:        self.title,
+            borders:      self.borders,
+            border_type:  t,
+            border_style: self.border_style,
+            title_style:  self.title_style,
+            style:        self.style
+        };
+    }
+
+    # Style applied to all border characters.
+    export fn borderStyle(s: Style): Block {
+        return Block {
+            title:        self.title,
+            borders:      self.borders,
+            border_type:  self.border_type,
+            border_style: s,
+            title_style:  self.title_style,
+            style:        self.style
+        };
+    }
+
+    # Style applied to the title text.
+    export fn titleStyle(s: Style): Block {
+        return Block {
+            title:        self.title,
+            borders:      self.borders,
+            border_type:  self.border_type,
+            border_style: self.border_style,
+            title_style:  s,
+            style:        self.style
+        };
+    }
+
+    # Style applied to the inner area background.
+    export fn style(s: Style): Block {
+        return Block {
+            title:        self.title,
+            borders:      self.borders,
+            border_type:  self.border_type,
+            border_style: self.border_style,
+            title_style:  self.title_style,
+            style:        s
+        };
+    }
+
+    # Return the inner area after accounting for drawn borders.
+    export fn inner(area: Rect): Rect {
+        let x = area.x;
+        let y = area.y;
+        let w = area.width;
+        let h = area.height;
+        if (self.borders & 8) != 0 { x = x + 1; w = w - 1; }   # Left
+        if (self.borders & 2) != 0 { w = w - 1; }                # Right
+        if (self.borders & 1) != 0 { y = y + 1; h = h - 1; }   # Top
+        if (self.borders & 4) != 0 { h = h - 1; }                # Bottom
+        if w < 0 { w = 0; }
+        if h < 0 { h = 0; }
+        return Rect { x: x, y: y, width: w, height: h };
+    }
+}
+
+Block extends Widget {
+    export fn render(area: Rect, buf: Buffer) {
+        if area.isEmpty() { return; }
+        let bt = self.border_type;
+        let bs = self.border_style;
+        let x1 = area.x;
+        let y1 = area.y;
+        let x2 = area.x + area.width  - 1;
+        let y2 = area.y + area.height - 1;
+
+        # Fill inner background
+        let inner = self.inner(area);
+        let bst: Style = self.style;
+        if !inner.isEmpty() {
+            if bst.fg != -1 || bst.bg != -1 || bst.mods != 0 {
+                buf.fillArea(inner, " ", self.style);
+            }
+        }
+
+        # Top border
+        if (self.borders & 1) != 0 {
+            let x = x1 + 1;
+            while x < x2 {
+                buf.setCell(x, y1, blockChar(bt, 1), bs);
+                x = x + 1;
+            }
+            if (self.borders & 8) != 0 { buf.setCell(x1, y1, blockChar(bt, 0), bs); }
+            if (self.borders & 2) != 0 { buf.setCell(x2, y1, blockChar(bt, 2), bs); }
+        }
+
+        # Bottom border
+        if (self.borders & 4) != 0 {
+            let xb = x1 + 1;
+            while xb < x2 {
+                buf.setCell(xb, y2, blockChar(bt, 5), bs);
+                xb = xb + 1;
+            }
+            if (self.borders & 8) != 0 { buf.setCell(x1, y2, blockChar(bt, 6), bs); }
+            if (self.borders & 2) != 0 { buf.setCell(x2, y2, blockChar(bt, 4), bs); }
+        }
+
+        # Left border
+        if (self.borders & 8) != 0 {
+            let yl = y1 + 1;
+            while yl < y2 {
+                buf.setCell(x1, yl, blockChar(bt, 7), bs);
+                yl = yl + 1;
+            }
+        }
+
+        # Right border
+        if (self.borders & 2) != 0 {
+            let yr = y1 + 1;
+            while yr < y2 {
+                buf.setCell(x2, yr, blockChar(bt, 3), bs);
+                yr = yr + 1;
+            }
+        }
+
+        # Title on top border
+        if (self.borders & 1) != 0 && self.title != "" {
+            let tlen = tui_str_display_width(self.title);
+            let avail = area.width - 4;
+            if avail > 0 && tlen > 0 {
+                if tlen > avail { tlen = avail; }
+                buf.writeStr(x1 + 2, y1, tlen, self.title, self.title_style);
+            }
+        }
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Paragraph — wrapping text widget
+#
+#   Paragraph.new("Hello\nWorld")
+#       .style(Style.default().fg(Color.Yellow()))
+#       .render(area, buf);
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Paragraph {
+    text:  string
+    style: Style
+    wrap:  int    # 1 = wrap at column boundary, 0 = truncate
+}
+
+Paragraph extends {
+
+    export static fn new(text: string): Paragraph {
+        return Paragraph { text: text, style: Style.default(), wrap: 1 };
+    }
+
+    export fn style(s: Style): Paragraph {
+        return Paragraph { text: self.text, style: s, wrap: self.wrap };
+    }
+
+    # Enable or disable line wrapping (default: enabled).
+    export fn noWrap(): Paragraph {
+        return Paragraph { text: self.text, style: self.style, wrap: 0 };
+    }
+}
+
+Paragraph extends Widget {
+    export fn render(area: Rect, buf: Buffer) {
+        if area.isEmpty() { return; }
+        let ps: Style = self.style;
+        tui_paragraph_render(self.text,
+                             ps.fg, ps.bg, ps.mods,
+                             area.x, area.y, area.width, area.height,
+                             buf, self.wrap);
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ListState — mutable scroll/selection state for List
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type ListState {
+    offset:   int   # index of first visible item
+    selected: int   # selected item index (-1 = none)
+}
+
+ListState extends {
+
+    export static fn new(): ListState {
+        return ListState { offset: 0, selected: -1 };
+    }
+
+    # Set the selected item index (0-based).
+    export fn select(i: int): ListState {
+        return ListState { offset: self.offset, selected: i };
+    }
+
+    # Move selection up by one, clamped at 0.
+    export fn up(): ListState {
+        let s = self.selected - 1;
+        if s < 0 { s = 0; }
+        return ListState { offset: self.offset, selected: s };
+    }
+
+    # Move selection down by one, clamped at `max`.
+    export fn down(max: int): ListState {
+        let s = self.selected + 1;
+        if s >= max { s = max - 1; }
+        return ListState { offset: self.offset, selected: s };
+    }
+
+    # Ensure the selected item is visible by adjusting offset.
+    # Call after changing `selected`, pass the visible row count.
+    export fn ensureVisible(visible_rows: int): ListState {
+        let off = self.offset;
+        if self.selected < off { off = self.selected; }
+        if self.selected >= off + visible_rows { off = self.selected - visible_rows + 1; }
+        return ListState { offset: off, selected: self.selected };
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# List — scrollable item list
+#
+#   let items: string[] = ["Alpha", "Beta", "Gamma"];
+#   let state: ListState = ListState.new().select(0);
+#   List.new(items)
+#       .highlightStyle(Style.default().bg(Color.Blue()).fg(Color.BrightWhite()))
+#       .renderStateful(area, buf, state);
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type List {
+    items:           string[]
+    style:           Style
+    highlight_style: Style
+    highlight_symbol: string   # prefix for selected row (e.g. "► ")
+}
+
+List extends {
+
+    export static fn new(items: string[]): List {
+        return List {
+            items:            items,
+            style:            Style.default(),
+            highlight_style:  Style.default().reversed(),
+            highlight_symbol: "► "
+        };
+    }
+
+    export fn style(s: Style): List {
+        return List {
+            items:            self.items,
+            style:            s,
+            highlight_style:  self.highlight_style,
+            highlight_symbol: self.highlight_symbol
+        };
+    }
+
+    export fn highlightStyle(s: Style): List {
+        return List {
+            items:            self.items,
+            style:            self.style,
+            highlight_style:  s,
+            highlight_symbol: self.highlight_symbol
+        };
+    }
+
+    export fn highlightSymbol(sym: string): List {
+        return List {
+            items:            self.items,
+            style:            self.style,
+            highlight_style:  self.highlight_style,
+            highlight_symbol: sym
+        };
+    }
+
+    # Render with explicit scroll/selection state.
+    export fn renderStateful(area: Rect, buf: Buffer, state: ListState) {
+        if area.isEmpty() { return; }
+        let count   = self.items.length();
+        let visible = area.height;
+        let offset  = state.offset;
+        let i = 0;
+        while i < visible && (offset + i) < count {
+            let idx = offset + i;
+            let row_y = area.y + i;
+            if idx == state.selected {
+                # Pad the whole row with highlight background
+                buf.fillArea(Rect { x: area.x, y: row_y, width: area.width, height: 1 },
+                             " ", self.highlight_style);
+                let sym_w = tui_str_display_width(self.highlight_symbol);
+                buf.writeStr(area.x, row_y, sym_w, self.highlight_symbol, self.highlight_style);
+                let text_w = area.width - sym_w;
+                if text_w > 0 {
+                    buf.writeStr(area.x + sym_w, row_y, text_w,
+                                 self.items.get(idx), self.highlight_style);
+                }
+            } else {
+                buf.writeStr(area.x, row_y, area.width,
+                             self.items.get(idx), self.style);
+            }
+            i = i + 1;
+        }
+    }
+}
+
+List extends Widget {
+    # Default render with no selection — use renderStateful for full control.
+    export fn render(area: Rect, buf: Buffer) {
+        let state: ListState = ListState.new();
+        self.renderStateful(area, buf, state);
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Gauge — horizontal progress bar
+#
+#   Gauge.new()
+#       .ratio(75)
+#       .label("Loading…")
+#       .gaugeStyle(Style.default().fg(Color.BrightGreen()))
+#       .render(area, buf);
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Gauge {
+    ratio:       int    # 0-100 percent
+    label:       string # "" → auto "XX%"
+    style:       Style  # empty portion
+    gauge_style: Style  # filled portion
+}
+
+Gauge extends {
+
+    export static fn new(): Gauge {
+        return Gauge {
+            ratio:       0,
+            label:       "",
+            style:       Style.default(),
+            gauge_style: Style.default().fg(Color.Green())
+        };
+    }
+
+    export fn ratio(r: int): Gauge {
+        return Gauge {
+            ratio:       r,
+            label:       self.label,
+            style:       self.style,
+            gauge_style: self.gauge_style
+        };
+    }
+
+    export fn label(l: string): Gauge {
+        return Gauge {
+            ratio:       self.ratio,
+            label:       l,
+            style:       self.style,
+            gauge_style: self.gauge_style
+        };
+    }
+
+    export fn style(s: Style): Gauge {
+        return Gauge {
+            ratio:       self.ratio,
+            label:       self.label,
+            style:       s,
+            gauge_style: self.gauge_style
+        };
+    }
+
+    export fn gaugeStyle(s: Style): Gauge {
+        return Gauge {
+            ratio:       self.ratio,
+            label:       self.label,
+            style:       self.style,
+            gauge_style: s
+        };
+    }
+}
+
+Gauge extends Widget {
+    export fn render(area: Rect, buf: Buffer) {
+        if area.isEmpty() { return; }
+        let gs: Style  = self.style;
+        let ggs: Style = self.gauge_style;
+        tui_gauge_render(
+            buf,
+            area.x, area.y, area.width,
+            self.ratio, self.label,
+            gs.fg,  gs.bg,  gs.mods,
+            ggs.fg, ggs.bg, ggs.mods
+        );
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Tabs — horizontal tab bar
+#
+#   Tabs.new(["General", "Network", "Help"])
+#       .select(0)
+#       .highlightStyle(Style.default().fg(Color.BrightYellow()).bold())
+#       .render(area, buf);
+# ══════════════════════════════════════════════════════════════════════════════
+
+export type Tabs {
+    titles:          string[]
+    selected:        int
+    style:           Style
+    highlight_style: Style
+    divider:         string   # separator between tabs (default "│")
+}
+
+Tabs extends {
+
+    export static fn new(titles: string[]): Tabs {
+        return Tabs {
+            titles:          titles,
+            selected:        0,
+            style:           Style.default(),
+            highlight_style: Style.default().reversed(),
+            divider:         "│"
+        };
+    }
+
+    export fn select(i: int): Tabs {
+        return Tabs {
+            titles:          self.titles,
+            selected:        i,
+            style:           self.style,
+            highlight_style: self.highlight_style,
+            divider:         self.divider
+        };
+    }
+
+    export fn style(s: Style): Tabs {
+        return Tabs {
+            titles:          self.titles,
+            selected:        self.selected,
+            style:           s,
+            highlight_style: self.highlight_style,
+            divider:         self.divider
+        };
+    }
+
+    export fn highlightStyle(s: Style): Tabs {
+        return Tabs {
+            titles:          self.titles,
+            selected:        self.selected,
+            style:           self.style,
+            highlight_style: s,
+            divider:         self.divider
+        };
+    }
+
+    export fn divider(d: string): Tabs {
+        return Tabs {
+            titles:          self.titles,
+            selected:        self.selected,
+            style:           self.style,
+            highlight_style: self.highlight_style,
+            divider:         d
+        };
+    }
+}
+
+Tabs extends Widget {
+    export fn render(area: Rect, buf: Buffer) {
+        if area.isEmpty() { return; }
+        let x     = area.x;
+        let y     = area.y;
+        let max_x = area.x + area.width;
+        let count = self.titles.length();
+        let i = 0;
+        while i < count && x < max_x {
+            # Divider between tabs
+            if i > 0 && x < max_x {
+                buf.setCell(x, y, self.divider, self.style);
+                x = x + 1;
+            }
+            let tab_style = self.style;
+            if i == self.selected { tab_style = self.highlight_style; }
+            let title = self.titles.get(i);
+            let tlen  = tui_str_display_width(title);
+            let avail = max_x - x;
+            if tlen > avail { tlen = avail; }
+            buf.writeStr(x, y, tlen, title, tab_style);
+            x = x + tlen;
+            i = i + 1;
+        }
+    }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "codelang",
+  "version": "0.1.0",
+  "description": "CodeLang — a new compiled programming language",
+  "type": "module",
+  "scripts": {
+    "langium:generate": "langium generate && node scripts/merge-syntax.mjs",
+    "langium:watch": "langium generate --watch",
+    "build": "tsc -b tsconfig.json",
+    "build:watch": "tsc -b tsconfig.json --watch",
+    "dev": "pnpm langium:generate && pnpm build",
+    "codelang": "node ./bin/codelang.js",
+    "compile": "node ./bin/codelang.js compile",
+    "run": "node ./bin/codelang.js run",
+    "hello": "node ./bin/codelang.js run ./examples/hello.code",
+    "hello:ir": "node ./bin/codelang.js compile ./examples/hello.code --ir && node -e \"process.stdout.write(require('fs').readFileSync('./examples/hello.ll','utf8'))\"",
+    "doc": "node ./bin/codelang.js doc",
+    "doc:hello": "node ./bin/codelang.js doc ./examples/documented.code --out ./docs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "bin": {
+    "codelang": "./bin/codelang.js"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "langium": "~4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/ui": "2.1.9",
+    "langium-cli": "~4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9",
+    "vscode-languageserver-types": "^3.17.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

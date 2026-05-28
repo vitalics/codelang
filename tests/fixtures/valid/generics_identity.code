@@ -1,0 +1,11 @@
+fn identity<T>(const x: T): T {
+    return x;
+}
+
+fn main() {
+    let a: int = identity(42);
+    print(a);
+
+    let b: string = identity("hello");
+    print(b);
+}

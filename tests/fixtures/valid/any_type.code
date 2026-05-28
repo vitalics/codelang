@@ -1,0 +1,12 @@
+import "../../../stdlib/any";
+
+fn getAny(): Any {
+    return getAny();
+}
+
+fn main() {
+    const a: Any = getAny();
+    const s: string = a.toString();
+    print(s);
+    print(a);
+}

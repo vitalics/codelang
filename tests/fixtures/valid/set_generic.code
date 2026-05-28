@@ -1,0 +1,42 @@
+import "../../../stdlib/set";
+
+fn main() {
+    # ── Set.new() with type annotation ────────────────────────────────────────
+    let si: Set<int> = Set.new();
+    si.add(10);
+    si.add(20);
+    si.add(10);                # duplicate
+    print(si.size());          # 2
+    print(si);                 # {10, 20}
+
+    let ss: Set<string> = Set.new();
+    ss.add("x");
+    ss.add("y");
+    ss.add("x");               # duplicate
+    print(ss.size());          # 2
+    print(ss);                 # {"x", "y"}
+
+    let sb: Set<bool> = Set.new();
+    sb.add(true);
+    sb.add(true);              # duplicate
+    print(sb.size());          # 1
+    print(sb);                 # {true}
+
+    # ── Set<T>.new() with explicit type args (no annotation) ──────────────────
+    let si2 = Set<int>.new();
+    si2.add(5);
+    si2.add(15);
+    print(si2.size());                  # 2
+    print(si2.at(0).unwrapOr(0));       # 5  (sorted: 5 < 15)
+
+    let ss2 = Set<string>.new();
+    ss2.add("foo");
+    ss2.add("bar");
+    print(ss2.size());                  # 2
+    print(ss2.at(0).unwrapOr(""));      # bar  (sorted: bar < foo)
+
+    let sb2 = Set<bool>.new();
+    sb2.add(false);
+    print(sb2.size());                  # 1
+    print(sb2.at(0));                   # false  (BoolSet.at() still returns bool)
+}

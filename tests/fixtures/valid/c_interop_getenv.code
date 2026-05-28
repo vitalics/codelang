@@ -1,0 +1,15 @@
+# c_interop_getenv.code
+#
+# Runtime test for getenv().
+# HOME is always set in macOS/Linux test environments.
+#
+# Expected output (1 line):
+#   <N>   where N > 0 — byte length of $HOME path string
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    const home: C_Str   = getenv("HOME");
+    const len:  C_SizeT = strlen(home);
+    print(len);
+}

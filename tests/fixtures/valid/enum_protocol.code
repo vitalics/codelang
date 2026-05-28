@@ -1,0 +1,66 @@
+# enum_protocol.code
+# Enum with inline protocol conformance (extends on declaration) and
+# a separate extends block.
+
+enum Color extends Displayable {
+    Red,
+    Green,
+    Blue,
+
+    export fn toString(): string {
+        return switch self {
+            Color::Red   => "Red",
+            Color::Green => "Green",
+            Color::Blue  => "Blue",
+        };
+    }
+
+    fn toHex(): string {
+        return switch self {
+            Color::Red   => "#FF0000",
+            Color::Green => "#00FF00",
+            Color::Blue  => "#0000FF",
+        };
+    }
+}
+
+enum Weekday {
+    Mon, Tue, Wed, Thu, Fri, Sat, Sun,
+}
+
+Weekday extends Displayable {
+    export fn toString(): string {
+        return switch self {
+            Weekday::Mon => "Monday",
+            Weekday::Tue => "Tuesday",
+            Weekday::Wed => "Wednesday",
+            Weekday::Thu => "Thursday",
+            Weekday::Fri => "Friday",
+            Weekday::Sat => "Saturday",
+            Weekday::Sun => "Sunday",
+        };
+    }
+}
+
+Weekday extends {
+    export fn isWeekend(): bool {
+        return switch self {
+            Weekday::Sat => true,
+            Weekday::Sun => true,
+            else         => false,
+        };
+    }
+}
+
+fn main() {
+    let col = Color::Green;
+    print(col.toString());
+    print(col.toHex());
+
+    let day = Weekday::Sat;
+    print(day.toString());
+    print(day.isWeekend());
+
+    let mon = Weekday::Mon;
+    print(mon.isWeekend());
+}

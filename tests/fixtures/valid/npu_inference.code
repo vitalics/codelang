@@ -1,0 +1,98 @@
+import "../../../stdlib/npu";
+
+# 2-layer MLP inference fixture.
+# Architecture: 1×3  →  W1(3×4)+ReLU  →  W2(4×2)+softmax  →  1×2 probs.
+#
+# Output (20 lines):
+#   [0-3]  layer-1 hidden values (h1)
+#   [4-7]  relu(h1) values
+#   [8-9]  logit values
+#  [10-11] softmax probabilities (sample 1: [0.1, 0.9, 0.1] → healthy)
+#  [12]    decision string for sample 1  ("healthy")
+#  [13-14] softmax probabilities (sample 2: [0.5, 0.3, 0.8] → maintenance)
+#  [15]    decision string for sample 2  ("maintenance")
+#  [16-19] batch probabilities row-0 cells (4 samples × 2 classes)
+
+fn loadW1(w: Matrix) {
+    w.set(0, 0,  0.4);  w.set(0, 1, -0.2);  w.set(0, 2,  0.8);  w.set(0, 3,  0.1);
+    w.set(1, 0,  0.3);  w.set(1, 1,  0.5);  w.set(1, 2, -0.4);  w.set(1, 3,  0.7);
+    w.set(2, 0, -0.1);  w.set(2, 1,  0.3);  w.set(2, 2,  0.5);  w.set(2, 3, -0.2);
+}
+
+fn loadW2(w: Matrix) {
+    w.set(0, 0,  0.5);  w.set(0, 1, -0.3);
+    w.set(1, 0,  0.2);  w.set(1, 1,  0.8);
+    w.set(2, 0, -0.1);  w.set(2, 1,  0.6);
+    w.set(3, 0,  0.7);  w.set(3, 1, -0.4);
+}
+
+fn predict(x: Matrix, w1: Matrix, w2: Matrix): Matrix {
+    const h: Matrix = x.multiply(w1).relu();
+    return h.multiply(w2).softmax();
+}
+
+fn main(): void {
+    const w1: Matrix = Matrix.new(3, 4);
+    const w2: Matrix = Matrix.new(4, 2);
+    loadW1(w1);
+    loadW2(w2);
+
+    # ── Sample 1: [0.1, 0.9, 0.1] → should predict "healthy" ────────────────
+    const x1: Matrix = Matrix.new(1, 3);
+    x1.set(0, 0, 0.1);
+    x1.set(0, 1, 0.9);
+    x1.set(0, 2, 0.1);
+
+    # Intermediate values for inspection
+    const h1:  Matrix = x1.multiply(w1);
+    const h1r: Matrix = h1.relu();
+    print(h1.get(0, 0));   # 0: h1[0,0] = 0.30
+    print(h1.get(0, 1));   # 1: h1[0,1] = 0.46
+    print(h1.get(0, 2));   # 2: h1[0,2] = -0.23 (clamped to 0 by relu)
+    print(h1.get(0, 3));   # 3: h1[0,3] = 0.62
+    print(h1r.get(0, 0));  # 4: 0.30
+    print(h1r.get(0, 1));  # 5: 0.46
+    print(h1r.get(0, 2));  # 6: 0.0
+    print(h1r.get(0, 3));  # 7: 0.62
+
+    const lg1: Matrix = h1r.multiply(w2);
+    print(lg1.get(0, 0));  # 8: logit[0] ≈ 0.676
+    print(lg1.get(0, 1));  # 9: logit[1] ≈ 0.030
+
+    const p1: Matrix = predict(x1, w1, w2);
+    print(p1.get(0, 0));   # 10: P(healthy)     ≈ 0.656
+    print(p1.get(0, 1));   # 11: P(maintenance) ≈ 0.344
+    if (p1.get(0, 0) > p1.get(0, 1)) {
+        print("healthy");  # 12
+    } else {
+        print("maintenance");
+    }
+
+    # ── Sample 2: [0.5, 0.3, 0.8] → should predict "maintenance" ────────────
+    const x2: Matrix = Matrix.new(1, 3);
+    x2.set(0, 0, 0.5);
+    x2.set(0, 1, 0.3);
+    x2.set(0, 2, 0.8);
+
+    const p2: Matrix = predict(x2, w1, w2);
+    print(p2.get(0, 0));   # 13: P(healthy)     ≈ 0.408
+    print(p2.get(0, 1));   # 14: P(maintenance) ≈ 0.592
+    if (p2.get(0, 0) > p2.get(0, 1)) {
+        print("healthy");
+    } else {
+        print("maintenance"); # 15
+    }
+
+    # ── Batch (4×3 input → 4×2 output) ───────────────────────────────────────
+    const b: Matrix = Matrix.new(4, 3);
+    b.set(0, 0, 0.1);  b.set(0, 1, 0.5);  b.set(0, 2, 0.2);
+    b.set(1, 0, 0.8);  b.set(1, 1, 0.7);  b.set(1, 2, 0.9);
+    b.set(2, 0, 0.2);  b.set(2, 1, 0.4);  b.set(2, 2, 0.3);
+    b.set(3, 0, 0.9);  b.set(3, 1, 0.2);  b.set(3, 2, 0.85);
+
+    const pb: Matrix = b.multiply(w1).relu().multiply(w2).softmax();
+    print(pb.get(0, 0));  # 16: batch row 0, P(healthy)
+    print(pb.get(0, 1));  # 17: batch row 0, P(maintenance)
+    print(pb.get(1, 0));  # 18: batch row 1, P(healthy)
+    print(pb.get(1, 1));  # 19: batch row 1, P(maintenance)
+}

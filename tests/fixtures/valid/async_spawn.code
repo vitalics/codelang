@@ -1,0 +1,19 @@
+import "../../../stdlib/async";
+
+# async_spawn fixture — basic task spawn and wait.
+#
+# Output (3 lines):
+#   [0] "before"
+#   [1] "in task"
+#   [2] "after"
+
+fn main(): void {
+    print("before");
+
+    const t: Task = Async.spawn(fn(): void {
+        print("in task");
+    });
+
+    Async.wait(t);
+    print("after");
+}

@@ -1,0 +1,9 @@
+# Invalid: a top-level void function returning a value.
+
+fn greet(): void {
+    return 42;
+}
+
+fn main() {
+    greet();
+}

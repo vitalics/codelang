@@ -1,0 +1,16 @@
+import "../../../stdlib/numbers";
+
+fn main(): void {
+    # Long-hand aliases
+    const a: float = Float64.Infinity;
+    const b: float = Float64.NegativeInfinity;
+
+    print(a);
+    print(b);
+
+    # Long-hand aliases produce the same behaviour as the short-hand ones
+    const c: bool = Float64.Infinity > 9999.0;
+    const d: bool = Float64.NegativeInfinity < -9999.0;
+    print(c);
+    print(d);
+}

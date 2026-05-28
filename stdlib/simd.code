@@ -1,0 +1,369 @@
+# stdlib/simd.code
+#
+# SIMD vector math for the Float2 / Float4 / Float8 / Float16 types declared
+# in stdlib/numbers.code.
+#
+# ── Types (from stdlib/numbers.code) ─────────────────────────────────────────
+#   Float2  = intrinsic("<2 x float>")   — 2-lane vector  (2D position, UV)
+#   Float4  = intrinsic("<4 x float>")   — 4-lane vector  (3D point+w, RGBA)
+#   Float8  = intrinsic("<8 x float>")   — 8-lane vector  (batch ops)
+#   Float16 = intrinsic("<16 x float>")  — 16-lane vector (batch ops)
+#
+# ── Arithmetic operators work natively ───────────────────────────────────────
+#   const a = Float2.of(1.0, 2.0);
+#   const b = Float2.of(3.0, 4.0);
+#   const c = a + b;   # Float2(4, 6)   — uses fadd <2 x float>
+#   const d = a * b;   # Float2(3, 8)   — uses fmul <2 x float>
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/simd";
+#
+#   const pos: Float2 = Float2.of(3.0, 4.0);
+#   print(pos.length());          # 5
+#
+#   const v: Float4 = Float4.of(1.0, 0.0, 0.0, 0.0);
+#   const w: Float4 = Float4.of(0.0, 1.0, 0.0, 0.0);
+#   print(v.cross3(w));           # Float4(0, 0, 1, 0)
+
+import "./numbers";
+import "./protocols";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/simd.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Float2 ──────────────────────────────────────────────────────────────────
+
+extern fn float2_of(x: Float, y: Float): Float2;
+extern fn float2_splat(v: Float): Float2;
+extern fn float2_x(v: Float2): Float;
+extern fn float2_y(v: Float2): Float;
+extern fn float2_set_x(v: Float2, x: Float): Float2;
+extern fn float2_set_y(v: Float2, y: Float): Float2;
+extern fn float2_dot(a: Float2, b: Float2): Float;
+extern fn float2_length_sq(v: Float2): Float;
+extern fn float2_length(v: Float2): Float;
+extern fn float2_normalize(v: Float2): Float2;
+extern fn float2_abs(v: Float2): Float2;
+extern fn float2_min(a: Float2, b: Float2): Float2;
+extern fn float2_max(a: Float2, b: Float2): Float2;
+extern fn float2_clamp(v: Float2, lo: Float2, hi: Float2): Float2;
+extern fn float2_lerp(a: Float2, b: Float2, t: Float): Float2;
+extern fn float2_distance(a: Float2, b: Float2): Float;
+extern fn float2_rotate(v: Float2, angle: Float): Float2;
+extern fn float2_reflect(v: Float2, n: Float2): Float2;
+extern fn float2_cross(a: Float2, b: Float2): Float;
+extern fn float2_perp(v: Float2): Float2;
+extern fn float2_to_string(v: Float2): string;
+
+# ── Float4 ──────────────────────────────────────────────────────────────────
+
+extern fn float4_of(x: Float, y: Float, z: Float, w: Float): Float4;
+extern fn float4_xyz(x: Float, y: Float, z: Float): Float4;
+extern fn float4_splat(v: Float): Float4;
+extern fn float4_x(v: Float4): Float;
+extern fn float4_y(v: Float4): Float;
+extern fn float4_z(v: Float4): Float;
+extern fn float4_w(v: Float4): Float;
+extern fn float4_set_x(v: Float4, x: Float): Float4;
+extern fn float4_set_y(v: Float4, y: Float): Float4;
+extern fn float4_set_z(v: Float4, z: Float): Float4;
+extern fn float4_set_w(v: Float4, w: Float): Float4;
+extern fn float4_dot(a: Float4, b: Float4): Float;
+extern fn float4_dot3(a: Float4, b: Float4): Float;
+extern fn float4_length_sq(v: Float4): Float;
+extern fn float4_length_sq3(v: Float4): Float;
+extern fn float4_length(v: Float4): Float;
+extern fn float4_length3(v: Float4): Float;
+extern fn float4_normalize(v: Float4): Float4;
+extern fn float4_normalize3(v: Float4): Float4;
+extern fn float4_cross3(a: Float4, b: Float4): Float4;
+extern fn float4_abs(v: Float4): Float4;
+extern fn float4_min(a: Float4, b: Float4): Float4;
+extern fn float4_max(a: Float4, b: Float4): Float4;
+extern fn float4_clamp(v: Float4, lo: Float4, hi: Float4): Float4;
+extern fn float4_lerp(a: Float4, b: Float4, t: Float): Float4;
+extern fn float4_distance(a: Float4, b: Float4): Float;
+extern fn float4_distance3(a: Float4, b: Float4): Float;
+extern fn float4_reflect3(v: Float4, n: Float4): Float4;
+extern fn float4_sum(v: Float4): Float;
+extern fn float4_to_string(v: Float4): string;
+
+# ── Float8 ──────────────────────────────────────────────────────────────────
+
+extern fn float8_of(a: Float, b: Float, c: Float, d: Float,
+                    e: Float, f: Float, g: Float, h: Float): Float8;
+extern fn float8_splat(v: Float): Float8;
+extern fn float8_get(v: Float8, i: int): Float;
+extern fn float8_set(v: Float8, i: int, val: Float): Float8;
+extern fn float8_sum(v: Float8): Float;
+extern fn float8_dot(a: Float8, b: Float8): Float;
+extern fn float8_abs(v: Float8): Float8;
+extern fn float8_min(a: Float8, b: Float8): Float8;
+extern fn float8_max(a: Float8, b: Float8): Float8;
+extern fn float8_lerp(a: Float8, b: Float8, t: Float): Float8;
+extern fn float8_to_string(v: Float8): string;
+
+# ── Float16 ─────────────────────────────────────────────────────────────────
+
+extern fn float16_of(a: Float, b: Float, c: Float, d: Float,
+                     e: Float, f: Float, g: Float, h: Float,
+                     i: Float, j: Float, k: Float, l: Float,
+                     m: Float, n: Float, o: Float, p: Float): Float16;
+extern fn float16_splat(v: Float): Float16;
+extern fn float16_get(v: Float16, i: int): Float;
+extern fn float16_set(v: Float16, i: int, val: Float): Float16;
+extern fn float16_sum(v: Float16): Float;
+extern fn float16_dot(a: Float16, b: Float16): Float;
+extern fn float16_lerp(a: Float16, b: Float16, t: Float): Float16;
+extern fn float16_to_string(v: Float16): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Float2 extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Float2 extends {
+
+    # ── Constructors ─────────────────────────────────────────────────────────
+
+    # Create a Float2 from two scalar components.
+    export static fn of(x: Float, y: Float): Float2 {
+        return float2_of(x, y);
+    }
+
+    # All lanes set to the same value.
+    export static fn splat(v: Float): Float2 {
+        return float2_splat(v);
+    }
+
+    export static fn zero(): Float2  { return float2_splat(0.0); }
+    export static fn one(): Float2   { return float2_splat(1.0); }
+
+    # Unit vectors along each axis.
+    export static fn unitX(): Float2 { return float2_of(1.0, 0.0); }
+    export static fn unitY(): Float2 { return float2_of(0.0, 1.0); }
+
+    # ── Element access ───────────────────────────────────────────────────────
+
+    export fn x(): Float { return float2_x(self); }
+    export fn y(): Float { return float2_y(self); }
+
+    export fn withX(x: Float): Float2 { return float2_set_x(self, x); }
+    export fn withY(y: Float): Float2 { return float2_set_y(self, y); }
+
+    # ── Dot / length ─────────────────────────────────────────────────────────
+
+    export fn dot(other: Float2): Float    { return float2_dot(self, other); }
+    export fn lengthSq(): Float            { return float2_length_sq(self); }
+    export fn length(): Float              { return float2_length(self); }
+
+    # ── Normalization ────────────────────────────────────────────────────────
+
+    # Returns a unit-length vector; returns self unchanged if length is zero.
+    export fn normalize(): Float2          { return float2_normalize(self); }
+
+    # ── Element-wise ops ─────────────────────────────────────────────────────
+
+    export fn abs(): Float2                { return float2_abs(self); }
+    export fn min(other: Float2): Float2   { return float2_min(self, other); }
+    export fn max(other: Float2): Float2   { return float2_max(self, other); }
+
+    # Clamp each component to [lo, hi].
+    export fn clamp(lo: Float2, hi: Float2): Float2 {
+        return float2_clamp(self, lo, hi);
+    }
+
+    # ── Interpolation ────────────────────────────────────────────────────────
+
+    # Linear interpolation: self + (other - self) * t
+    export fn lerp(other: Float2, t: Float): Float2 {
+        return float2_lerp(self, other, t);
+    }
+
+    # ── Geometry ─────────────────────────────────────────────────────────────
+
+    export fn distance(other: Float2): Float { return float2_distance(self, other); }
+
+    # Rotate by angle radians (counter-clockwise).
+    export fn rotate(angle: Float): Float2 { return float2_rotate(self, angle); }
+
+    # Reflect self about unit normal n.
+    export fn reflect(n: Float2): Float2   { return float2_reflect(self, n); }
+
+    # 2D "cross product" (scalar z-component of 3D cross).
+    export fn cross(other: Float2): Float  { return float2_cross(self, other); }
+
+    # Perpendicular vector (rotated 90° CCW).
+    export fn perp(): Float2               { return float2_perp(self); }
+}
+
+Float2 extends Displayable {
+    export fn toString(): string { return float2_to_string(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Float4 extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Float4 extends {
+
+    # ── Constructors ─────────────────────────────────────────────────────────
+
+    # Full 4-component constructor.
+    export static fn of(x: Float, y: Float, z: Float, w: Float): Float4 {
+        return float4_of(x, y, z, w);
+    }
+
+    # 3D point constructor (w = 0).
+    export static fn xyz(x: Float, y: Float, z: Float): Float4 {
+        return float4_xyz(x, y, z);
+    }
+
+    # All lanes set to the same value.
+    export static fn splat(v: Float): Float4 {
+        return float4_splat(v);
+    }
+
+    export static fn zero(): Float4  { return float4_splat(0.0); }
+    export static fn one(): Float4   { return float4_splat(1.0); }
+
+    # Unit vectors.
+    export static fn unitX(): Float4 { return float4_of(1.0, 0.0, 0.0, 0.0); }
+    export static fn unitY(): Float4 { return float4_of(0.0, 1.0, 0.0, 0.0); }
+    export static fn unitZ(): Float4 { return float4_of(0.0, 0.0, 1.0, 0.0); }
+    export static fn unitW(): Float4 { return float4_of(0.0, 0.0, 0.0, 1.0); }
+
+    # ── Element access ───────────────────────────────────────────────────────
+
+    export fn x(): Float { return float4_x(self); }
+    export fn y(): Float { return float4_y(self); }
+    export fn z(): Float { return float4_z(self); }
+    export fn w(): Float { return float4_w(self); }
+
+    export fn withX(x: Float): Float4 { return float4_set_x(self, x); }
+    export fn withY(y: Float): Float4 { return float4_set_y(self, y); }
+    export fn withZ(z: Float): Float4 { return float4_set_z(self, z); }
+    export fn withW(w: Float): Float4 { return float4_set_w(self, w); }
+
+    # ── Dot / length ─────────────────────────────────────────────────────────
+
+    # Full 4-component dot product.
+    export fn dot(other: Float4): Float    { return float4_dot(self, other); }
+
+    # 3-component dot product (ignores w).
+    export fn dot3(other: Float4): Float   { return float4_dot3(self, other); }
+
+    export fn lengthSq(): Float            { return float4_length_sq(self); }
+    export fn lengthSq3(): Float           { return float4_length_sq3(self); }
+    export fn length(): Float              { return float4_length(self); }
+    export fn length3(): Float             { return float4_length3(self); }
+
+    # ── Normalization ────────────────────────────────────────────────────────
+
+    # Normalize all 4 components.
+    export fn normalize(): Float4          { return float4_normalize(self); }
+
+    # Normalize treating self as a 3D vector (preserves w).
+    export fn normalize3(): Float4         { return float4_normalize3(self); }
+
+    # ── 3D cross product ─────────────────────────────────────────────────────
+
+    # Cross product of xyz components; result has w=0.
+    export fn cross3(other: Float4): Float4 { return float4_cross3(self, other); }
+
+    # ── Element-wise ops ─────────────────────────────────────────────────────
+
+    export fn abs(): Float4                { return float4_abs(self); }
+    export fn min(other: Float4): Float4   { return float4_min(self, other); }
+    export fn max(other: Float4): Float4   { return float4_max(self, other); }
+
+    export fn clamp(lo: Float4, hi: Float4): Float4 {
+        return float4_clamp(self, lo, hi);
+    }
+
+    # ── Interpolation ────────────────────────────────────────────────────────
+
+    export fn lerp(other: Float4, t: Float): Float4 {
+        return float4_lerp(self, other, t);
+    }
+
+    # ── Geometry ─────────────────────────────────────────────────────────────
+
+    export fn distance(other: Float4): Float  { return float4_distance(self, other); }
+    export fn distance3(other: Float4): Float { return float4_distance3(self, other); }
+
+    # Reflect about unit normal n (3D, ignores w).
+    export fn reflect3(n: Float4): Float4  { return float4_reflect3(self, n); }
+
+    # ── Reduction ────────────────────────────────────────────────────────────
+
+    # Sum of all 4 lanes.
+    export fn sum(): Float                 { return float4_sum(self); }
+}
+
+Float4 extends Displayable {
+    export fn toString(): string { return float4_to_string(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Float8 extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Float8 extends {
+
+    export static fn of(a: Float, b: Float, c: Float, d: Float,
+                        e: Float, f: Float, g: Float, h: Float): Float8 {
+        return float8_of(a, b, c, d, e, f, g, h);
+    }
+
+    export static fn splat(v: Float): Float8 { return float8_splat(v); }
+    export static fn zero(): Float8          { return float8_splat(0.0); }
+    export static fn one(): Float8           { return float8_splat(1.0); }
+
+    export fn get(i: int): Float             { return float8_get(self, i); }
+    export fn set(i: int, v: Float): Float8  { return float8_set(self, i, v); }
+
+    export fn sum(): Float                   { return float8_sum(self); }
+    export fn dot(other: Float8): Float      { return float8_dot(self, other); }
+    export fn abs(): Float8                  { return float8_abs(self); }
+    export fn min(other: Float8): Float8     { return float8_min(self, other); }
+    export fn max(other: Float8): Float8     { return float8_max(self, other); }
+    export fn lerp(other: Float8, t: Float): Float8 {
+        return float8_lerp(self, other, t);
+    }
+}
+
+Float8 extends Displayable {
+    export fn toString(): string { return float8_to_string(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Float16 extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Float16 extends {
+
+    export static fn of(a: Float, b: Float, c: Float, d: Float,
+                        e: Float, f: Float, g: Float, h: Float,
+                        i: Float, j: Float, k: Float, l: Float,
+                        m: Float, n: Float, o: Float, p: Float): Float16 {
+        return float16_of(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+    }
+
+    export static fn splat(v: Float): Float16 { return float16_splat(v); }
+    export static fn zero(): Float16          { return float16_splat(0.0); }
+    export static fn one(): Float16           { return float16_splat(1.0); }
+
+    export fn get(i: int): Float              { return float16_get(self, i); }
+    export fn set(i: int, v: Float): Float16  { return float16_set(self, i, v); }
+
+    export fn sum(): Float                    { return float16_sum(self); }
+    export fn dot(other: Float16): Float      { return float16_dot(self, other); }
+    export fn lerp(other: Float16, t: Float): Float16 {
+        return float16_lerp(self, other, t);
+    }
+}
+
+Float16 extends Displayable {
+    export fn toString(): string { return float16_to_string(self); }
+}

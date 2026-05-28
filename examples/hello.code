@@ -1,0 +1,14 @@
+const fn main() {
+  print("Hello, World!");
+  print("Hello world twice");
+
+  print(fibo(10));
+}
+
+
+fn fibo(n: Int32): Int32 {
+  if (n <= 1) {
+    return n;
+  }
+  return fibo(n - 1) + fibo(n - 2);
+}

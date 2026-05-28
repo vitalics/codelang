@@ -1,0 +1,149 @@
+# stdlib/memory.code
+# Raw memory / pointer primitives.
+#
+# These built-ins expose the underlying memory model at the language level.
+# They are designed for use cases such as:
+#   • Array scaling / resizing (compute buffer addresses, element strides)
+#   • Foreign-function bridges (pass raw pointers to C allocators)
+#   • Type-tagged generic containers (stamp elements with typeId!)
+#   • Manual serialisation / deserialisation
+#
+# ── Quick reference ──────────────────────────────────────────────────────────
+#
+#   addressOf(expr)         → Int64   address of a value in memory
+#   sizeOf!(T)              → int     byte size of type T (compile-time)
+#   typeId!(T)              → Int64   stable compile-time hash of type T's name
+#   typeAddress(expr)       → Int64   address of expr's TypeInfo descriptor
+#
+# ── Notes on pointer semantics ───────────────────────────────────────────────
+#
+#   • For struct / array types (which are already heap-allocated pointer
+#     values), `addressOf` returns the address of the *heap object* itself —
+#     i.e., the pointer value cast to Int64.
+#
+#   • For scalar types (int, bool, float …), `addressOf` returns the address
+#     of the local stack slot where the value lives.  This address is only
+#     valid for the duration of the enclosing function call.
+#
+#   • `sizeOf!` is a compile-time macro and produces an integer constant; no
+#     code is emitted.  (Same family as `alignOf!` and `offsetOf!`.)
+#
+#   • `typeId!` is also compile-time.  It returns a stable i64 hash of the
+#     type name string, so the same type always hashes to the same value
+#     regardless of compilation order.  Two *different* types may in theory
+#     collide (hash collision), though this is extremely unlikely for
+#     short identifiers.
+#
+# ── Usage examples ───────────────────────────────────────────────────────────
+#
+#   import "stdlib/memory";
+#   import "stdlib/numbers";
+#
+#   type Buffer {
+#       data: Int64    # raw pointer to malloc'd memory
+#       len:  int
+#       cap:  int
+#   }
+#
+#   fn makeBuffer(cap: int): Buffer {
+#       const elemSize = sizeOf!(int);           # 4  (compile-time)
+#       const byteLen  = cap * elemSize;         # bytes needed
+#       const rawAddr  = c_malloc(byteLen);      # Int64 from C malloc
+#       const buf      = Buffer_new(rawAddr, 0, cap);
+#       return buf;
+#   }
+#
+#   fn elementAddress(buf: Buffer, idx: int): Int64 {
+#       return buf.data + idx * sizeOf!(int);    # pointer arithmetic
+#   }
+#
+#   # Type-tagged entry for a generic array
+#   type Entry {
+#       tag:   Int64   # typeId!(T) — which type is stored
+#       value: Int64   # addressOf(element) — where it lives
+#   }
+#
+#   fn storeInt(e: Entry, x: int) {
+#       e.tag   = typeId!(int);    # 0x… (stable compile-time constant)
+#       e.value = addressOf(x);    # address of x's stack slot
+#   }
+#
+# ── sizeOf! — byte size ────────────────────────────────────────────────────
+#
+# Returns the byte size of type T as a compile-time constant int.
+# Equivalent to Zig's @sizeOf(T), C's sizeof(T).
+#
+#   sizeOf!(bool)    →  1
+#   sizeOf!(int)     →  4
+#   sizeOf!(float)   →  8   (float = Float64 = double in CodeLang)
+#   sizeOf!(string)  →  8   (pointer)
+#   sizeOf!(Int64)   →  8
+#   sizeOf!(Point)   →  8   (for Point { x: int, y: int } — 4+4 with no trailing pad)
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+# Also available as `size_of!` (the original snake_case spelling).
+
+# ── typeId! — compile-time type identifier ────────────────────────────────
+#
+# Returns a stable compile-time Int64 hash of the type name T.
+# The same type always produces the same value across compilation units.
+# Used to tag elements in type-erased (AnyArray, generic) containers.
+#
+#   const intTag    = typeId!(int);      # e.g. 2090452731
+#   const strTag    = typeId!(string);   # e.g. 3002342187
+#   const pointTag  = typeId!(Point);    # hash of "Point"
+#
+# Hash function: djb2  (hash = hash * 33 ^ charCode, starting from 5381)
+# Result is an unsigned 32-bit djb2 value zero-extended to Int64.
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+
+# ── addressOf — address of a value ────────────────────────────────────────
+#
+# Returns the memory address of `value` as an Int64.
+#
+# For heap-allocated types (structs, arrays, strings …):
+#   The pointer *value* itself is returned as Int64 — i.e., the address
+#   of the heap object, not of the local pointer variable.
+#
+# For scalar types (int, bool, float, Int32, Int64 …):
+#   A temporary stack slot is allocated, the value is stored, and the
+#   address of that slot is returned.  Valid only within the current frame.
+#
+# Equivalent to &x in C / Zig, std::ptr::addr_of!(x) in Rust.
+#
+# Built-in — the compiler recognises calls to `addressOf` by name and
+# emits inline LLVM `ptrtoint` / `alloca+store+ptrtoint` instructions.
+# The placeholder body below is never compiled.
+
+import "stdlib/numbers";
+import "stdlib/reflection";
+
+export fn addressOf<T>(const value: T): Int64 {
+    # Placeholder — intercepted by the IR generator.
+    # The actual emission is `ptrtoint %T* %value to i64`
+    # (or alloca+store+ptrtoint for scalar types).
+    return 0;
+}
+
+# ── typeAddress — address of a TypeInfo descriptor ────────────────────────
+#
+# Returns the runtime memory address of the TypeInfo descriptor for `value`'s
+# type.  Equivalent to `addressOf(typeInfo(value))`.
+#
+# Two values of the same type share the same TypeInfo object only when the
+# compiler de-duplicates them; use `typeId!(T)` for stable compile-time
+# identity comparisons.
+#
+# Example:
+#   const a: int = 1;
+#   const b: int = 2;
+#   const infoA = typeInfo(a);
+#   const infoB = typeInfo(b);
+#   # addressOf(infoA) may or may not equal addressOf(infoB)
+#   # typeId!(int) == typeId!(int)  ← always true
+
+export fn typeAddress<T>(const value: T): Int64 {
+    const info = typeInfo(value);
+    return addressOf(info);
+}

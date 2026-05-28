@@ -1,0 +1,25 @@
+import "../../../stdlib/string";
+
+# nested_fn_using_early_return.code
+#
+# `using` inside a nested fn fires on *every* return path — including early
+# returns from conditional branches.  This is the nested-fn equivalent of
+# the top-level using_early_return test.
+#
+# guard(s) returns 0 for the empty string (early return) and the byte length
+# for any other string (normal return).  The Buffer is freed in both cases.
+#
+# Expected output: 0 / 5 / 2
+
+fn main() {
+    fn guard(const s: string): int {
+        using b: Buffer = s.toBuffer();
+        let n: int = b.length();
+        if n == 0 { return 0; }   # early return — using still disposes b
+        return n;
+    }
+
+    print(guard(""));       # 0  (early-return path)
+    print(guard("hello"));  # 5  (normal-return path)
+    print(guard("hi"));     # 2  (normal-return path)
+}

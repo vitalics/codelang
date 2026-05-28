@@ -1,0 +1,113 @@
+import "stdlib/os";
+
+# ── Hardware profile for CI / build environments ──────────────────────────────
+#
+# Assembles a machine profile useful in:
+#   - CI pipelines  (tag which runner executed a job)
+#   - Distributed build systems  (resource-aware task scheduling)
+#   - Telemetry / crash reporters  (attach hardware context to reports)
+#
+# The profile is printed as a compact fingerprint line plus a detailed section.
+#
+# Typical output on Apple M2 Pro (16 GB, 10 cores):
+#   fingerprint: arm64-darwin-Apple_M2_Pro-10c-16gb
+#   host:        Vitalis-MacBook-Pro-2.local (vitaliharadkou uid=501)
+#   kernel:      Darwin 25.4.0
+#   accelerators: gpu=true npu=true
+#   cpu:  10 cores  @ 0 MHz
+#   ram:  16 GB total  /  2841 MB free
+#   home: /Users/vitaliharadkou   tmp: /var/folders/…
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+# Replace spaces with underscores — URL/identifier safe fragment.
+fn slug(const s: string): string {
+    return s.replaceAll(" ", "_");
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+fn main() {
+    # ── Collect all values upfront ────────────────────────────────────────────
+    # Binding namespace calls to locals is required before using them in
+    # template strings  ($"…{var}…"  only resolves local variable names).
+
+    # Build target (compile-time)
+    const arch:    string = OS.arch();
+    const plat:    string = OS.platform();
+
+    # CPU
+    const cpuModel: string = OS.cpuModel();
+    const cpuCores: int    = OS.cpuCount();
+    const cpuSpeed: int    = OS.cpuSpeed();
+
+    # Memory (raw bytes → human-readable)
+    const ramGb:  Int64 = OS.totalmem() / 1073741824;
+    const freeMb: Int64 = OS.freemem() / 1048576;
+
+    # Host / user
+    const hostname: string = OS.hostname();
+    const username: string = OS.username();
+    const uid:      int    = OS.uid();
+    const gid:      int    = OS.gid();
+    const osName:   string = OS.osType();
+    const kernel:   string = OS.release();
+
+    # Accelerators (compile-time guards)
+    const gpuPresent: bool = GPU.isAvailable();
+    const npuPresent: bool = NPU.isAvailable();
+
+    # Paths
+    const homedir: string = OS.homedir();
+    const tmpdir:  string = OS.tmpdir();
+    const devNull: string = OS.devNull();
+
+    # Uptime
+    const uptime: Int64 = OS.uptime();
+
+    # ── Compact fingerprint ───────────────────────────────────────────────────
+    # Format: arch-platform-cpu_model-Nc-Ngb
+    # e.g.  arm64-darwin-Apple_M2_Pro-10c-16gb
+    const cpuSlug: string = slug(cpuModel);
+    print("=== Hardware fingerprint ===");
+    print($"  {arch}-{plat}-{cpuSlug}-{cpuCores}c-{ramGb}gb");
+
+    # ── Host identity ─────────────────────────────────────────────────────────
+    print("");
+    print("=== Host ===");
+    print($"  hostname : {hostname}");
+    print($"  user     : {username}  (uid={uid} gid={gid})");
+    print($"  kernel   : {osName} {kernel}");
+
+    # ── Accelerators ─────────────────────────────────────────────────────────
+    # GPU and NPU compile-time guards — dead code is eliminated by the compiler.
+    print("");
+    print("=== Accelerators ===");
+
+    print($"  GPU: {gpuPresent}");
+    if (GPU.isAvailable()) {
+        const gpuCount: int    = GPU.count();
+        const gpuModel: string = GPU.model(0);
+        print($"    {gpuCount} device(s) — primary: {gpuModel}");
+    }
+
+    print($"  NPU: {npuPresent}");
+    if (NPU.isAvailable()) {
+        const npuName: string = NPU.name();
+        print($"    {npuName}");
+    }
+
+    # ── Resources ─────────────────────────────────────────────────────────────
+    print("");
+    print("=== Resources ===");
+    print($"  CPU    : {cpuCores} cores  @  {cpuSpeed} MHz");
+    print($"  RAM    : {ramGb} GB total  /  {freeMb} MB free");
+    print($"  uptime : {uptime} s");
+
+    # ── Paths ─────────────────────────────────────────────────────────────────
+    print("");
+    print("=== Paths ===");
+    print($"  home : {homedir}");
+    print($"  tmp  : {tmpdir}");
+    print($"  null : {devNull}");
+}

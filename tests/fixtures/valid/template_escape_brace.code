@@ -1,0 +1,11 @@
+# template_escape_brace.code
+# \{ and \} produce literal brace characters even when followed by an identifier.
+fn main() {
+    let x: int = 99;
+
+    # \{ forces a literal { before an identifier, hole is not started
+    print($"\{x\}");
+
+    # Mix of escaped braces and real holes
+    print($"\{value: {x}\}");
+}

@@ -1,0 +1,21 @@
+# generics_displayable.code
+# Generic function with a Displayable bound:
+#   fn describe<T extends Displayable>(item: T) calls item.toString()
+#   inside a template string hole.
+#
+# Specializations exercised:
+#   T = int     → @describe_i32
+#   T = float   → @describe_f64
+#   T = string  → @describe_str
+#   T = bool    → @describe_bool
+
+fn describe<T extends Displayable>(const item: T) {
+    print($"value: {item.toString()}");
+}
+
+fn main() {
+    describe(99);
+    describe(3.14);
+    describe("world");
+    describe(true);
+}

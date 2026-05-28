@@ -1,0 +1,10 @@
+fn main() {
+  let a: int = 2 + 3 * 4;
+  print(a);
+  let b: int = (2 + 3) * 4;
+  print(b);
+  let c: int = 10 - 4 - 2;
+  print(c);
+  let d: int = 2 * 3 + 4 * 5;
+  print(d);
+}

@@ -1,0 +1,36 @@
+# struct_basic.code
+#
+# Tests for struct type declarations:
+#   - Named fields with concrete types
+#   - Auto-generated constructor (TypeName_new)
+#   - Field access on variables and self
+#   - Inline struct methods (dispatched via extension table)
+#
+# IR expectations:
+#   %Point = type { i32, i32 }
+#   define private %Point* @Point_new(i32 %arg.0, i32 %arg.1) { ... }
+#   define private i32 @Point_sum(%Point* %self.0) { ... }
+#   GEP + load for field access
+
+type Point = {
+    x: int
+    y: int
+    fn sum(): int {
+        return self.x + self.y;
+    }
+    fn scale(const factor: int): int {
+        return self.x * factor;
+    }
+};
+
+fn main() {
+    let p: Point = Point_new(10, 20);
+    let x: int = p.x;
+    let y: int = p.y;
+    let s: int = p.sum();
+    let r: int = p.scale(3);
+    print(x);
+    print(y);
+    print(s);
+    print(r);
+}

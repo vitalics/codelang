@@ -1,0 +1,7 @@
+fn main() {
+    write("Hello");
+    write(", ");
+    write("world");
+    write("!");
+    write("\n");
+}

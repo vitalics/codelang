@@ -1,0 +1,17 @@
+import "../../../stdlib/numbers";
+
+fn main() {
+    const a: Number = 42;
+    const b: Number = 0;
+    const c: Number = 3;
+
+    # Displayable — toString()
+    print(a.toString());     # "42"
+    print(b.toString());     # "0"
+    print(c.toString());     # "3"
+
+    # Logical — toBoolean()
+    print(a.toBoolean());    # true (non-zero)
+    print(b.toBoolean());    # false (zero)
+    print(c.toBoolean());    # true
+}

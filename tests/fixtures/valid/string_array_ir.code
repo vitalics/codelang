@@ -1,0 +1,8 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: StringArray = StringArray.new();
+    a.push("test");
+    print(a.length());
+    a.free();
+}

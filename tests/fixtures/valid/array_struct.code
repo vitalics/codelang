@@ -1,0 +1,15 @@
+import "../../../stdlib/array";
+
+type User {
+    username: string
+}
+
+fn main() {
+    # ── Array<User> (PtrArray) ─────────────────────────────────────────────────
+    let users: Array<User> = [];
+    users.push(User {username: "qwe"});
+    print(users);              # [{username: "qwe"}]
+    print(users.length());     # 1
+    const u: User = users.get(0);
+    print(u.username);         # qwe
+}

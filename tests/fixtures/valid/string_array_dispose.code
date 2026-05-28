@@ -1,0 +1,12 @@
+import "../../../stdlib/array";
+
+fn main() {
+    using a: StringArray = StringArray.with(2, "ok");
+    print(a.length());              # 2
+    print(a.first().unwrapOr(""));  # ok
+    print(a.last().unwrapOr(""));   # ok
+
+    a.push("extra");
+    print(a.length());              # 3
+    print(a.last().unwrapOr(""));   # extra
+}

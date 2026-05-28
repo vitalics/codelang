@@ -1,0 +1,15 @@
+import "../../../stdlib/set";
+
+fn main() {
+    let s: StringSet = StringSet.new();
+    s.add("banana");
+    s.add("apple");
+    s.add("cherry");
+    s.add("apple");            # duplicate — ignored
+    print(s.size());           # 3
+    print(s.contains("apple")); # true
+    print(s.contains("mango")); # false
+    print(s);                  # {"apple", "banana", "cherry"}
+    s.remove("banana");
+    print(s);                  # {"apple", "cherry"}
+}

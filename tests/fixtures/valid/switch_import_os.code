@@ -1,0 +1,11 @@
+# Tests switch_import! with compile.os() dispatch.
+
+const backend = switch_import! compile.os() {
+    "darwin"  => "./switch_import_backends/arm64",
+    "linux"   => "./switch_import_backends/x64",
+    else      => "./switch_import_backends/generic",
+}
+
+fn main() {
+    print(backend.platformName());
+}

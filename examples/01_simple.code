@@ -1,0 +1,20 @@
+protocol Lolable {
+  fn lol(): void;
+}
+
+fn process<T extends Displayable, Lolable>(const item: T) {
+    print($"display: {item.toString()}, length: {item.lol()}");
+}
+
+
+Number extends Lolable {
+  fn lol(): void {
+    return 1;
+  }
+}
+
+fn main() {
+    let i: int = 1;
+    process(10);
+    panic("Something happends!");
+}

@@ -1,0 +1,77 @@
+import "../../../stdlib/string";
+
+# ── Bitwise operators — comprehensive fixture ────────────────────────────────
+#
+# Expected output (one value per line):
+#   8        (12 & 10)
+#   14       (12 | 10)
+#   6        (12 ^ 10)
+#   48       (12 << 2)
+#   6        (12 >> 1)
+#   15       (u32: 255 >> 4, logical — same result as arithmetic here)
+#   14       (prec: (a & b) | 6 = 8 | 6)
+#   12       (prec: a | (b ^ 6) = 12 | 12)
+#   8        (paren: (a | b) ^ 6 = 14 ^ 6)
+#   24       (shift prec: (1 + 2) << 3 — additive binds tighter than shift)
+#   8        (set bit 3: 0 | (1 << 3))
+#   11       (clear bit 2: 15 & (255 ^ 4))
+#   13       (toggle bit 1: 15 ^ 2)
+#   4        (chained: (1 << 4) >> 2)
+#   done
+
+fn main() {
+    # ── basic integer bitwise ─────────────────────────────────────────────────
+    const a: int = 12;   # 1100 in binary
+    const b: int = 10;   # 1010 in binary
+
+    print(a & b);   # 8   (1000)
+    print(a | b);   # 14  (1110)
+    print(a ^ b);   # 6   (0110)
+    print(a << 2);  # 48
+    print(a >> 1);  # 6
+
+    # ── unsigned right-shift (logical zero-fill) ──────────────────────────────
+    const u: u32 = 255;
+    const sh: u32 = u >> 4;   # 15 (same for logical and arithmetic on positive value)
+    print(sh);      # 15
+
+    # ── precedence: & > ^ > | (matching C / Rust) ────────────────────────────
+    # a & b | 6  →  (a & b) | 6  =  8 | 6  = 14
+    const p1: int = a & b | 6;
+    print(p1);      # 14
+
+    # a | b ^ 6  →  a | (b ^ 6)  =  12 | (10 ^ 6)  =  12 | 12  = 12
+    const p2: int = a | b ^ 6;
+    print(p2);      # 12
+
+    # (a | b) ^ 6  =  14 ^ 6  =  8   (parens override)
+    const p3: int = (a | b) ^ 6;
+    print(p3);      # 8
+
+    # ── shift has lower precedence than additive: 1 + 2 << 3 → (1+2) << 3 ────
+    # (Same as C, Rust, Python: shift < additive in the precedence hierarchy)
+    const s1: int = 1 + 2 << 3;
+    print(s1);      # 24  = 3 << 3
+
+    # ── common bit-manipulation idioms ────────────────────────────────────────
+    # Set bit 3
+    const flags: int = 0;
+    const set3: int = flags | (1 << 3);
+    print(set3);    # 8
+
+    # Clear bit 2:  15 & (255 ^ 4) = 15 & 251 = 11
+    const x: int = 15;
+    const mask: int = 1 << 2;                   # 4
+    const cleared: int = x & (255 ^ mask);
+    print(cleared); # 11
+
+    # Toggle bit 1: 15 ^ (1 << 1) = 15 ^ 2 = 13
+    const toggled: int = x ^ (1 << 1);
+    print(toggled); # 13
+
+    # ── chained (left-associative): 1 << 4 >> 2  =  (1<<4)>>2  = 4 ──────────
+    const chain: int = 1 << 4 >> 2;
+    print(chain);   # 4
+
+    print("done");
+}

@@ -1,0 +1,236 @@
+# stdlib/protocols.code
+# Shared protocol interfaces used by multiple types in the standard library.
+#
+# Protocols define method signatures that types can implement via `extends`.
+# This file is the single source of truth for all cross-type contracts so that
+# Boolean, String, and future types never need to redeclare the same interfaces.
+#
+# Usage:
+#   import "./protocols";
+#   MyType extends Displayable { export fn toString(): string { ... } }
+
+# ── Displayable ───────────────────────────────────────────────────────────────
+# Types that can produce a human-readable string representation.
+#
+# Default implementation returns "[Displayable]: default".
+# Concrete types (Boolean, Number, String, Any, …) override this with their
+# own toString() by implementing Displayable in an extension block.
+#
+#   bool   → "true" / "false"
+#   string → the string itself
+#   Any    → "Any"
+#   other  → "[Displayable]: default"  (fallback)
+
+export protocol Displayable {
+    fn toString(): string {
+        return "[Displayable]: default";
+    }
+}
+
+# ── Numeric ───────────────────────────────────────────────────────────────────
+# Types that can be converted to an integer value.
+#
+#   bool   → 1 (true) / 0 (false)
+#   string → parsed integer (atoi semantics: "42" → 42, "abc" → 0)
+
+export protocol Numeric {
+    const fn toNumber(): int;
+}
+
+# ── Logical ───────────────────────────────────────────────────────────────────
+# Types that have a boolean (truthy / falsy) interpretation.
+#
+#   bool   → the value itself
+#   string → false when empty, true otherwise
+
+export protocol Logical {
+    const fn toBoolean(): bool;
+}
+
+# ── Countable ─────────────────────────────────────────────────────────────────
+# Types whose elements can be counted.
+# The type parameter N controls what integer type `length()` returns.
+# Defaults to Int (i.e. Int32 / int) so that plain `Countable` still works
+# without an explicit argument.
+#
+#   string  → number of bytes (UTF-8 code units), returns int
+#   Array<T, N extends Int> extends Countable<N> — returns the same integer
+#     width as the array's index type
+
+export protocol Countable<N extends Int = Int> {
+    const fn length(): N;
+}
+
+# ── Indexable ─────────────────────────────────────────────────────────────────
+# Types whose elements can be accessed by integer index.
+#
+#   string    → Some(single-character string) at position `index`, or None
+#   StringSet → Some(element) at sorted position `index`, or None
+#   negative indices count from the end
+
+export protocol Indexable {
+    fn at(const index: int): Option<string>;
+}
+
+# ── ByteIndexable ─────────────────────────────────────────────────────────────
+# Like Indexable but element type is u8 rather than string.
+# Used by Buffer so that at(i) returns a raw byte value.
+#
+#   Buffer  → byte value (0–255) at position `index`
+#            negative indices count from the end
+
+export protocol ByteIndexable {
+    fn at(const index: int): u8;
+}
+
+# ── Disposable ────────────────────────────────────────────────────────────────
+# Types that own a resource and must release it explicitly.
+# Conforming types can be bound with `using` so the compiler automatically
+# inserts a `dispose()` call on every return path.
+#
+#   Buffer  → releases the heap buffer allocated by string.toBuffer()
+
+export protocol Disposable {
+    fn dispose();
+}
+
+# ── Cmp ───────────────────────────────────────────────────────────────────────
+# Total ordering protocol (like Rust's Ord).
+# Implement `cmp(other) -> int` returning a negative value when self < other,
+# zero when self == other, and a positive value when self > other.
+# Types that conform to Cmp automatically get <, >, <=, >= operators.
+
+export protocol Cmp {
+    fn cmp(const other: Self): int;
+}
+
+# ── PartialCmp ────────────────────────────────────────────────────────────────
+# Partial ordering (like Rust's PartialOrd) — suitable for types with
+# incomparable values (e.g. NaN in floating-point).
+# Same signature as Cmp; the compiler dispatches operators identically.
+
+export protocol PartialCmp {
+    fn partialCmp(const other: Self): int;
+}
+
+# ── Ord ───────────────────────────────────────────────────────────────────────
+# Equality protocol (like Rust's Eq / PartialEq).
+# Implement `eq(other) -> bool` to give the == and != operators to a type.
+
+export protocol Ord {
+    fn eq(const other: Self): bool;
+}
+
+# ── PartialOrd ────────────────────────────────────────────────────────────────
+# Partial equality — suitable for types where equality may be undefined
+# (e.g. NaN != NaN).  Same dispatch mechanism as Ord.
+
+export protocol PartialOrd {
+    fn eq(const other: Self): bool;
+}
+
+# ── Bitwise protocols ─────────────────────────────────────────────────────────
+#
+# Implement these to give a user-defined type the &, |, ^, <<, >> operators.
+# The dispatch mechanism is identical to BinaryAdd / BinarySub:
+#
+#   a & b   →  TypeName_bitAnd(a, b)
+#   a | b   →  TypeName_bitOr(a, b)
+#   a ^ b   →  TypeName_bitXor(a, b)
+#   a << b  →  TypeName_shl(a, b)
+#   a >> b  →  TypeName_shr(a, b)
+#
+# For primitive integer types the compiler falls back to native LLVM
+# instructions (and / or / xor / shl / ashr|lshr) without requiring an
+# extension, so there is no need to extend `int` or `u32` etc. with these
+# protocols unless you want to override the default semantics.
+
+export protocol BitAnd {
+    fn bitAnd(const other: Self): Self;
+}
+
+export protocol BitOr {
+    fn bitOr(const other: Self): Self;
+}
+
+export protocol BitXor {
+    fn bitXor(const other: Self): Self;
+}
+
+# `rhs` is the shift amount.
+export protocol Shl {
+    fn shl(const rhs: int): int;
+}
+
+# Arithmetic right-shift for signed types, logical for unsigned.
+export protocol Shr {
+    fn shr(const rhs: int): int;
+}
+
+# ── Defaultable ───────────────────────────────────────────────────────────────
+# Types that have a well-defined zero / neutral value.
+# Implement `default()` as a static factory that returns the canonical "empty"
+# or zero state for the type — analogous to Rust's Default trait.
+#
+# Primitive defaults:
+#   int    / Int32  → 0
+#   float  / Float64 → 0.0
+#   bool   / Boolean → false
+#   string / String  → ""
+#
+# Struct types provide their own definition, typically returning `Self { ... }`
+# with every field set to its own default:
+#
+#   type Point { x: float  y: float }
+#   Point extends Defaultable {
+#       export static fn default(): Point {
+#           return Self { x: 0.0, y: 0.0 };
+#       }
+#   }
+#
+# Usage:
+#   let n  = Int32.default();    # 0
+#   let ok = Boolean.default();  # false
+#   let s  = String.default();   # ""
+
+export protocol Defaultable {
+    static fn default(): Self;
+}
+
+# ── Callable ──────────────────────────────────────────────────────────────────
+# Generic invocable protocol with conditional-type narrowing on the argument
+# shape.  The first type parameter `A` controls how many arguments the `call`
+# method accepts:
+#
+#   Callable<T, R>          → call(arg: T): R          (single argument)
+#   Callable<[T1, T2], R>   → call(arg1: T1, arg2: T2): R  (spread from tuple)
+#   Callable<[T1,…,Tn], R>  → call(T1, …, Tn): R          (n-ary spread)
+#
+# In TypeScript-notation the semantics are:
+#   protocol Callable<A extends Any | Any[], R> =
+#       A extends Any[] ? (fn(...A): R) : fn(A): R
+#
+# The compiler enforces the arity rule: when A is a tuple [T1, T2, …], the
+# concrete `call` method MUST declare exactly as many parameters as there are
+# elements in the tuple, and each parameter type must match the corresponding
+# element type.
+#
+# Usage:
+#   # single-arg form
+#   type Double extends Callable<int, int> {
+#     call(value: int): int { return value * 2; }
+#   }
+#   print(Double(21));   # 42
+#
+#   # multi-arg form (tuple spread)
+#   type Add extends Callable<[int, int], int> {
+#     call(a: int, b: int): int { return a + b; }
+#   }
+#   print(Add(10, 20));  # 30
+#
+# Function<A, R> (stdlib/function.code) also implements Callable<A, R> via
+# a `call` extension method so fat-pointer function values support `.call(arg)`.
+
+export protocol Callable<A extends Any | Any[], R> {
+    fn call(arg: A): R;
+}

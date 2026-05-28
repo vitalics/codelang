@@ -1,0 +1,38 @@
+# enum_generic.code
+# Generic tagged union: Option<T> and Result<T, E>.
+
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+fn unwrap_or(opt: Option<int>, default: int): int {
+    return switch opt {
+        Option::Some(x) => x,
+        Option::None    => default,
+    };
+}
+
+fn is_ok(r: Result<int, string>): bool {
+    return switch r {
+        Result::Ok(_)  => true,
+        Result::Err(_) => false,
+    };
+}
+
+fn main() {
+    let some_val: Option<int> = Option::Some(42);
+    let none_val: Option<int> = Option::None;
+    print(unwrap_or(some_val, 0));
+    print(unwrap_or(none_val, 99));
+
+    let ok_val:  Result<int, string> = Result::Ok(1);
+    let err_val: Result<int, string> = Result::Err("oops");
+    print(is_ok(ok_val));
+    print(is_ok(err_val));
+}

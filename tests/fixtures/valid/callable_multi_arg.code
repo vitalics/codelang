@@ -1,0 +1,32 @@
+# callable_multi_arg.code
+#
+# Demonstrates the tuple-spread form of Callable:
+#   type Add  extends Callable<[int, int], int>  → call(a, b)   (2-arg)
+#   type Sum3 extends Callable<[int, int, int], int> → call(a,b,c) (3-arg)
+#
+# The first type parameter is a tuple [T1, T2, …], so the compiler spreads it
+# into individual `call` parameters at the IR level:
+#   Add(10, 20)    → @Add_call(i32 10, i32 20)
+#   Sum3(1, 2, 3)  → @Sum3_call(i32 1, i32 2, i32 3)
+
+import "stdlib/protocols";
+
+type Add extends Callable<[int, int], int> {
+  call(a: int, b: int): int {
+    return a + b;
+  }
+}
+
+type Sum3 extends Callable<[int, int, int], int> {
+  call(a: int, b: int, c: int): int {
+    return a + b + c;
+  }
+}
+
+fn main() {
+  const sum2 = Add(10, 20);
+  print(sum2);
+
+  const sum3 = Sum3(1, 2, 3);
+  print(sum3);
+}

@@ -1,0 +1,90 @@
+import "stdlib/async";
+
+# abort_basic.code — exercises AbortController / AbortSignal.
+#
+# Expected output (13 lines):
+#   [0]  false           — fresh signal: not yet aborted
+#   [1]  true            — after ctrl.abort()
+#   [2]  AbortError      — default reason
+#   [3]  user cancelled  — custom reason via abortWith
+#   [4]  true            — AbortSignal.abortWith static factory → already aborted
+#   [5]  gone            — reason from static factory
+#   [6]  callback fired  — onAbort callback fires synchronously inside abort()
+#   [7]  false           — AbortSignal.timeout(300): not yet fired
+#   [8]  true            — after Async.sleep(500): timeout has fired
+#   [9]  TimeoutError    — reason set by the timeout factory
+#   [10] task stopped    — cooperative task cancellation (before Async.wait returns)
+#   [11] true            — signal still aborted after double abort() call
+#   [12] callback once   — onAbort fires exactly once (idempotent)
+
+fn main(): void {
+    # ── 1. Basic abort ────────────────────────────────────────────────────────
+    const ctrl1: AbortController = AbortController.new();
+    const sig1:  AbortSignal     = ctrl1.signal();
+
+    print(sig1.aborted());       # [0] false
+    ctrl1.abort();
+    print(sig1.aborted());       # [1] true
+    print(sig1.reason());        # [2] AbortError
+    ctrl1.free();
+
+    # ── 2. Custom reason ──────────────────────────────────────────────────────
+    const ctrl2: AbortController = AbortController.new();
+    const sig2:  AbortSignal     = ctrl2.signal();
+    ctrl2.abortWith("user cancelled");
+    print(sig2.reason());        # [3] user cancelled
+    ctrl2.free();
+
+    # ── 3. Already-aborted static factory ────────────────────────────────────
+    const dead: AbortSignal = AbortSignal.abortWith("gone");
+    print(dead.aborted());       # [4] true
+    print(dead.reason());        # [5] gone
+    dead.free();
+
+    # ── 4. onAbort callback ───────────────────────────────────────────────────
+    # Callback fires synchronously inside ctrl3.abort().
+    const ctrl3: AbortController = AbortController.new();
+    const sig3:  AbortSignal     = ctrl3.signal();
+    sig3.onAbort(fn(): void {
+        print("callback fired"); # [6]
+    });
+    ctrl3.abort();
+    ctrl3.free();
+
+    # ── 5. AbortSignal.timeout(ms) ────────────────────────────────────────────
+    const tsig: AbortSignal = AbortSignal.timeout(300);
+    print(tsig.aborted());       # [7] false — not yet fired
+    Async.sleep(500);            # wait long enough for the timeout
+    print(tsig.aborted());       # [8] true
+    print(tsig.reason());        # [9] TimeoutError
+    tsig.free();
+
+    # ── 6. Cooperative task cancellation ─────────────────────────────────────
+    # The spawned task checks signal.aborted() in a loop and exits cleanly.
+    # Async.wait() joins the thread, so "task stopped" always precedes wait().
+    const ctrl4: AbortController = AbortController.new();
+    const sig4:  AbortSignal     = ctrl4.signal();
+
+    const t: Task = Async.spawn(fn(): void {
+        while (!sig4.aborted()) {
+            Async.sleep(5);
+        }
+        print("task stopped");   # [10]
+    });
+
+    Async.sleep(30);
+    ctrl4.abort();
+    Async.wait(t);
+    ctrl4.free();
+
+    # ── 7. Idempotency — second abort() is a no-op ────────────────────────────
+    const ctrl5: AbortController = AbortController.new();
+    const sig5:  AbortSignal     = ctrl5.signal();
+    sig5.onAbort(fn(): void {
+        print("callback once");  # [12] — must print exactly once
+    });
+    ctrl5.abort();               # fires callback
+    ctrl5.abort();               # no-op: already aborted
+    print(sig5.aborted());       # [11] true
+    ctrl5.free();
+}

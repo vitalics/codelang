@@ -1,0 +1,12 @@
+# stdlib_import.code
+#
+# Demonstrates stdlib path imports: import "stdlib/buffer"
+# Previously only relative imports (./...) were supported.
+
+import "stdlib/buffer";
+
+fn main() {
+  const b = buffer_new(4);
+  print(b.length());
+  b.free();
+}

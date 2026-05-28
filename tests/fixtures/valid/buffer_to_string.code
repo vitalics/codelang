@@ -1,0 +1,19 @@
+# buffer_to_string.code
+# Tests toUtf8() and toString().
+
+import "../../../stdlib/string";
+
+fn main() {
+    const s = "hi";
+    let b: Buffer = s.toBuffer();
+
+    # toUtf8 round-trip
+    const recovered = b.toUtf8();
+    print(recovered);              # hi
+
+    # toString — human-readable [104, 105]
+    const repr = b.toString();
+    print(repr);                   # [104, 105]
+
+    b.free();
+}

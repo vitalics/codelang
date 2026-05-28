@@ -1,0 +1,88 @@
+import "stdlib/random";
+import "stdlib/array";
+
+# ── stdlib/random.code — demo ─────────────────────────────────────────────────
+#
+# Demonstrates the Random namespace: seeding, core generators, statistical
+# distributions and array operations (shuffle / choose).
+
+fn main() {
+    # ── Seeded reproducible sequence ─────────────────────────────────────────
+    print("=== Seed + core generators ===");
+    Random.seed(42);
+    print(Random.float());          # uniform float in [0, 1)
+    print(Random.uniform(10.0, 20.0));  # float in [10, 20)
+    print(Random.randInt(1, 6));    # die roll — 1..6 inclusive
+    print(Random.bool());           # true / false 50/50
+    print(Random.coin(0.75));       # true with probability 0.75
+
+    # ── Fixed boundary ────────────────────────────────────────────────────────
+    print("=== Fixed boundary ===");
+    print(Random.randInt(7, 7));    # always 7
+
+    # ── Probability extremes ──────────────────────────────────────────────────
+    print("=== coin() extremes ===");
+    print(Random.coin(1.0));   # always true
+    print(Random.coin(0.0));   # always false
+
+    # ── Statistical distributions ─────────────────────────────────────────────
+    print("=== Distributions (seed 42) ===");
+    Random.seed(42);
+
+    # Normal distribution — mu=0, sigma=1 (standard normal)
+    const g: float = Random.gauss(0.0, 1.0);
+    print(g == g);          # true — not NaN
+
+    # Exponential — lambda=1 (mean=1)
+    const e: float = Random.exponential(1.0);
+    print(e > 0.0);         # true — always positive
+
+    # Triangular — lo=0, hi=10, mode=5
+    const tri: float = Random.triangular(0.0, 10.0, 5.0);
+    print(tri >= 0.0);      # true
+    print(tri <= 10.0);     # true
+
+    # ── Shuffle integers ──────────────────────────────────────────────────────
+    print("=== shuffleInts ===");
+    Random.seed(42);
+    let dice: int[] = [1, 2, 3, 4, 5, 6];
+    Random.shuffleInts(dice);
+    # Print every element — order varies but elements are preserved
+    print(dice.get(0));
+    print(dice.get(1));
+    print(dice.get(2));
+
+    # Verify sum is invariant under shuffle (1+2+3+4+5+6 = 21)
+    const sum: int = dice.get(0) + dice.get(1) + dice.get(2)
+                   + dice.get(3) + dice.get(4) + dice.get(5);
+    print(sum);             # 21
+
+    # ── Shuffle strings ───────────────────────────────────────────────────────
+    print("=== shuffleStrings ===");
+    Random.seed(1);
+    let fruits: string[] = ["apple", "banana", "cherry", "date"];
+    Random.shuffleStrings(fruits);
+    print(fruits.length()); # 4 — length preserved
+
+    # ── Random element pick ───────────────────────────────────────────────────
+    print("=== chooseInt ===");
+    Random.seed(42);
+    let nums: int[] = [10, 20, 30, 40, 50];
+    const pick: Option<int> = Random.chooseInt(nums);
+    print(pick.isSome());   # true
+
+    const val: int = pick.unwrapOr(-1);
+    print(val >= 10);       # true
+    print(val <= 50);       # true
+
+    # Empty array → None
+    let empty: int[] = [];
+    const none: Option<int> = Random.chooseInt(empty);
+    print(none.isNone());   # true
+
+    print("=== chooseString ===");
+    Random.seed(7);
+    let words: string[] = ["alpha", "beta", "gamma"];
+    const word: Option<string> = Random.chooseString(words);
+    print(word.isSome());   # true
+}

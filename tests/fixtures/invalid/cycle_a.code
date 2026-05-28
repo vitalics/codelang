@@ -1,0 +1,9 @@
+import "./cycle_b";
+
+export fn funcA() {
+  print("A");
+}
+
+fn main() {
+  funcA();
+}

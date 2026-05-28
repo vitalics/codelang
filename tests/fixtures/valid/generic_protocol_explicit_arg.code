@@ -1,0 +1,23 @@
+# Valid: a user type correctly implements a generic protocol with an explicit
+# type argument. Previously produced a false-positive error:
+#   "method 'size' return type mismatch — requires 'T'"
+# even though the explicit arg <int> was provided and the impl matched.
+
+protocol Container<T> {
+    fn size(): T;
+}
+
+type MyBox {
+    n: int
+}
+
+MyBox extends Container<int> {
+    export fn size(): int {
+        return self.n;
+    }
+}
+
+fn main() {
+    let b = MyBox { n: 42 };
+    print(b.size());
+}

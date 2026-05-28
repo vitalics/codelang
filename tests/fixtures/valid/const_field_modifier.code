@@ -1,0 +1,13 @@
+import "stdlib/numbers";
+
+# `const` field modifier — read-only after construction.
+type Point {
+    const x: int
+    const y: int
+}
+
+fn main() {
+    const p = Point { x: 7, y: 13 };
+    print(p.x);    # 7
+    print(p.y);    # 13
+}

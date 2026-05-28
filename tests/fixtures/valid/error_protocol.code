@@ -1,0 +1,47 @@
+# Tests for the Error protocol, Stacktrace type, and shorthand field init.
+
+import "../../../stdlib/error";
+
+# ── A minimal custom error type ───────────────────────────────────────────────
+# Declares the two fields required by the Error protocol.
+type AppError = {
+    const name:  string,
+    stacktrace:  Option<Stacktrace>,
+};
+
+# Conform to Error — inherits `static fn new` and `fn toString` defaults.
+AppError extends Error {}
+
+# ── An error with extra context ───────────────────────────────────────────────
+type HttpError = {
+    const name:       string,
+    stacktrace:       Option<Stacktrace>,
+    const statusCode: int,
+};
+
+HttpError extends Error {
+    # Override toString to include the status code.
+    export fn toString(): string {
+        return $"HttpError({self.statusCode}): {self.name}";
+    }
+}
+
+fn main() {
+    # Create an AppError using the inherited static factory
+    const e = AppError.new("AppError");
+    print(e.name);         # AppError
+
+    # Create an HttpError — must use struct literal since it has extra fields
+    const http: HttpError = HttpError {
+        name: "NotFound",
+        stacktrace: Option::None,
+        statusCode: 404,
+    };
+    print(http.name);        # NotFound
+    print(http.statusCode);  # 404
+    print(http.toString());  # HttpError(404): NotFound
+
+    # Stacktrace is an Option — check that it is Some for AppError
+    const st = e.stacktrace;
+    print(st.isSome());  # true (stacktrace was captured)
+}

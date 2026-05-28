@@ -1,0 +1,5 @@
+fn main() {
+  let count: int = 10;
+  let active: bool = true;
+  print("typed vars ok");
+}

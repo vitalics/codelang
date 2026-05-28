@@ -1,0 +1,25 @@
+{
+  "name": "tree-sitter-codelang",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for CodeLang",
+  "main": "bindings/node",
+  "keywords": ["parser", "tree-sitter", "codelang"],
+  "license": "MIT",
+  "dependencies": {
+    "nan": "*"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "*"
+  },
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.codelang",
+      "file-types": ["code"],
+      "highlights": "queries/highlights.scm"
+    }
+  ]
+}

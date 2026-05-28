@@ -1,0 +1,16 @@
+# Демонстрация const fn vs fn
+
+# compile-time функция — без side effects, только возвращает значение
+const fn greet() {
+  return "Hello from const fn";
+}
+
+# runtime функция — может делать всё что угодно
+fn log() {
+  print("runtime fn: logging...");
+}
+
+# entry point — всегда runtime, несмотря на const fn
+const fn main() {
+  print("Hello, World!");
+}

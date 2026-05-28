@@ -1,0 +1,50 @@
+import "../../../stdlib/reflection";
+import "../../../stdlib/boolean";
+import "../../../stdlib/numbers";
+import "../../../stdlib/string";
+import "../../../stdlib/any";
+
+type Point {
+    x: int
+    y: int
+}
+
+fn wrapString(s: string): Any {
+    return s;
+}
+
+fn main() {
+    # ── typeInfo from inferred T (primitive type) ─────────────────────────────
+    const b: bool = true;
+    const bInfo = typeInfo(b);
+    print(bInfo.name());       # bool
+
+    # ── typeInfo with explicit type arg ───────────────────────────────────────
+    const iInfo = typeInfo<int>(0);
+    print(iInfo.name());       # int
+
+    # ── typeInfo from struct type ─────────────────────────────────────────────
+    const p: Point = Point_new(1, 2);
+    const pInfo = typeInfo(p);
+    print(pInfo.name());                     # Point
+
+    const fields: Array<Field> = pInfo.fields();
+    print(fields.length());                  # 2
+
+    const f0: Field = fields.get(0);
+    print(f0.name());                        # x
+    print(f0.typeName());                    # int
+    print(f0.isConst());                     # 0
+    print(f0.isFunction());                  # 0
+    print(f0.isDisposable());                # 0
+    print(f0.isExportable());                # 0
+    print(f0.returnType());                  # int
+
+    const f1: Field = fields.get(1);
+    print(f1.name());                        # y
+
+    # ── cast: Any → string ────────────────────────────────────────────────────
+    const x: Any = wrapString("hello");
+    const s: string = cast(x);
+    print(s);                  # hello
+}

@@ -1,0 +1,39 @@
+# Must wanted features
+
+- Easy to learn, hard to master. (inspiring Python and JavaScript)
+- Compile time type checking and error handling (inspiring from Rust)
+- Safe for memory management and GC
+- GC Modes:
+  - Automatic memory management
+  - Manual memory management
+  - No GC
+  - defer support (Inspiring from GoLang)
+  - 
+- No "null" or empty values (inspired from Rust)
+- Everything is an object (inspiring from Java & JavaScript)
+- Built-in Extensions (inspiring from Swift & Rust)
+- "Just compile" to native code (inspiring from Jai)
+- types as values (inspiring from Jai)
+- Fast & c interop (inspiring from Zig, Rust, VLang, )
+- Runtime and Comptime Reflection (inspiring from Jai & C++)
+- "let", "const" for variables
+- "type" for Types (inspiring from Typescript)
+- types are turing-complete (inspiring from Typescript)
+- JavaScript interop
+- WASM interop (inspiring from Rust)
+- No-std support for embedded targets (inspiring from Rust, Zig, C)
+- Code injection (inspiring from Jai)
+- macros support (inspiring from C++ and Rust)
+- guard syntax (inspiring from Swift and Zig)
+- Tooling included (linter, package management)
+  - Linter dead code detection
+  - Testing module
+  - Dependency resolving
+- Hot Reload support (inspiring from VLang)
+- Language Server Protocol support
+- Generic Supports (inspiring from Rust, TypeScript)
+- Decorators support (inspiring from Python, TypeScript)
+- import support overrides (inspiring from Jai, Typescript, Zig, Python)
+- minimal keywords ("let", "const", "type", "fn")
+- No References, but keep for c interop ("Reference" type)
+- Async support without coloring (inspiring from GoLang)

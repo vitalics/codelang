@@ -1,0 +1,29 @@
+# Demonstrates let / const variables and const parameters
+
+# A const fn that returns a greeting — no side effects, return type inferred
+const fn makeGreeting() {
+  return "Hello from const fn!";
+}
+
+# A runtime fn with a const parameter — reassigning it is a compile error
+fn greet(const name: string) {
+  # name = "other";  ← would be: error: cannot assign to 'name', it is a 'const' parameter
+  print(name);
+}
+
+fn main() {
+  # Immutable binding — cannot be reassigned after this point
+  const lang = "CodeLang";
+
+  # Mutable binding — can be updated freely
+  let counter = "first iteration";
+  print(counter);
+  counter = "second iteration";
+  print(counter);
+
+  # Explicit type annotation
+  let msg: string = "explicit type";
+  print(msg);
+
+  print(lang);
+}

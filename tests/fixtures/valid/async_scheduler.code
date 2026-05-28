@@ -1,0 +1,29 @@
+import "../../../stdlib/async";
+
+# async_scheduler fixture — priority scheduler with Priority enum.
+#
+# Each priority level's task runs independently.
+# We verify that all five tasks execute (by printing) and that
+# waitAll() blocks until they're done.
+#
+# Output (6 lines):
+#   [0] "start"
+#   [1..4] p0..p4 in some order (each dispatched to its priority worker)
+#   [5] "done"   (always last — printed after waitAll)
+
+fn main(): void {
+    print("start");
+
+    const s: Scheduler = Scheduler.new();
+
+    s.postTask(fn(): void { print("p0"); }, Priority::Highest);
+    s.postTask(fn(): void { print("p1"); }, Priority::High);
+    s.postTask(fn(): void { print("p2"); }, Priority::Medium);
+    s.postTask(fn(): void { print("p3"); }, Priority::Low);
+    s.postTask(fn(): void { print("p4"); }, Priority::Lowest);
+
+    s.waitAll();
+    s.free();
+
+    print("done");
+}

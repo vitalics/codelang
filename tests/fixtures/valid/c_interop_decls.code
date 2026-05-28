@@ -1,0 +1,33 @@
+# c_interop_decls.code
+#
+# IR structure fixture for C interop tests.
+#
+# Purpose: import c-interop and declare variables of each alias type so that
+#   1. All extern function signatures appear as `declare` in the IR header
+#      (the generator emits every extern from every imported module).
+#   2. Alloca instructions for each type alias are present for type tests.
+#
+# This file does not need to perform meaningful work at runtime — the IR tests
+# only check the `.ll` output, not the binary execution.
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    # ── Type aliases — one variable per interesting alias ─────────────────
+    const ci:  C_Int     = 42;
+    const cl:  C_Long    = 100;
+    const cf:  C_Float   = 1.5;
+    const cd:  C_Double  = 2.5;
+    const csz: C_SizeT   = 4;
+    const cs:  C_Str     = "test";
+    const cv:  C_VoidPtr = malloc(csz);
+
+    # ── Use a couple of functions so the fixture is non-trivial ───────────
+    strlen(cs);
+    strcmp(cs, cs);
+    abs(ci);
+    labs(cl);
+
+    free(cv);
+    print(ci);
+}

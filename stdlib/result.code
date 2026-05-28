@@ -1,0 +1,49 @@
+# stdlib/result.code
+#
+# Result<T, E> — a value that is either a success (Ok) or a failure (Err).
+#
+# Used throughout the stdlib as the return type of any fallible write or
+# operation that can fail with a meaningful error:
+#
+#   arr.get(i)      → Option<T>          (use for reads; None = absent)
+#   arr.pop()       → Option<T>          (None if empty)
+#
+# Pattern-matching:
+#   switch some_result {
+#       Result::Ok(v)  => print(v),
+#       Result::Err(e) => print("error"),
+#   }
+#
+# Convenience methods:
+#   r.isOk()           → bool
+#   r.isErr()          → bool
+#   r.unwrapOr(default) → T    (returns default on Err)
+
+export enum Result<T, E> {
+    Ok(T),
+    Err(E),
+
+    # Returns true when the result is Ok.
+    export fn isOk(): bool {
+        return switch self {
+            Result::Ok(_)  => true,
+            Result::Err(_) => false,
+        };
+    }
+
+    # Returns true when the result is Err.
+    export fn isErr(): bool {
+        return switch self {
+            Result::Ok(_)  => false,
+            Result::Err(_) => true,
+        };
+    }
+
+    # Returns the Ok value, or `default` if Err.
+    export fn unwrapOr(const default: T): T {
+        return switch self {
+            Result::Ok(v)  => v,
+            Result::Err(_) => default,
+        };
+    }
+}

@@ -1,0 +1,10 @@
+# Tests switch_import! falls through to else when no arm matches.
+
+const backend = switch_import! compile.arch() {
+    "impossible_arch_xyz" => "./switch_import_backends/arm64",
+    else                  => "./switch_import_backends/generic",
+}
+
+fn main() {
+    print(backend.platformName());
+}

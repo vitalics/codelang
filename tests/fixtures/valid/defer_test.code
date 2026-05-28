@@ -1,0 +1,15 @@
+import "../../../stdlib/string";
+
+# Helper functions whose calls are deferred
+fn say1() { print("deferred 1"); }
+fn say2() { print("deferred 2"); }
+fn say3() { print("deferred 3"); }
+
+fn main() {
+    # Defers registered in order 1, 2, 3 → should run in LIFO: 3, 2, 1
+    defer say1();
+    defer say2();
+    defer say3();
+
+    print("body");
+}

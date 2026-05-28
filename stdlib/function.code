@@ -1,0 +1,124 @@
+# stdlib/function.code
+# First-class function utilities.
+#
+# All function values in CodeLang use a fat-pointer representation:
+#   { fn_ptr: i8*, env_ptr: i8* }
+# so every function type — regardless of arity or parameter types — has the
+# same LLVM representation at runtime.
+#
+# ── Types ──────────────────────────────────────────────────────────────────────
+#
+#   type Function<A extends Any[], R> = fn(...A): R
+#
+#   A named alias for a function whose parameter types are given by the tuple A
+#   and whose return type is R.  When A is a single plain type (e.g. int), the
+#   function is single-argument; when A is a tuple (e.g. [int, string]), the
+#   function accepts one argument per element.
+#
+#   Examples:
+#     const double: Function<[int], int>        = fn(x: int): int { return x * 2; };
+#     const add:    Function<[int, int], int>    = fn(a: int, b: int): int { return a + b; };
+#     const fmt:    Function<[int, string], int> = fn(n: int, s: string): int { ... };
+#
+# ── Callable protocol conformance ─────────────────────────────────────────────
+#
+#   Function<[A], R> (single-argument specialisation) implements Callable<A, R>.
+#   f.call(arg) is equivalent to f(arg).
+#
+# ── Higher-order combinators ───────────────────────────────────────────────────
+#
+#   fn apply<A, R>(f: fn(A): R, x: A): R
+#     Call f with a single argument x.
+#
+#   fn compose<A, B, C>(f: fn(B): C, g: fn(A): B): fn(A): C
+#     Right-to-left composition: compose(f, g)(x) == f(g(x))
+#
+#   fn pipe<A, B, C>(g: fn(A): B, f: fn(B): C): fn(A): C
+#     Left-to-right pipeline: pipe(g, f)(x) == f(g(x))
+#
+#   fn identity<T>(x: T): T
+#     Return x unchanged.  Identity element for compose / pipe.
+#
+#   fn constant<T>(value: T): fn(int): T
+#     Return a function that always returns value regardless of its argument.
+#
+# ── Usage ──────────────────────────────────────────────────────────────────────
+#
+#   import "./function";
+#
+#   fn double(x: int): int { return x * 2; }
+#   fn add(a: int, b: int): int { return a + b; }
+#
+#   fn main() {
+#       # Single-argument function
+#       const f: Function<[int], int> = double;
+#       print(f(5));           # 10
+#       print(f.call(5));      # 10  (via Callable protocol)
+#
+#       # Two-argument function
+#       const g: Function<[int, int], int> = add;
+#       print(g(3, 4));        # 7
+#
+#       print(apply(double, 5));   # 10
+#       print(identity(42));       # 42
+#
+#       const always7: fn(int): int = constant(7);
+#       print(always7(0));         # 7
+#   }
+
+# ── Type alias ────────────────────────────────────────────────────────────────
+
+# A function whose parameter types are the elements of the tuple A and whose
+# return type is R.  The underlying LLVM representation is { i8*, i8* }.
+# A can be a plain type (single-arg) or a tuple [T1, T2, …] (multi-arg).
+export type Function<A extends Any[] | Any, R> = fn(...A): R;
+
+# ── Callable conformance ──────────────────────────────────────────────────────
+
+# Function<A, R> implements Callable<A, R> with the same bound on A.
+# Because A is shared between Function and Callable, no type-argument remapping
+# is needed: Callable<A, R> re-uses A as-is.
+#
+#   A = int          → call(arg: int): R        (single-arg form)
+#   A = [int, int]   → call(a: int, b: int): R  (tuple-spread form)
+#
+# f.call(arg)  is equivalent to  f(arg).
+Function<A extends Any[] | Any, R> extends Callable<A, R> {
+    export fn call(arg: A): R {
+        return self(arg);
+    }
+}
+
+# ── Higher-order combinators ──────────────────────────────────────────────────
+
+# Call f with x and return the result.
+export fn apply<A, R>(f: fn(A): R, x: A): R {
+    return f(x);
+}
+
+# Compose two functions right-to-left: compose(f, g)(x) == f(g(x)).
+export fn compose<A, B, C>(f: fn(B): C, g: fn(A): B): fn(A): C {
+    return fn(x: A): C {
+        return f(g(x));
+    };
+}
+
+# Pipe two functions left-to-right: pipe(g, f)(x) == f(g(x)).
+# Equivalent to compose with the arguments swapped.
+export fn pipe<A, B, C>(g: fn(A): B, f: fn(B): C): fn(A): C {
+    return fn(x: A): C {
+        return f(g(x));
+    };
+}
+
+# Return x unchanged.  Identity element for compose / pipe.
+export fn identity<T>(x: T): T {
+    return x;
+}
+
+# Return a function that ignores its argument and always returns value.
+export fn constant<T>(value: T): fn(int): T {
+    return fn(n: int): T {
+        return value;
+    };
+}

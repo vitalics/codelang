@@ -1,0 +1,24 @@
+# template_member_access.code
+# Template holes with member access (obj.field) inside a struct toString method.
+# Tests {self.field} parsing in the mini-expression evaluator.
+
+type Point {
+    x: int
+    y: int
+
+    static fn new(xv: int, yv: int): Point {
+        return Self { x: xv, y: yv };
+    }
+
+    fn toString(): string {
+        return $"Point{ x: {self.x}, y: {self.y} }";
+    }
+}
+
+fn main() {
+    let p = Point.new(3, 4);
+    print(p);
+
+    let origin = Point.new(0, 0);
+    print(origin);
+}

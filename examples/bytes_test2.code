@@ -1,0 +1,17 @@
+import "../stdlib/string";
+
+fn main() {
+    # Test Cyrillic: each codepoint is 2 bytes in UTF-8
+    const s = "Привет";
+    using b = s.toBuffer();
+    # "Привет" = 6 codepoints, 12 UTF-8 bytes
+    print(b.length());
+    # First byte of П = 208
+    print(b.get(0));
+
+    # Test defer directly
+    const s2 = "world";
+    let b2 = s2.toBuffer();
+    defer b2.free();
+    print(b2.length());
+}

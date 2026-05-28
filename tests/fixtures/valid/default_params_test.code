@@ -1,0 +1,51 @@
+import "../../../stdlib/string";
+
+# ── Helper with a defaulted integer parameter ──────────────────────────────────
+#
+#   power(2, 3)    → 8   (explicit exponent)
+#   power(2)       → 32  (exponent defaults to 5)
+
+fn power(const base: int, const exp: int = 5): int {
+    let result = 1;
+    let i = 0;
+    while i < exp {
+        result = result * base;
+        i = i + 1;
+    }
+    return result;
+}
+
+# ── Inferred-type default (no explicit `: int`) ────────────────────────────────
+#
+#   add(10, 3)   → 13
+#   add(10)      → 11  (y defaults to 1)
+
+fn add(const x: int, const y = 1): int {
+    return x + y;
+}
+
+# ── Multiple defaults ──────────────────────────────────────────────────────────
+
+fn greet(const name: string, const times = 1): string {
+    let i = 0;
+    let result = "";
+    while i < times {
+        result = concat(result, name);
+        i = i + 1;
+    }
+    return result;
+}
+
+fn main() {
+    # power: with and without the default exponent
+    print(power(2, 3));   # 8
+    print(power(2));       # 32  (default exp=5)
+
+    # add: with and without the default second arg
+    print(add(10, 3));    # 13
+    print(add(10));        # 11  (default y=1)
+
+    # greet
+    print(greet("hi", 3)); # hihihi
+    print(greet("yo"));    # yo  (default times=1)
+}

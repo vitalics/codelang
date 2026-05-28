@@ -1,0 +1,25 @@
+# enum_simple.code
+# Simple discriminant enum — unit variants, no payload.
+
+enum Direction {
+    North,
+    South,
+    East = 10,
+    West = 11,
+}
+
+fn describe(d: Direction): string {
+    return switch d {
+        Direction::North => "north",
+        Direction::South => "south",
+        Direction::East  => "east",
+        Direction::West  => "west",
+    };
+}
+
+fn main() {
+    let d = Direction::North;
+    print(describe(d));
+    let e = Direction::East;
+    print(describe(e));
+}

@@ -1,0 +1,62 @@
+# stdlib/any.code
+# Any — the top type of the CodeLang type hierarchy.
+#
+# Every type is conceptually a subtype of Any.  Any provides a default
+# toString() implementation via the Displayable protocol that returns
+# the string "Any".  Concrete types (Boolean, Number, String, …) shadow
+# this default with their own toString() by implementing Displayable.
+#
+# ── Usage ──────────────────────────────────────────────────────────────────────
+#
+#   import "./any";
+#
+#   const x: Any = someAnyValue;
+#   print(x.toString());           # "Any"
+#   print(x);                      # "Any"  (print dispatches toString for Any)
+#
+# ── cast ───────────────────────────────────────────────────────────────────────
+# Unsafe downcast from Any to a concrete type T.
+#
+#   Two call forms are supported:
+#     cast<string>(x)              explicit target type
+#     const s: string = cast(x)   context-inferred from variable annotation
+#
+#   Safety: the caller is responsible for ensuring `x` was originally of type T.
+#   Using the wrong T produces undefined behaviour (the IR generator emits a
+#   plain `bitcast`; no runtime type checks are performed).
+#
+#   Example:
+#     fn wrapString(s: string): Any { return s; }
+#
+#     fn main() {
+#         const x: Any = wrapString("hello");
+#         const s: string = cast(x);    # T inferred as string
+#         print(s);                     # "hello"
+#     }
+
+import "./protocols";
+
+# Any is an opaque heap-allocated value whose LLVM representation is %Any*.
+# It shares the same opaque-struct pattern as Number, Buffer, IntArray, etc.
+export type Any = intrinsic("%Any*");
+
+export type any = Any;
+
+# ── Displayable ───────────────────────────────────────────────────────────────
+# Default toString() — returns the literal string "Any".
+# Concrete types override this by implementing Displayable themselves.
+
+Any extends Displayable {
+    export fn toString(): string {
+        return "Any";
+    }
+}
+
+# ── cast ──────────────────────────────────────────────────────────────────────
+# Compiler intrinsic — the placeholder body is never compiled.
+# Every call is intercepted by the IR generator (emitCastIntrinsic) which
+# emits `bitcast %Any* val to TargetLLVMType` directly at the call site.
+
+export fn cast<T>(const value: Any): T {
+    return value;
+}

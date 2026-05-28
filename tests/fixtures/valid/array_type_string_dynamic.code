@@ -1,0 +1,29 @@
+# array_type_string_dynamic.code
+# Tests the string[] shorthand syntax for dynamic string arrays inside a struct.
+# string[] is sugar for StringArray — the field stores a StringArray pointer.
+
+import "../../../stdlib/array";
+
+type Messages {
+    items: string[]
+    count: int
+
+    static fn new(): Messages {
+        return Self { items: StringArray.new(), count: 0 };
+    }
+
+    fn add(s: string): void {
+        self.items.push(s);
+    }
+
+    fn size(): int {
+        return self.items.length();
+    }
+}
+
+fn main() {
+    let m = Messages.new();
+    m.add("hello");
+    m.add("world");
+    print(m.size());
+}

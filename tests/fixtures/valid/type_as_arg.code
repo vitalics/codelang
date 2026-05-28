@@ -1,0 +1,130 @@
+# type_as_arg.code
+#
+# Exercises every way CodeLang passes a type to a generic function.
+#
+# Scenarios:
+#   1. Inference          — T deduced from the runtime value; no <T> at call site
+#   2. Explicit type arg  — <T> supplied at call site for a user-defined generic
+#   3. Placeholder / type-only — <T> at call site; dummy value is ignored by logic
+#   4. Two params inferred — <A, B> both deduced from two runtime args
+#   5. Partial explicit   — first type param pinned with <A>, second inferred
+#   6. Type forwarding    — T received by fn foo<T> and passed to fn bar<T>
+#   7. Reflect style      — generic fn introspects its T via typeInfo(value)
+#
+# Expected output (19 lines):
+#   42
+#   hello
+#   true
+#   42
+#   hi
+#   int
+#   string
+#   bool
+#   int
+#   string
+#   world
+#   99
+#   10
+#   yes
+#   7
+#   chain
+#   2
+#   int
+#   Vec2
+
+import "../../../stdlib/reflection";
+import "../../../stdlib/numbers";
+import "../../../stdlib/string";
+
+# ── Section 1 & 2: pure echo — T inferred or explicitly pinned ────────────────
+
+fn echo<T>(const x: T): T {
+    return x;
+}
+
+# ── Section 3: placeholder / type-only passing ────────────────────────────────
+# getTypeName<T>(dummy) — the caller pins T with an explicit type arg;
+# the function ignores the value's runtime content and uses typeInfo<T>(dummy)
+# to introspect the type via the explicit type param.
+
+fn getTypeName<T>(const dummy: T): string {
+    const info = typeInfo<T>(dummy);
+    return info.name();
+}
+
+# ── Section 4: two type params — both inferred from args ─────────────────────
+
+fn second<A, B>(const a: A, const b: B): B {
+    return b;
+}
+
+# ── Section 5: partial explicit — A pinned with <A>, B inferred from value ───
+
+fn first<A, B>(const a: A, const b: B): A {
+    return a;
+}
+
+# ── Section 6: type forwarding — T forwarded explicitly to a nested generic ──
+
+fn forwardToEcho<T>(const x: T): T {
+    return echo<T>(x);
+}
+
+# ── Section 7: reflect style — struct fields counted via generic fn ───────────
+
+type Vec2 {
+    x: float
+    y: float
+}
+
+fn fieldCount<T>(const v: T): int {
+    const info = typeInfo(v);
+    return info.properties().length();
+}
+
+fn main() {
+    # ── 1. Inference — T deduced from the value argument ─────────────────────
+    print(echo(42));         # 42
+    print(echo("hello"));    # hello
+    print(echo(true));       # true
+
+    # ── 2. Explicit type arg — same fn, T pinned at call site ─────────────────
+    # Produces a distinct IR specialization (echo_i32 / echo_str) and
+    # verifies the <T> syntax is accepted at every call site.
+    print(echo<int>(42));        # 42
+    print(echo<string>("hi"));   # hi
+
+    # ── 3. Placeholder / type-only call ──────────────────────────────────────
+    # With explicit <T>: the caller pins the type, the dummy value is irrelevant.
+    # Both forms are exercised to show explicit == inferred when types match.
+    print(getTypeName<int>(0));       # int
+    print(getTypeName<string>(""));   # string
+    print(getTypeName<bool>(false));  # bool
+
+    # Same fn without explicit type arg — T inferred from the value:
+    print(getTypeName(0));    # int    (T inferred from 0)
+    print(getTypeName("x"));  # string (T inferred from "x")
+
+    # ── 4. Two type params, both inferred ─────────────────────────────────────
+    print(second(42, "world"));  # world  (A=int, B=string)
+    print(second("hi", 99));     # 99     (A=string, B=int)
+
+    # ── 5. Partial explicit — only the first type arg is given ────────────────
+    print(first<int>(10, "ignore"));    # 10   (A=int pinned, B=string inferred)
+    print(first<string>("yes", 99));    # yes  (A=string pinned, B=int inferred)
+
+    # ── 6. Type forwarding — T pinned at call site, forwarded down ────────────
+    print(forwardToEcho<int>(7));          # 7
+    print(forwardToEcho<string>("chain")); # chain
+
+    # ── 7. Reflect style — struct type inferred from value ────────────────────
+    const v = Vec2_new(1.0, 2.0);
+    print(fieldCount(v));    # 2  (T inferred as Vec2, 2 fields)
+
+    # Top-level explicit typeInfo<T> (the established reflect idiom):
+    const iInfo = typeInfo<int>(0);
+    print(iInfo.name());     # int
+
+    const vInfo = typeInfo(v);
+    print(vInfo.name());     # Vec2
+}

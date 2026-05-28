@@ -1,0 +1,53 @@
+# Tests for using the Error protocol with panic.
+#
+# A value conforming to the Error protocol (i.e. any struct that extends Error
+# and has a toString() method) can be passed directly to panic().
+# The compiler automatically calls toString() to obtain the i8* message
+# before forwarding it to the C runtime_panic function.
+
+import "../../../stdlib/error";
+
+# ── Simple error type (uses all protocol defaults) ────────────────────────────
+type AppError = {
+    const name:  string,
+    stacktrace:  Option<Stacktrace>,
+};
+AppError extends Error {}
+
+# ── Error with extra context and overridden toString ──────────────────────────
+type HttpError = {
+    const name:       string,
+    stacktrace:       Option<Stacktrace>,
+    const statusCode: int,
+};
+HttpError extends Error {
+    export fn toString(): string {
+        return $"HttpError({self.statusCode}): {self.name}";
+    }
+}
+
+# ── Guard function — panics with a plain AppError ─────────────────────────────
+fn checkPositive(n: int): void {
+    if n <= 0 {
+        panic(AppError.new("valueNotPositive"));
+    }
+    print(n);
+}
+
+# ── Guard function — panics with an HttpError (custom toString) ───────────────
+fn fetchResource(statusCode: int): void {
+    if statusCode != 200 {
+        panic(HttpError {
+            name: "BadStatus",
+            stacktrace: Option::None,
+            statusCode: statusCode,
+        });
+    }
+    print(statusCode);
+}
+
+fn main() {
+    # These should NOT panic — they print their argument.
+    checkPositive(42);      # prints 42
+    fetchResource(200);     # prints 200
+}

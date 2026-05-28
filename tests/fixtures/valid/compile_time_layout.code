@@ -1,0 +1,57 @@
+# tests/fixtures/valid/compile_time_layout.code
+# Exercise all four compile-time type-layout intrinsics.
+
+import "stdlib/macros";
+import "stdlib/numbers";
+
+type Point {
+    x: int
+    y: int
+}
+
+type Mixed {
+    flag:  bool
+    value: int
+}
+
+type Vec3 {
+    x: float
+    y: float
+    z: float
+}
+
+fn main() {
+    # alignOf! — primitive types
+    const a_bool   = alignOf!(bool);    # 1
+    const a_int    = alignOf!(int);     # 4
+    const a_float  = alignOf!(float);   # 8  (float = Float64 = double)
+    const a_string = alignOf!(string);  # 8  (pointer)
+
+    # alignOf! — struct types
+    const a_point  = alignOf!(Point);   # 4  (max(int,int) = 4)
+    const a_mixed  = alignOf!(Mixed);   # 4  (max(bool=1, int=4) = 4)
+    const a_vec3   = alignOf!(Vec3);    # 8  (max(double,double,double) = 8)
+
+    # offsetOf! — Point
+    const ox = offsetOf!(Point, x);    # 0
+    const oy = offsetOf!(Point, y);    # 4
+
+    # offsetOf! — Mixed (ABI padding after 1-byte bool → int at offset 4)
+    const mf = offsetOf!(Mixed, flag);  # 0
+    const mv = offsetOf!(Mixed, value); # 4
+
+    # compileLog! — printed to stderr at compile time (no runtime output)
+    compileLog!("alignOf(Point)=", alignOf!(Point), " offsetOf(y)=", offsetOf!(Point, y));
+
+    print(a_bool);    # 1
+    print(a_int);     # 4
+    print(a_float);   # 8
+    print(a_string);  # 8
+    print(a_point);   # 4
+    print(a_mixed);   # 4
+    print(a_vec3);    # 8
+    print(ox);        # 0
+    print(oy);        # 4
+    print(mf);        # 0
+    print(mv);        # 4
+}

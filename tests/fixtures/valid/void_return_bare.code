@@ -1,0 +1,13 @@
+# Valid: a void function using a bare `return;` — this is legal.
+
+fn earlyExit(n: int): void {
+    if n < 0 {
+        return;
+    }
+    print(n);
+}
+
+fn main() {
+    earlyExit(-1);
+    earlyExit(42);
+}

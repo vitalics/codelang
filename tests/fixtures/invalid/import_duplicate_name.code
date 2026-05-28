@@ -1,0 +1,5 @@
+import { greet, greet } from "./greetings_stub";
+
+fn main() {
+  greet();
+}

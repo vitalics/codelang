@@ -1,0 +1,5 @@
+import "./does_not_exist";
+
+fn main() {
+  print("unreachable");
+}

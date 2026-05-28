@@ -1,0 +1,31 @@
+import "../stdlib/boolean";
+
+fn main() {
+    let a: bool = true;
+    let b: bool = false;
+
+    # Equality (Ord / PartialOrd)
+    if a == true {
+        print("a is true");
+    }
+    if b == false {
+        print("b is false");
+    }
+    if a != b {
+        print("a != b");
+    }
+
+    # Ordering (Cmp / PartialCmp) — false < true
+    if b < a {
+        print("false < true");
+    }
+    if a > b {
+        print("true > false");
+    }
+    if a >= true {
+        print("true >= true");
+    }
+    if b <= false {
+        print("false <= false");
+    }
+}

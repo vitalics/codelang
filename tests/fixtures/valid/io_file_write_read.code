@@ -1,0 +1,20 @@
+import "../../../stdlib/io";
+
+fn main() {
+    # Write some content to a temp file
+    const f = File.open("/tmp/codelang_io_test.txt", "w");
+    f.write("line one");
+    f.writeln("");
+    f.write("line two");
+    f.writeln("");
+    f.close();
+
+    # Read it back line by line
+    const r = File.open("/tmp/codelang_io_test.txt", "r");
+    const a = r.readLine();
+    const b = r.readLine();
+    r.close();
+
+    print(a);
+    print(b);
+}

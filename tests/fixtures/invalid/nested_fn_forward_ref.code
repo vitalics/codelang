@@ -1,0 +1,7 @@
+fn main() {
+    someFunction();
+    fn someFunction() {
+        print("hello world");
+    }
+    someFunction();
+}

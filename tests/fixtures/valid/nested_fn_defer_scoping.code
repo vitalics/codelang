@@ -1,0 +1,23 @@
+# nested_fn_defer_scoping.code
+#
+# Each call to a nested fn gets its *own* defer scope.
+# When the nested fn returns, its deferred calls fire immediately —
+# before control returns to the caller.
+#
+# Expected output (per call to step(n)):
+#   body: -(n)    (negative to distinguish from deferred value)
+#   defer: n
+#
+# Full output: -1 / 1 / -2 / 2 / -3 / 3
+
+fn step_done(const n: int) { print(n); }
+
+fn main() {
+    fn step(const n: int) {
+        defer step_done(n);
+        print(0 - n);
+    }
+    step(1);
+    step(2);
+    step(3);
+}

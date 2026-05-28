@@ -1,0 +1,12 @@
+# Invalid: a void function returning a value from inside an if-block.
+# The validator must traverse nested blocks to catch this.
+
+fn checkSign(n: int): void {
+    if n > 0 {
+        return 1;
+    }
+}
+
+fn main() {
+    checkSign(5);
+}

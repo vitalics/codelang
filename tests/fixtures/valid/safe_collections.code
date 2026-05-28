@@ -1,0 +1,95 @@
+# safe_collections.code
+# Tests for Option-returning safe accessor methods on stdlib collections.
+#
+# getSafe(i)   → Option<T> for arrays   (None if out of bounds)
+# atSafe(i)    → Option<T> for sets     (None if out of bounds)
+# getSafe(key) → Option<V> for maps     (None if key absent)
+
+import "stdlib/array";
+import "stdlib/map";
+import "stdlib/set";
+import "stdlib/option";
+
+fn main() {
+    # ── IntArray.getSafe ──────────────────────────────────────────────────────
+    let arr: IntArray = IntArray.new();
+    arr.push(10);
+    arr.push(20);
+    arr.push(30);
+
+    let a: Option<int> = arr.getSafe(0);
+    let b: Option<int> = arr.getSafe(2);
+    let c: Option<int> = arr.getSafe(3);        # out of bounds
+    let d: Option<int> = arr.getSafe(-1);       # negative OOB
+
+    let va: int = switch a { Option::Some(v) => v, Option::None => -1 };
+    let vb: int = switch b { Option::Some(v) => v, Option::None => -1 };
+    let vc: int = switch c { Option::Some(v) => v, Option::None => -1 };
+    let vd: int = switch d { Option::Some(v) => v, Option::None => -1 };
+    print(va);   # 10
+    print(vb);   # 30
+    print(vc);   # -1
+    print(vd);   # -1
+
+    print(a.isSome());   # true
+    print(c.isNone());   # true
+
+    # ── StringArray.getSafe ───────────────────────────────────────────────────
+    let sarr: StringArray = StringArray.new();
+    sarr.push("foo");
+    sarr.push("bar");
+
+    let s0: Option<string> = sarr.getSafe(1);
+    let s1: Option<string> = sarr.getSafe(99);
+    let vs0: string = switch s0 { Option::Some(v) => v, Option::None => "none" };
+    let vs1: string = switch s1 { Option::Some(v) => v, Option::None => "none" };
+    print(vs0);  # bar
+    print(vs1);  # none
+
+    # ── IntIntMap.getSafe ─────────────────────────────────────────────────────
+    let m: IntIntMap = IntIntMap.new();
+    m.put(1, 100);
+    m.put(2, 200);
+
+    let m0: Option<int> = m.getSafe(1);
+    let m1: Option<int> = m.getSafe(99);
+    let vm0: int = switch m0 { Option::Some(v) => v, Option::None => -1 };
+    let vm1: int = switch m1 { Option::Some(v) => v, Option::None => -1 };
+    print(vm0);  # 100
+    print(vm1);  # -1
+
+    # ── StringStringMap.getSafe ───────────────────────────────────────────────
+    let sm: StringStringMap = StringStringMap.new();
+    sm.put("key", "value");
+
+    let sm0: Option<string> = sm.getSafe("key");
+    let sm1: Option<string> = sm.getSafe("missing");
+    let vsm0: string = switch sm0 { Option::Some(v) => v, Option::None => "none" };
+    let vsm1: string = switch sm1 { Option::Some(v) => v, Option::None => "none" };
+    print(vsm0); # value
+    print(vsm1); # none
+
+    # ── IntSet.atSafe ─────────────────────────────────────────────────────────
+    let is: IntSet = IntSet.new();
+    is.add(5);
+    is.add(15);
+    is.add(25);
+
+    let i0: Option<int> = is.atSafe(1);
+    let i1: Option<int> = is.atSafe(5);
+    let vi0: int = switch i0 { Option::Some(v) => v, Option::None => -1 };
+    let vi1: int = switch i1 { Option::Some(v) => v, Option::None => -1 };
+    print(vi0);  # 15
+    print(vi1);  # -1
+
+    # ── IntArray.popSafe and firstSafe ────────────────────────────────────────
+    let ea: IntArray = IntArray.new();
+    let pop1: Option<int> = ea.popSafe();
+    let pop1v: int = switch pop1 { Option::Some(v) => v, Option::None => -1 };
+    print(pop1v); # -1 (empty)
+
+    ea.push(42);
+    let first1: Option<int> = ea.firstSafe();
+    let first1v: int = switch first1 { Option::Some(v) => v, Option::None => -1 };
+    print(first1v); # 42
+}

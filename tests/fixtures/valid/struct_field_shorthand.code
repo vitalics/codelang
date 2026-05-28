@@ -1,0 +1,37 @@
+# Tests for the shorthand field init syntax: `field,` inside struct literals.
+# `name,` is equivalent to `name: name` — the variable of the same name fills the field.
+
+type Point = {
+    x: int,
+    y: int,
+};
+
+type Named = {
+    label: string,
+    value: int,
+};
+
+fn makePoint(const x: int, const y: int): Point {
+    # Shorthand for both fields — same as `Point { x: x, y: y }`
+    return Point { x, y };
+}
+
+fn main() {
+    # Shorthand in a direct literal
+    let x = 10;
+    let y = 20;
+    let p = Point { x, y };
+    print(p.x);   # 10
+    print(p.y);   # 20
+
+    # Mix of shorthand and named
+    let label = "hello";
+    let n = Named { label, value: 42 };
+    print(n.label);  # hello
+    print(n.value);  # 42
+
+    # Shorthand via function call
+    let q = makePoint(3, 7);
+    print(q.x);   # 3
+    print(q.y);   # 7
+}

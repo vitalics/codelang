@@ -1,0 +1,13 @@
+const str = import "../../../stdlib/string";
+
+fn main() {
+  print(str.toUpperCase("hello"));
+  print(str.toLowerCase("WORLD"));
+  print(str.trim("  hi  "));
+  print(str.slice("hello world", 6, 11));
+  print(str.repeat("ab", 3));
+  print(str.replace("hello world", "world", "there"));
+  print(str.concat("foo", "bar"));
+  print(str.padStart("5", 3, "0"));
+  print(str.padEnd("5", 3, "0"));
+}

@@ -1,0 +1,17 @@
+# tests/fixtures/invalid/compile_error_with_error_struct_shorthand.code
+#
+# Verifies that compileError! accepts an Error struct with the shorthand
+# name field init `name,` (using a local variable as both key and value).
+
+import "../../../stdlib/error";
+
+type AppError = {
+    const name:  string,
+    stacktrace:  Option<Stacktrace>,
+};
+AppError extends Error {}
+
+fn main() {
+    const name = "platform-not-supported";
+    compileError!(AppError { name, stacktrace: Option::None });
+}

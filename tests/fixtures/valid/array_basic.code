@@ -1,0 +1,39 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # Static factories
+    let a: IntArray = IntArray.new();
+    let b: IntArray = IntArray.with(5, 7);
+
+    # push / length / get
+    a.push(10);
+    a.push(20);
+    a.push(30);
+    print(a.length());      # 3
+    print(a.get(0));        # 10
+    print(a.get(1));        # 20
+    print(a.get(2));        # 30
+
+    # at() with positive index — returns Option<int>
+    print(a.at(0).unwrapOr(0));   # 10
+
+    # at() with negative index (from end)
+    print(a.at(-1).unwrapOr(0));  # 30
+    print(a.at(-2).unwrapOr(0));  # 20
+
+    # first / last — return Option<int>
+    print(a.first().unwrapOr(0)); # 10
+    print(a.last().unwrapOr(0));  # 30
+
+    # with() factory
+    print(b.length());      # 5
+    print(b.get(0));        # 7
+    print(b.get(4));        # 7
+
+    # set()
+    b.set(2, 99);
+    print(b.get(2));        # 99
+
+    a.free();
+    b.free();
+}

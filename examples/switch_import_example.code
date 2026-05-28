@@ -1,0 +1,28 @@
+# examples/switch_import_example.code
+#
+# Demonstrates switch_import! — compile-time conditional imports.
+#
+# The `switch_import!` macro selects which module to bind to a namespace
+# based on a compile-time value.  The only currently supported condition
+# namespace is `compile`:
+#
+#   compile.arch()     → process.arch   e.g. "arm64", "x64"
+#   compile.os()       → process.platform  e.g. "darwin", "linux"
+#   compile.platform() → "<os>-<arch>"  e.g. "darwin-arm64"
+#
+# On an ARM64 Mac this binds `io` to stdlib/io.code (trivial example);
+# on any other platform it also binds to stdlib/io.code (same for demo).
+# In real code each arm would point to a different implementation file.
+
+const io = switch_import! compile.arch() {
+    "arm64"  => "stdlib/io",
+    "x86_64" => "stdlib/io",
+    else     => "stdlib/io",
+}
+
+fn main() {
+    let out: io.Stdout = io.Stdout { };
+    out.writeln("switch_import! selected the io module for this architecture.");
+    out.writeln("Try compile.os() or compile.platform() for OS-based dispatch.");
+    out.flush();
+}

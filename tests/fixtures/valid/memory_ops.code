@@ -1,0 +1,85 @@
+# tests/fixtures/valid/memory_ops.code
+# Tests for addressOf, sizeOf!, and typeId! primitives.
+
+import "stdlib/memory";
+import "stdlib/numbers";
+
+type Point {
+    x: int
+    y: int
+}
+
+type Mixed {
+    flag:  bool
+    value: int
+}
+
+fn main() {
+    # ── sizeOf! ───────────────────────────────────────────────────────────────
+    const sz_bool   = sizeOf!(bool);    # 1
+    const sz_int    = sizeOf!(int);     # 4
+    const sz_float  = sizeOf!(float);   # 8  (float = Float64)
+    const sz_str    = sizeOf!(string);  # 8  (pointer)
+    const sz_i64    = sizeOf!(Int64);   # 8
+    const sz_point  = sizeOf!(Point);   # 8  (i32 + i32)
+    const sz_mixed  = sizeOf!(Mixed);   # 8  (bool=1 + pad3 + int=4)
+
+    print(sz_bool);    # 1
+    print(sz_int);     # 4
+    print(sz_float);   # 8
+    print(sz_str);     # 8
+    print(sz_i64);     # 8
+    print(sz_point);   # 8
+    print(sz_mixed);   # 8
+
+    # ── typeId! ───────────────────────────────────────────────────────────────
+    const id_int    = typeId!(int);
+    const id_str    = typeId!(string);
+    const id_bool   = typeId!(bool);
+    const id_float  = typeId!(float);
+    const id_point  = typeId!(Point);
+
+    # Same type → same ID
+    print(id_int == typeId!(int));      # true
+    print(id_str == typeId!(string));   # true
+    print(id_point == typeId!(Point));  # true
+
+    # Different types → different IDs
+    print(id_int == id_str);    # false
+    print(id_int == id_bool);   # false
+    print(id_int == id_float);  # false
+    print(id_int == id_point);  # false
+
+    # ── addressOf — scalar (stack slot address) ───────────────────────────────
+    const a: int = 10;
+    const b: int = 20;
+    const addr_a = addressOf(a);
+    const addr_b = addressOf(b);
+
+    print(addr_a != 0);        # true — non-null address
+    print(addr_b != 0);        # true — non-null address
+    print(addr_a != addr_b);   # true — different variables, different addresses
+
+    # ── addressOf — struct (heap object address) ──────────────────────────────
+    const p = Point_new(1, 2);
+    const q = Point_new(3, 4);
+    const addr_p = addressOf(p);
+    const addr_q = addressOf(q);
+
+    print(addr_p != 0);        # true — heap object is live
+    print(addr_q != 0);        # true — second object also live
+    print(addr_p != addr_q);   # true — distinct heap objects
+
+    # ── sizeOf! for stride arithmetic ────────────────────────────────────────
+    const stride = sizeOf!(int);
+    const base   = addressOf(a);
+    const next   = base + stride;
+    print(next - base == stride);    # true
+
+    # ── sizeOf! and typeId! are compile-time constants ────────────────────────
+    # They can be used in constant expressions
+    const elem_size: int = sizeOf!(int);      # 4
+    const type_tag: Int64 = typeId!(int);     # stable hash
+    print(elem_size == 4);    # true
+    print(type_tag != 0);     # true  (hash of "int" is non-zero)
+}

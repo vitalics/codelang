@@ -1,0 +1,8 @@
+# template_assign.code
+# Template string assigned to a variable, then used later.
+fn main() {
+    let x = 10;
+    let y = 20;
+    let result = $"x={x}, y={y}, sum={x + y}";
+    print(result);
+}

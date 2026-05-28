@@ -1,0 +1,35 @@
+# array_new_with_capacity.code
+# Tests IntArray.newWithCapacity(n): creates an empty array
+# pre-reserved for n elements; push never reallocates until length > n.
+import "../../../stdlib/array";
+
+fn main() {
+    # IntArray
+    let a: IntArray = IntArray.newWithCapacity(4);
+    print(a.length());     # 0 — empty on creation
+    a.push(10);
+    a.push(20);
+    a.push(30);
+    print(a.length());     # 3
+    print(a.get(0));       # 10
+    print(a.get(2));       # 30
+    a.free();
+
+    # Works the same as new() — can push past original capacity
+    let b: IntArray = IntArray.newWithCapacity(2);
+    b.push(1);
+    b.push(2);
+    b.push(3);             # exceeds reserved capacity — grows automatically
+    print(b.length());     # 3
+    print(b.get(2));       # 3
+    b.free();
+
+    # StringArray
+    let s: StringArray = StringArray.newWithCapacity(3);
+    print(s.length());     # 0
+    s.push("hello");
+    s.push("world");
+    print(s.length());     # 2
+    print(s.get(0));       # hello
+    s.free();
+}

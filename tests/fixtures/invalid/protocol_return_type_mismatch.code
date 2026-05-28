@@ -1,0 +1,16 @@
+# Invalid: Number extends Lolable but implements lol(): int instead of lol(): void.
+# The compiler must reject this with a protocol conformance error.
+
+protocol Lolable {
+    fn lol(): void;
+}
+
+Number extends Lolable {
+    fn lol(): int {
+        return 1;
+    }
+}
+
+const fn main() {
+    print("should not compile");
+}

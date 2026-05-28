@@ -1,0 +1,42 @@
+import "../../../stdlib/numbers";
+
+fn main() {
+    const a: Number = 42;
+    const b: Number = 0;
+    const c: Number = -7;
+
+    # toString inside switch
+    let label = switch a.toString() {
+        "42" => "forty-two",
+        else => "unknown",
+    };
+    print(label);   # forty-two
+
+    # toBoolean in if
+    if a.toBoolean() {
+        print("a is truthy");   # a is truthy
+    }
+    if b.toBoolean() {
+        print("b is truthy");
+    } else {
+        print("b is falsy");    # b is falsy
+    }
+
+    # toBoolean in switch
+    let verdict = switch a.toBoolean() {
+        true  => "non-zero",
+        false => "zero",
+    };
+    print(verdict);   # non-zero
+
+    # toString of negative
+    print(c.toString());   # -7
+
+    # chain: toString in variable, then switch on it
+    const s: string = b.toString();
+    let which = switch s {
+        "0" => "zero string",
+        else => "other",
+    };
+    print(which);   # zero string
+}

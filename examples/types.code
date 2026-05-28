@@ -1,0 +1,30 @@
+# examples/types.code
+# Demonstrates the stdlib type system: Int32, Float64, Boolean, String, BigInt.
+
+export fn qwe() {
+  # Primitive aliases (backward-compat: int, float, bool, string, Number)
+  let a: int    = 42;
+  let b: float  = 3.14;
+  let c: bool   = true;
+  let s: string = "hello from stdlib";
+
+  # Stdlib integer types
+  let i8:  Int8  = 127;
+  let i16: Int16 = 32767;
+  let i32: Int32 = 2147483647;
+  let i64: Int64 = 9223372036;
+
+  # Stdlib float types
+  let f32: Float32 = 1.5;
+  let f64: Float64 = 2.718281828;
+
+  # Aliases
+  let big: BigInt   = 9223372036;
+  let bf:  BigFloat = 3.14159;
+
+  # Boolean and String from stdlib
+  let flag:  Boolean = true;
+  let label: String  = "typed string";
+
+  print("stdlib types demo OK");
+}

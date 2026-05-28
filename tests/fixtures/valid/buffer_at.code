@@ -1,0 +1,23 @@
+# buffer_at.code
+# Tests Buffer.at() — negative-index aliased access.
+
+import "../../../stdlib/string";
+
+fn main() {
+    const s = "hello";
+    let b: Buffer = s.toBuffer();
+
+    # positive indices
+    print(b.at(0));          # 104  'h'
+    print(b.at(4));          # 111  'o'
+
+    # negative indices count from the end
+    print(b.at(0 - 1));      # 111  'o'  (last byte)
+    print(b.at(0 - 5));      # 104  'h'  (first byte via -5)
+
+    # out-of-bounds → 0
+    print(b.at(0 - 6));      # 0
+    print(b.at(5));          # 0
+
+    b.free();
+}

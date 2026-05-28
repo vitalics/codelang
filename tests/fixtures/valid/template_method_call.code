@@ -1,0 +1,24 @@
+# template_method_call.code
+# Template string holes containing method calls on primitive types.
+#
+# Tests that {x.toString()} and {x.length()} inside $"..." strings
+# produce correct string interpolation (not "undef").
+fn main() {
+    let n: int = 42;
+    let f: float = 1.5;
+    let s: string = "hello";
+
+    # int method calls in template holes
+    print($"n.toString()={n.toString()}");
+    print($"n.length()={n.length()}");
+
+    # float method call in template hole
+    print($"f.toString()={f.toString()}");
+
+    # string method calls in template holes
+    print($"s.toString()={s.toString()}");
+    print($"s.length()={s.length()}");
+
+    # combined in one template
+    print($"int={n.toString()} digits={n.length()} float={f.toString()}");
+}

@@ -1,0 +1,9 @@
+# template_expr.code
+# Template string with arithmetic expressions in holes.
+fn main() {
+    let x = 3;
+    let y = 4;
+    print($"sum: {x + y}");
+    print($"product: {x * y}");
+    print($"constant: {1 + 1}");
+}

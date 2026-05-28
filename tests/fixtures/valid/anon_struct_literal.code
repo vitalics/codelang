@@ -1,0 +1,46 @@
+# Anonymous struct literal: `let p: Point = {}`
+# The struct type is inferred from the variable's type annotation.
+
+type Point = {
+    x: int = 0,
+    y: int = 0,
+};
+
+type Config = {
+    width:  int    = 800,
+    height: int    = 600,
+    debug:  bool   = false,
+    title:  string = "App",
+};
+
+type Named = {
+    label: string = "none",
+    value: int    = 42,
+};
+
+fn main() {
+    # All fields use defaults — anonymous literal
+    let p1: Point = {};
+    print(p1.x);   # 0
+    print(p1.y);   # 0
+
+    # One field overridden
+    let p2: Point = { x: 7 };
+    print(p2.x);   # 7
+    print(p2.y);   # 0
+
+    # All fields overridden
+    let p3: Point = { x: 3, y: 4 };
+    print(p3.x);   # 3
+    print(p3.y);   # 4
+
+    # Config with all defaults
+    let cfg: Config = {};
+    print(cfg.width);   # 800
+    print(cfg.height);  # 600
+
+    # Named struct with string default
+    let n: Named = {};
+    print(n.label);  # none
+    print(n.value);  # 42
+}

@@ -1,0 +1,17 @@
+# array_type_non_const_typevals.code
+# Tests that using typeValues syntax (int[N; v,...]) without the `const`
+# keyword causes a compile-time error requiring 'const'.
+
+type Table3 {
+    data: int[3; 1, 2, 3] = [1, 2, 3]   # wrong — missing 'const' keyword
+    id: int
+
+    static fn new(i: int): Table3 {
+        return Self { id: i };
+    }
+}
+
+fn main() {
+    let t = Table3.new(1);
+    print(t.id);
+}

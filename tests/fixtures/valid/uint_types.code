@@ -1,0 +1,23 @@
+fn main() {
+    # u8: max value 255 — would print as -1 if treated as signed i8
+    let byte: u8 = 255;
+    print(byte);
+
+    # u32: value above i32 max (2147483647) — would be negative if signed
+    let big: u32 = 3000000000;
+    print(big);
+
+    # unsigned division — should use udiv, not sdiv
+    let a: u32 = 10;
+    let b: u32 = 3;
+    let q: u32 = a / b;
+    print(q);
+
+    # unsigned modulo — should use urem, not srem
+    let r: u32 = a % b;
+    print(r);
+
+    # u64: large value
+    let wide: u64 = 18000000000;
+    print(wide);
+}

@@ -1,0 +1,21 @@
+# array_type_value_typed.code
+# Tests `const data: int[N; v0,...] = [v0,...]` — value-typed fixed array.
+# The type annotation carries the required values; the initializer must match.
+
+type LutTable {
+    const data: int[3; 10, 20, 30] = [10, 20, 30]
+    name: int
+
+    static fn new(n: int): LutTable {
+        return Self { name: n };
+    }
+
+    fn getName(): int {
+        return self.name;
+    }
+}
+
+fn main() {
+    let t = LutTable.new(7);
+    print(t.getName());
+}

@@ -1,0 +1,19 @@
+import "../../../stdlib/map";
+
+fn main() {
+    let m: StringIntMap = StringIntMap.new();
+    m.put("banana", 2);
+    m.put("apple", 5);
+    m.put("cherry", 1);
+    m.put("apple", 7);          # update existing key
+    print(m.size());            # 3
+    print(m.contains("apple")); # true
+    print(m.contains("grape")); # false
+    print(m.get("apple").unwrapOr(0));   # 7  (updated)
+    print(m.get("cherry").unwrapOr(0));  # 1
+    print(m.get("missing").unwrapOr(0)); # 0  (absent → None → default)
+    print(m);                   # {"apple": 7, "banana": 2, "cherry": 1}
+    m.remove("banana");
+    print(m);                   # {"apple": 7, "cherry": 1}
+    m.free();
+}

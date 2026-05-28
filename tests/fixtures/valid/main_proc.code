@@ -1,0 +1,7 @@
+import "../../../stdlib/io";
+
+fn main(proc: Process) {
+    # proc.args contains the C argv array (index 0 = binary path)
+    print(proc.args.length());
+    print(proc.args.get(0));
+}

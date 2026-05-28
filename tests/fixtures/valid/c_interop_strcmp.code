@@ -1,0 +1,18 @@
+# c_interop_strcmp.code
+#
+# Runtime tests for strcmp() and strncmp().
+#
+# Expected output (4 lines):
+#    0          ← strcmp("abc", "abc")     equal strings
+#   <negative>  ← strcmp("abc", "abd")     "abc" < "abd"  ('c' < 'd')
+#   <positive>  ← strcmp("abd", "abc")     "abd" > "abc"  ('d' > 'c')
+#    0          ← strncmp("hello","help",3) first 3 bytes "hel" == "hel"
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    print(strcmp("abc", "abc"));
+    print(strcmp("abc", "abd"));
+    print(strcmp("abd", "abc"));
+    print(strncmp("hello", "help", 3));
+}

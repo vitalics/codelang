@@ -1,0 +1,15 @@
+import "../../../stdlib/async";
+
+# async_sleep fixture — Async.sleep pauses the calling thread.
+#
+# Output (3 lines):
+#   [0] "before"
+#   [1] "after"       (printed after ~50 ms sleep)
+#   [2] "ok"
+
+fn main(): void {
+    print("before");
+    Async.sleep(50);
+    print("after");
+    print("ok");
+}

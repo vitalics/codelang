@@ -1,0 +1,13 @@
+id          = "codelang"
+name        = "CodeLang"
+version     = "0.1.0"
+schema_version = 1
+authors     = ["Vitali Haradkou <vitali.haradkou@b2broker.com>"]
+description = "Syntax highlighting for the CodeLang programming language (.code files)"
+repository  = "https://github.com/vitalics/codelang"
+
+[grammars.codelang]
+repository = "file:///Users/vitaliharadkou/Documents/git/chore/codelang/tree-sitter-codelang"
+rev        = "13b2da6b2c29e759202b09151ec46474d97562f3"
+
+languages = ["languages/codelang"]

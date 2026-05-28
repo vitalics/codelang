@@ -1,0 +1,8 @@
+name         = "CodeLang"
+grammar      = "codelang"
+path_suffixes = ["code"]
+
+line_comment  = "// "
+block_comment = ["/*", "*/"]
+
+indent = { tab_width = 2, unit = "  " }

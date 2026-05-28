@@ -1,0 +1,132 @@
+import "stdlib/async";
+
+# ── AbortController — cooperative task cancellation ───────────────────────────
+#
+# Implements the Web AbortController / AbortSignal pattern:
+#
+#   AbortController  — the write side.  Call .abort() to cancel.
+#   AbortSignal      — the read-only token passed to cancellable operations.
+#                      Poll .aborted() or register .onAbort(callback).
+#
+# Three cancellation flavours are shown:
+#   1. Manual abort by the caller
+#   2. Deadline via AbortSignal.timeout(ms)
+#   3. Chained: abort one controller, propagate via shared signal
+#
+# Because AbortSignal is a pointer type, closures capture it by pointer value —
+# multiple threads share the same signal object without copying.  Thread-safety
+# is handled by the mutex inside AbortSignal.
+
+fn banner(const title: string) {
+    print($"── {title} ──────────────────────────────────────────");
+}
+
+fn main(): void {
+
+    # ── 1. Basic abort ────────────────────────────────────────────────────────
+    banner("1. Basic AbortController");
+
+    const ctrl: AbortController = AbortController.new();
+    const sig:  AbortSignal     = ctrl.signal();
+
+    const before: bool = sig.aborted();
+    print($"  before abort: {before}");     # false
+
+    ctrl.abort();
+
+    const after:  bool   = sig.aborted();
+    const reason: string = sig.reason();
+    print($"  after  abort: {after}");      # true
+    print($"  reason      : {reason}");     # AbortError
+    ctrl.free();
+
+    # ── 2. Custom reason ──────────────────────────────────────────────────────
+    banner("2. Custom abort reason");
+
+    const ctrl2: AbortController = AbortController.new();
+    const sig2:  AbortSignal     = ctrl2.signal();
+    ctrl2.abortWith("user-initiated cancellation");
+    print($"  reason: {sig2.reason()}");    # user-initiated cancellation
+    ctrl2.free();
+
+    # ── 3. onAbort callback ───────────────────────────────────────────────────
+    banner("3. onAbort callback");
+
+    const ctrl3: AbortController = AbortController.new();
+    const sig3:  AbortSignal     = ctrl3.signal();
+
+    sig3.onAbort(fn(): void {
+        print("  [callback] operation was cancelled!");
+    });
+
+    print("  aborting…");
+    ctrl3.abort();    # ← callback fires here, synchronously
+    print("  done.");
+    ctrl3.free();
+
+    # ── 4. Cooperative task cancellation ─────────────────────────────────────
+    banner("4. Cooperative task cancellation");
+
+    const ctrl4: AbortController = AbortController.new();
+    const sig4:  AbortSignal     = ctrl4.signal();
+
+    # The spawned task polls sig4.aborted() in a tight loop.
+    # AbortSignal is a pointer — captured by pointer value — so both threads
+    # share the exact same object.
+    const task: Task = Async.spawn(fn(): void {
+        let ticks: int = 0;
+        while (!sig4.aborted()) {
+            ticks = ticks + 1;
+            Async.sleep(10);
+        }
+        print($"  task ran for some ticks then stopped (reason: {sig4.reason()})");
+    });
+
+    Async.sleep(55);   # let the task tick a few times
+    ctrl4.abort();     # signal the task to stop
+    Async.wait(task);  # join — task has already exited the loop and printed
+    ctrl4.free();
+
+    # ── 5. AbortSignal.timeout(ms) ────────────────────────────────────────────
+    banner("5. Deadline: AbortSignal.timeout(ms)");
+
+    # Returns a signal that auto-aborts with reason "TimeoutError" after 200 ms.
+    # No controller needed — the timer fires the signal internally.
+    const deadline: AbortSignal = AbortSignal.timeout(200);
+
+    const task2: Task = Async.spawn(fn(): void {
+        while (!deadline.aborted()) {
+            Async.sleep(10);
+        }
+        const deadReason: string = deadline.reason();
+        print($"  task timed out: {deadReason}");   # TimeoutError
+    });
+
+    Async.wait(task2);
+    deadline.free();
+
+    # ── 6. Static already-aborted signal ─────────────────────────────────────
+    banner("6. AbortSignal.abort() factory");
+
+    # Useful as a noop sentinel — the operation never starts.
+    const dead: AbortSignal = AbortSignal.abort();
+    const deadAborted: bool = dead.aborted();
+    print($"  already aborted: {deadAborted}");     # true
+    dead.free();
+
+    # ── 7. Idempotency ────────────────────────────────────────────────────────
+    banner("7. Idempotency — second abort() is a no-op");
+
+    const ctrl5: AbortController = AbortController.new();
+    const sig5:  AbortSignal     = ctrl5.signal();
+
+    sig5.onAbort(fn(): void {
+        print("  [callback] fires exactly once");
+    });
+
+    ctrl5.abort();    # ← callback fires
+    ctrl5.abort();    # ← no-op: already aborted, callback NOT fired again
+    ctrl5.free();
+
+    print("Done.");
+}

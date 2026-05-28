@@ -1,0 +1,7 @@
+# Namespace import — exported functions accessed via dot notation.
+# const g = import "./greetings"  →  g.greet()  emits  call void @greet()
+const g = import "./greetings";
+
+fn main() {
+  g.greet();
+}

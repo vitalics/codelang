@@ -1,0 +1,867 @@
+# stdlib/map.code
+#
+# IntIntMap       — heap-allocated ordered map from int keys to int values.
+# IntStringMap    — heap-allocated ordered map from int keys to string values.
+# StringIntMap    — heap-allocated ordered map from string keys to int values.
+# StringStringMap — heap-allocated ordered map from string keys to string values.
+#
+# All four types are backed by sorted dynamic arrays for predictable
+# iteration order and O(log n) key lookups.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let m: IntIntMap = IntIntMap.new();   # empty map
+#
+#   m.put(1, 42)                          # insert or update a key-value pair
+#   m.get(1)                              # 42  (0 if key absent)
+#   m.contains(1)                         # true / false
+#   m.remove(1)                           # remove key (no-op if absent)
+#   m.size()                              # number of key-value pairs
+#
+#   print(m)                              # {1: 42}
+#   m.toString()                          # "{1: 42}"
+#
+#   m.free()                              # release heap memory
+#   using m: IntIntMap = IntIntMap.new(); # auto-dispose on scope exit
+#
+# Generic alias:
+#   let m: Map<int, int>       = IntIntMap.new();
+#   let m: Map<int, string>    = IntStringMap.new();
+#   let m: Map<string, int>    = StringIntMap.new();
+#   let m: Map<string, string> = StringStringMap.new();
+
+import "./protocols";
+import "./boolean";
+import "./option";
+
+# ════════════════════════════════════════════════════════════════════════════════
+# IntIntMap — ordered map from int keys to int values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type IntIntMap = intrinsic("%IntIntMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn intintmap_new(): IntIntMap;
+export extern fn intintmap_free(const m: IntIntMap);
+export extern fn intintmap_size(const m: IntIntMap): int;
+export extern fn intintmap_contains(const m: IntIntMap, const key: int): int;
+export extern fn intintmap_get(const m: IntIntMap, const key: int): int;
+export extern fn intintmap_put(m: IntIntMap, const key: int, const val: int);
+export extern fn intintmap_remove(m: IntIntMap, const key: int);
+export extern fn intintmap_print(const m: IntIntMap);
+export extern fn intintmap_to_string(const m: IntIntMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+IntIntMap extends {
+
+    # new(): static factory — creates an empty IntIntMap.
+    export static fn new(): IntIntMap {
+        return intintmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return intintmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: int): bool {
+        let r = intintmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): Some(value) if key is present, None if absent.
+    export fn get(const key: int): Option<int> {
+        let r: int = intintmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(intintmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): value for key, or default if absent.
+    export fn getOr(const key: int, const default: int): int {
+        let r: int = intintmap_contains(self, key);
+        if r == 1 {
+            return intintmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: int, const val: int) {
+        intintmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: int) {
+        intintmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this IntIntMap.
+    export fn free() {
+        intintmap_free(self);
+    }
+}
+
+IntIntMap extends Countable {
+    export fn length(): int {
+        return intintmap_size(self);
+    }
+}
+
+IntIntMap extends Displayable {
+    export fn toString(): string {
+        return intintmap_to_string(self);
+    }
+}
+
+IntIntMap extends Disposable {
+    export fn dispose() {
+        intintmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# IntStringMap — ordered map from int keys to string values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type IntStringMap = intrinsic("%IntStringMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn intstringmap_new(): IntStringMap;
+export extern fn intstringmap_free(const m: IntStringMap);
+export extern fn intstringmap_size(const m: IntStringMap): int;
+export extern fn intstringmap_contains(const m: IntStringMap, const key: int): int;
+export extern fn intstringmap_get(const m: IntStringMap, const key: int): string;
+export extern fn intstringmap_put(m: IntStringMap, const key: int, const val: string);
+export extern fn intstringmap_remove(m: IntStringMap, const key: int);
+export extern fn intstringmap_print(const m: IntStringMap);
+export extern fn intstringmap_to_string(const m: IntStringMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+IntStringMap extends {
+
+    # new(): static factory — creates an empty IntStringMap.
+    export static fn new(): IntStringMap {
+        return intstringmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return intstringmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: int): bool {
+        let r = intstringmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): Some(value) if key is present, None if absent.
+    export fn get(const key: int): Option<string> {
+        let r: int = intstringmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(intstringmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): value for key, or default if absent.
+    export fn getOr(const key: int, const default: string): string {
+        let r: int = intstringmap_contains(self, key);
+        if r == 1 {
+            return intstringmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: int, const val: string) {
+        intstringmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: int) {
+        intstringmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this IntStringMap.
+    export fn free() {
+        intstringmap_free(self);
+    }
+}
+
+IntStringMap extends Countable {
+    export fn length(): int {
+        return intstringmap_size(self);
+    }
+}
+
+IntStringMap extends Displayable {
+    export fn toString(): string {
+        return intstringmap_to_string(self);
+    }
+}
+
+IntStringMap extends Disposable {
+    export fn dispose() {
+        intstringmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# StringIntMap — ordered map from string keys to int values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type StringIntMap = intrinsic("%StringIntMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stringintmap_new(): StringIntMap;
+export extern fn stringintmap_free(const m: StringIntMap);
+export extern fn stringintmap_size(const m: StringIntMap): int;
+export extern fn stringintmap_contains(const m: StringIntMap, const key: string): int;
+export extern fn stringintmap_get(const m: StringIntMap, const key: string): int;
+export extern fn stringintmap_put(m: StringIntMap, const key: string, const val: int);
+export extern fn stringintmap_remove(m: StringIntMap, const key: string);
+export extern fn stringintmap_print(const m: StringIntMap);
+export extern fn stringintmap_to_string(const m: StringIntMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+StringIntMap extends {
+
+    # new(): static factory — creates an empty StringIntMap.
+    export static fn new(): StringIntMap {
+        return stringintmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return stringintmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = stringintmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): Some(value) if key is present, None if absent.
+    export fn get(const key: string): Option<int> {
+        let r: int = stringintmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(stringintmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): value for key, or default if absent.
+    export fn getOr(const key: string, const default: int): int {
+        let r: int = stringintmap_contains(self, key);
+        if r == 1 {
+            return stringintmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: string, const val: int) {
+        stringintmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        stringintmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this StringIntMap.
+    export fn free() {
+        stringintmap_free(self);
+    }
+}
+
+StringIntMap extends Countable {
+    export fn length(): int {
+        return stringintmap_size(self);
+    }
+}
+
+StringIntMap extends Displayable {
+    export fn toString(): string {
+        return stringintmap_to_string(self);
+    }
+}
+
+StringIntMap extends Disposable {
+    export fn dispose() {
+        stringintmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# StringStringMap — ordered map from string keys to string values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type StringStringMap = intrinsic("%StringStringMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stringstringmap_new(): StringStringMap;
+export extern fn stringstringmap_free(const m: StringStringMap);
+export extern fn stringstringmap_size(const m: StringStringMap): int;
+export extern fn stringstringmap_contains(const m: StringStringMap, const key: string): int;
+export extern fn stringstringmap_get(const m: StringStringMap, const key: string): string;
+export extern fn stringstringmap_put(m: StringStringMap, const key: string, const val: string);
+export extern fn stringstringmap_remove(m: StringStringMap, const key: string);
+export extern fn stringstringmap_print(const m: StringStringMap);
+export extern fn stringstringmap_to_string(const m: StringStringMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+StringStringMap extends {
+
+    # new(): static factory — creates an empty StringStringMap.
+    export static fn new(): StringStringMap {
+        return stringstringmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return stringstringmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = stringstringmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): Some(value) if key is present, None if absent.
+    export fn get(const key: string): Option<string> {
+        let r: int = stringstringmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(stringstringmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): value for key, or default if absent.
+    export fn getOr(const key: string, const default: string): string {
+        let r: int = stringstringmap_contains(self, key);
+        if r == 1 {
+            return stringstringmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: string, const val: string) {
+        stringstringmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        stringstringmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this StringStringMap.
+    export fn free() {
+        stringstringmap_free(self);
+    }
+}
+
+StringStringMap extends Countable {
+    export fn length(): int {
+        return stringstringmap_size(self);
+    }
+}
+
+StringStringMap extends Displayable {
+    export fn toString(): string {
+        return stringstringmap_to_string(self);
+    }
+}
+
+StringStringMap extends Disposable {
+    export fn dispose() {
+        stringstringmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# IntPtrMap — ordered map from int keys to pointer/struct values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type IntPtrMap = intrinsic("%IntPtrMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn intptrmap_new(): IntPtrMap;
+export extern fn intptrmap_free(const m: IntPtrMap);
+export extern fn intptrmap_size(const m: IntPtrMap): int;
+export extern fn intptrmap_contains(const m: IntPtrMap, const key: int): int;
+export extern fn intptrmap_put(m: IntPtrMap, const key: int, val: string);  # val stored as void*
+export extern fn intptrmap_remove(m: IntPtrMap, const key: int);
+export extern fn intptrmap_print(const m: IntPtrMap);
+export extern fn intptrmap_to_string(const m: IntPtrMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+# Note: get/put are omitted — the IR generator emits those calls directly with
+#       type-aware bitcasts since there is no single CodeLang type for void*.
+
+IntPtrMap extends {
+
+    # new(): static factory — creates an empty IntPtrMap.
+    export static fn new(): IntPtrMap {
+        return intptrmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return intptrmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: int): bool {
+        let r = intptrmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: int) {
+        intptrmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this IntPtrMap.
+    export fn free() {
+        intptrmap_free(self);
+    }
+}
+
+IntPtrMap extends Countable {
+    export fn length(): int {
+        return intptrmap_size(self);
+    }
+}
+
+IntPtrMap extends Displayable {
+    export fn toString(): string {
+        return intptrmap_to_string(self);
+    }
+}
+
+IntPtrMap extends Disposable {
+    export fn dispose() {
+        intptrmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# StringPtrMap — ordered map from string keys to pointer/struct values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type StringPtrMap = intrinsic("%StringPtrMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stringptrmap_new(): StringPtrMap;
+export extern fn stringptrmap_free(const m: StringPtrMap);
+export extern fn stringptrmap_size(const m: StringPtrMap): int;
+export extern fn stringptrmap_contains(const m: StringPtrMap, const key: string): int;
+export extern fn stringptrmap_put(m: StringPtrMap, const key: string, val: string);  # val stored as void*
+export extern fn stringptrmap_remove(m: StringPtrMap, const key: string);
+export extern fn stringptrmap_print(const m: StringPtrMap);
+export extern fn stringptrmap_to_string(const m: StringPtrMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+# Note: get/put are omitted — the IR generator emits those calls directly with
+#       type-aware bitcasts since there is no single CodeLang type for void*.
+
+StringPtrMap extends {
+
+    # new(): static factory — creates an empty StringPtrMap.
+    export static fn new(): StringPtrMap {
+        return stringptrmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return stringptrmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = stringptrmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        stringptrmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this StringPtrMap.
+    export fn free() {
+        stringptrmap_free(self);
+    }
+}
+
+StringPtrMap extends Countable {
+    export fn length(): int {
+        return stringptrmap_size(self);
+    }
+}
+
+StringPtrMap extends Displayable {
+    export fn toString(): string {
+        return stringptrmap_to_string(self);
+    }
+}
+
+StringPtrMap extends Disposable {
+    export fn dispose() {
+        stringptrmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PtrIntMap — ordered map from pointer/struct keys (by identity) to int values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type PtrIntMap = intrinsic("%PtrIntMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+# key is passed as string (i8*); the IR generator bitcasts the actual struct
+# pointer to i8* before each call.
+
+export extern fn ptrintmap_new(): PtrIntMap;
+export extern fn ptrintmap_free(const m: PtrIntMap);
+export extern fn ptrintmap_size(const m: PtrIntMap): int;
+export extern fn ptrintmap_contains(const m: PtrIntMap, const key: string): int;
+export extern fn ptrintmap_get(const m: PtrIntMap, const key: string): int;
+export extern fn ptrintmap_put(m: PtrIntMap, const key: string, const val: int);
+export extern fn ptrintmap_remove(m: PtrIntMap, const key: string);
+export extern fn ptrintmap_print(const m: PtrIntMap);
+export extern fn ptrintmap_to_string(const m: PtrIntMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+# Note: get/put/contains/remove key parameters are string (i8*) in CodeLang;
+#       the IR generator bitcasts the actual struct pointer before the call.
+
+PtrIntMap extends {
+
+    # new(): static factory — creates an empty PtrIntMap.
+    export static fn new(): PtrIntMap {
+        return ptrintmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return ptrintmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = ptrintmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): return the value for key, or 0 if absent.
+    export fn get(const key: string): int {
+        return ptrintmap_get(self, key);
+    }
+
+    # getSafe(key): Some(value) if key is present, None if absent.
+    export fn getSafe(const key: string): Option<int> {
+        let r: int = ptrintmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(ptrintmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): return the value for key, or default if absent.
+    export fn getOr(const key: string, const default: int): int {
+        let r: int = ptrintmap_contains(self, key);
+        if r == 1 {
+            return ptrintmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: string, const val: int) {
+        ptrintmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        ptrintmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this PtrIntMap.
+    export fn free() {
+        ptrintmap_free(self);
+    }
+}
+
+PtrIntMap extends Countable {
+    export fn length(): int {
+        return ptrintmap_size(self);
+    }
+}
+
+PtrIntMap extends Displayable {
+    export fn toString(): string {
+        return ptrintmap_to_string(self);
+    }
+}
+
+PtrIntMap extends Disposable {
+    export fn dispose() {
+        ptrintmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PtrStringMap — ordered map from pointer/struct keys (by identity) to string values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type PtrStringMap = intrinsic("%PtrStringMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+# key is passed as string (i8*); the IR generator bitcasts the actual struct
+# pointer to i8* before each call.
+
+export extern fn ptrstrmap_new(): PtrStringMap;
+export extern fn ptrstrmap_free(const m: PtrStringMap);
+export extern fn ptrstrmap_size(const m: PtrStringMap): int;
+export extern fn ptrstrmap_contains(const m: PtrStringMap, const key: string): int;
+export extern fn ptrstrmap_get(const m: PtrStringMap, const key: string): string;
+export extern fn ptrstrmap_put(m: PtrStringMap, const key: string, const val: string);
+export extern fn ptrstrmap_remove(m: PtrStringMap, const key: string);
+export extern fn ptrstrmap_print(const m: PtrStringMap);
+export extern fn ptrstrmap_to_string(const m: PtrStringMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+# Note: get/put/contains/remove key parameters are string (i8*) in CodeLang;
+#       the IR generator bitcasts the actual struct pointer before the call.
+
+PtrStringMap extends {
+
+    # new(): static factory — creates an empty PtrStringMap.
+    export static fn new(): PtrStringMap {
+        return ptrstrmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return ptrstrmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = ptrstrmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # get(key): return the value for key, or "" if absent.
+    export fn get(const key: string): string {
+        return ptrstrmap_get(self, key);
+    }
+
+    # getSafe(key): Some(value) if key is present, None if absent.
+    export fn getSafe(const key: string): Option<string> {
+        let r: int = ptrstrmap_contains(self, key);
+        if r == 1 {
+            return Option::Some(ptrstrmap_get(self, key));
+        }
+        return Option::None;
+    }
+
+    # getOr(key, default): return the value for key, or default if absent.
+    export fn getOr(const key: string, const default: string): string {
+        let r: int = ptrstrmap_contains(self, key);
+        if r == 1 {
+            return ptrstrmap_get(self, key);
+        }
+        return default;
+    }
+
+    # put(key, val): insert or update the key-value pair.
+    export fn put(const key: string, const val: string) {
+        ptrstrmap_put(self, key, val);
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        ptrstrmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this PtrStringMap.
+    export fn free() {
+        ptrstrmap_free(self);
+    }
+}
+
+PtrStringMap extends Countable {
+    export fn length(): int {
+        return ptrstrmap_size(self);
+    }
+}
+
+PtrStringMap extends Displayable {
+    export fn toString(): string {
+        return ptrstrmap_to_string(self);
+    }
+}
+
+PtrStringMap extends Disposable {
+    export fn dispose() {
+        ptrstrmap_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PtrPtrMap — ordered map from pointer/struct keys (by identity) to pointer/struct values
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type PtrPtrMap = intrinsic("%PtrPtrMap*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+# Both key and val are passed as string (i8*); the IR generator bitcasts the
+# actual struct pointers to i8* before each call.
+
+export extern fn ptrptrmap_new(): PtrPtrMap;
+export extern fn ptrptrmap_free(const m: PtrPtrMap);
+export extern fn ptrptrmap_size(const m: PtrPtrMap): int;
+export extern fn ptrptrmap_contains(const m: PtrPtrMap, const key: string): int;
+export extern fn ptrptrmap_put(m: PtrPtrMap, const key: string, val: string);  # both stored as void*
+export extern fn ptrptrmap_remove(m: PtrPtrMap, const key: string);
+export extern fn ptrptrmap_print(const m: PtrPtrMap);
+export extern fn ptrptrmap_to_string(const m: PtrPtrMap): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+# Note: get/put are omitted — the IR generator emits those calls directly with
+#       type-aware bitcasts since there is no single CodeLang type for void*.
+
+PtrPtrMap extends {
+
+    # new(): static factory — creates an empty PtrPtrMap.
+    export static fn new(): PtrPtrMap {
+        return ptrptrmap_new();
+    }
+
+    # size(): number of key-value pairs.
+    export fn size(): int {
+        return ptrptrmap_size(self);
+    }
+
+    # contains(key): true if key is present in this map.
+    export fn contains(const key: string): bool {
+        let r = ptrptrmap_contains(self, key);
+        if r == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # remove(key): delete key.  No-op if key is absent.
+    export fn remove(const key: string) {
+        ptrptrmap_remove(self, key);
+    }
+
+    # free(): release the heap memory owned by this PtrPtrMap.
+    export fn free() {
+        ptrptrmap_free(self);
+    }
+}
+
+PtrPtrMap extends Countable {
+    export fn length(): int {
+        return ptrptrmap_size(self);
+    }
+}
+
+PtrPtrMap extends Displayable {
+    export fn toString(): string {
+        return ptrptrmap_to_string(self);
+    }
+}
+
+PtrPtrMap extends Disposable {
+    export fn dispose() {
+        ptrptrmap_free(self);
+    }
+}
+
+# ══════════════════════════════════════════════════════════════════════
+# Generic Map<K, V> alias — compile-time resolution:
+#   Map<int, int>       → IntIntMap
+#   Map<int, string>    → IntStringMap
+#   Map<string, int>    → StringIntMap
+#   Map<string, string> → StringStringMap
+#   Map<int, T>         → IntPtrMap      (T = user-defined struct)
+#   Map<string, T>      → StringPtrMap   (T = user-defined struct)
+#   Map<T, int>         → PtrIntMap      (T = user-defined struct, key by identity)
+#   Map<T, string>      → PtrStringMap   (T = user-defined struct, key by identity)
+#   Map<T, V>           → PtrPtrMap      (both = user-defined structs, key by identity)
+# ══════════════════════════════════════════════════════════════════════
+
+export type Map<K, V> = intrinsic("%Map");
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Backward-compatible getSafe aliases.
+#
+# getSafe(key) is now an alias for get(key) — both return Option<V>.
+# Prefer get(key) in new code.
+# ════════════════════════════════════════════════════════════════════════════════
+
+IntIntMap extends {
+    export fn getSafe(const key: int): Option<int> { return self.get(key); }
+}
+
+IntStringMap extends {
+    export fn getSafe(const key: int): Option<string> { return self.get(key); }
+}
+
+StringIntMap extends {
+    export fn getSafe(const key: string): Option<int> { return self.get(key); }
+}
+
+StringStringMap extends {
+    export fn getSafe(const key: string): Option<string> { return self.get(key); }
+}
+
+# Note: PtrIntMap.getSafe() and PtrStringMap.getSafe() are defined inline
+# in the PtrIntMap and PtrStringMap extension blocks above.

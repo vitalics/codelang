@@ -1,0 +1,17 @@
+# array_type_count_mismatch.code
+# Tests that declaring a value-typed array with fewer initializer values than
+# the declared size causes a compile-time error about count mismatch.
+
+type Table {
+    const data: int[3; 1, 2, 3] = [1, 2]   # wrong — only 2 init values for 3
+    id: int
+
+    static fn new(i: int): Table {
+        return Self { id: i };
+    }
+}
+
+fn main() {
+    let t = Table.new(1);
+    print(t.id);
+}

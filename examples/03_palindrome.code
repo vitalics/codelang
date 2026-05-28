@@ -1,0 +1,47 @@
+import "../stdlib/string";
+
+# Reverse a string using a for loop and += concatenation.
+const fn reverse(const s: string): string {
+    let result: string = "";
+    let len: int = s.length();
+    for (let i: int = len - 1; i >= 0; i--) {
+        result += s.charAt(i);
+    }
+    return result;
+}
+
+# Check palindrome: compare char codes from both ends with a for loop.
+# Returns 1 if palindrome, 0 otherwise.
+fn isPalindrome(const s: string): int {
+    let len: int = s.length();
+    let half: int = len / 2;
+    for (let i: int = 0; i < half; i++) {
+        let lc: int = s.charCodeAt(i);
+        let rc: int = s.charCodeAt(len - 1 - i);
+        if lc != rc {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+fn main() {
+    let word: string = "racecar";
+    let rev: string = reverse(word);
+    print(rev);                       # racecar (same — it's a palindrome)
+
+    let p1: int = isPalindrome(word);
+    if p1 == 1 {
+        print("Palindrome");
+    } else {
+        print("Not a palindrome");
+    }
+
+    let word2: string = "hello";
+    let p2: int = isPalindrome(word2);
+    if p2 == 1 {
+        print("Palindrome");
+    } else {
+        print("Not a palindrome");
+    }
+}

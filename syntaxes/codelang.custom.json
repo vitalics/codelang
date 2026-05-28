@@ -1,0 +1,101 @@
+{
+  "_comment": "Hand-crafted syntax-highlight additions merged into the Langium-generated grammar by scripts/merge-syntax.mjs after every `pnpm langium:generate`.",
+
+  "topLevelIncludes": [
+    "#decorator",
+    "#type-parameters",
+    "#type-annotation",
+    "#builtin-types"
+  ],
+
+  "repository": {
+    "decorator": {
+      "comment": "@decorator and @decorator(args) before type/fn declarations",
+      "match": "(@)([A-Za-z_][A-Za-z_0-9]*)",
+      "captures": {
+        "1": { "name": "punctuation.definition.decorator.codelang" },
+        "2": { "name": "entity.name.function.decorator.codelang" }
+      }
+    },
+
+    "builtin-types": {
+      "comment": "Primitive and standard-library type names everywhere in the file",
+      "name": "support.type.builtin.codelang",
+      "match": "\\b(Any|int|uint|string|bool|void|u8|u16|u32|u64|i8|i16|i32|i64|f32|f64|float|double)\\b"
+    },
+
+    "type-annotation": {
+      "comment": "Highlight the type reference that follows ':' in declarations, parameters, and return positions",
+      "begin": "(:)\\s*",
+      "beginCaptures": {
+        "1": { "name": "punctuation.separator.codelang" }
+      },
+      "end": "(?=[,);={}\\n])",
+      "patterns": [
+        { "include": "#type-parameters" },
+        { "include": "#builtin-types" },
+        {
+          "name": "keyword.operator.type.union.codelang",
+          "match": "\\|"
+        },
+        {
+          "name": "storage.modifier.array.codelang",
+          "match": "\\[\\]"
+        },
+        {
+          "name": "entity.name.type.codelang",
+          "match": "\\b[A-Z][A-Za-z_0-9]*\\b"
+        },
+        {
+          "name": "keyword.operator.spread.codelang",
+          "match": "\\.\\.\\."
+        }
+      ]
+    },
+
+    "type-parameters": {
+      "comment": "Generic type-parameter list between < > after an identifier. Handles bounds like <A extends Any[] | Any, R>.",
+      "begin": "(?<=[A-Za-z_0-9])(<)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.typeparameters.begin.codelang" }
+      },
+      "end": "(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.typeparameters.end.codelang" }
+      },
+      "patterns": [
+        { "include": "#comments" },
+        {
+          "comment": "'extends' inside a type-parameter bound is a constraint operator, not a control-flow keyword",
+          "name": "keyword.operator.type-constraint.codelang",
+          "match": "\\bextends\\b"
+        },
+        {
+          "comment": "Union operator between bound alternatives: Any[] | Any",
+          "name": "keyword.operator.type.union.codelang",
+          "match": "\\|"
+        },
+        {
+          "comment": "Array/tuple suffix on a bound atom: Any[]",
+          "name": "storage.modifier.array.codelang",
+          "match": "\\[\\]"
+        },
+        { "include": "#builtin-types" },
+        {
+          "comment": "PascalCase identifiers inside <> are concrete type names (Buffer, Callable, …)",
+          "name": "entity.name.type.codelang",
+          "match": "\\b[A-Z][A-Za-z_0-9]*\\b"
+        },
+        {
+          "comment": "Short lowercase identifiers are type-parameter variables (A, R, T, K, V, …)",
+          "name": "variable.other.type-parameter.codelang",
+          "match": "\\b[a-z][A-Za-z_0-9]*\\b"
+        },
+        {
+          "name": "punctuation.separator.comma.codelang",
+          "match": ","
+        }
+      ]
+    }
+  }
+}

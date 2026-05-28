@@ -1,0 +1,5 @@
+fn main() {
+  let msg = "first";
+  msg = "second";
+  print(msg);
+}

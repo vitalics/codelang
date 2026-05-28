@@ -1,0 +1,410 @@
+# stdlib/async.code
+#
+# Concurrency primitives — Go-style concurrency without function colouring.
+#
+# Any function can be spawned into its own OS thread; no async/await keywords.
+# Context propagation follows the Go context.Context pattern.
+# The scheduler is inspired by the WICG Scheduling APIs (scheduler.postTask).
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/async";
+#
+#   fn main(): void {
+#       # Spawn a task and wait for it
+#       const t: Task = Async.spawn(fn(): void {
+#           print("hello from task");
+#       });
+#       Async.wait(t);
+#
+#       # Context propagation
+#       const ctx: Context = Context.background()
+#           .withValue("requestId", "abc-123");
+#       print(ctx.get("requestId"));   # abc-123
+#
+#       # Mutual exclusion
+#       const mu: Shared = Shared.new();
+#       mu.lock();
+#       # ... critical section ...
+#       mu.unlock();
+#
+#       # Priority scheduler
+#       const s: Scheduler = Scheduler.new();
+#       s.postTask(fn(): void { print("bg work"); }, Priority::Lowest);
+#       s.postTask(fn(): void { print("urgent!"); }, Priority::Highest);
+#       s.waitAll();
+#       s.free();
+#
+#       # setTimeout / setInterval
+#       Async.setTimeout(fn(): void { print("one-shot"); }, 100);
+#       const id: int = Async.setInterval(fn(): void { print("tick"); }, 500);
+#       Async.sleep(1200);
+#       Async.clearInterval(id);
+#   }
+#
+# ── Priority levels ──────────────────────────────────────────────────────────
+#   Priority::Highest   0  — run ASAP, blocks other work
+#   Priority::High      1  — above default
+#   Priority::Medium    2  — default (normal tasks)
+#   Priority::Low       3  — below default
+#   Priority::Lowest    4  — background / idle
+#
+#   p.toNumber()  →  the underlying integer (0–4)
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Priority        — task priority enum (use with Scheduler.postTask)
+#   Task            — handle to a spawned OS thread
+#   Context         — immutable key-value context (string keys and values)
+#   Shared          — mutual-exclusion lock (wraps pthread_mutex_t)
+#   Scheduler       — priority task queue backed by 5 worker threads
+#   AbortSignal     — read-only cancellation token; passed to cancellable work
+#   AbortController — write side; call .abort() to cancel all linked operations
+#
+# ── AbortController quick start ───────────────────────────────────────────────
+#   const ctrl:   AbortController = AbortController.new();
+#   const signal: AbortSignal     = ctrl.signal();
+#
+#   # Pass signal to any cancellable operation
+#   const t: Task = Async.spawn(fn(): void {
+#       while (!signal.aborted()) {
+#           Async.sleep(10);    # do work in small steps
+#       }
+#       print("task cancelled");
+#   });
+#
+#   Async.sleep(50);           # let task run for a bit
+#   ctrl.abort();              # cancel — fires onAbort callbacks, sets aborted = true
+#   Async.wait(t);
+#   ctrl.free();
+#
+#   # Deadline-based cancellation (auto-aborts after 500 ms)
+#   const deadline: AbortSignal = AbortSignal.timeout(500);
+#
+#   # Already-aborted signal (useful as a noop sentinel)
+#   const dead: AbortSignal = AbortSignal.abort();
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Priority enum
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Task priority levels for Scheduler.postTask.
+# Lower numeric value = higher priority.
+export enum Priority {
+    Highest = 0,   # Run ASAP — blocks other work (user-blocking)
+    High    = 1,   # Above default
+    Medium  = 2,   # Default — normal tasks (user-visible)
+    Low     = 3,   # Below default
+    Lowest  = 4,   # Background / idle
+
+    # Returns the underlying integer value (0 = Highest … 4 = Lowest).
+    # Useful when bridging to APIs that expect numeric priorities.
+    export fn toNumber(): int {
+        return switch self {
+            Priority::Highest => 0,
+            Priority::High    => 1,
+            Priority::Medium  => 2,
+            Priority::Low     => 3,
+            Priority::Lowest  => 4,
+        };
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Task is an opaque pointer to the C-managed struct { pthread_t; int active; }.
+export type Task = intrinsic("%Task*");
+
+# Context is an opaque pointer to an immutable linked-list of string key-value pairs.
+export type Context = intrinsic("%AsyncContext*");
+
+# Shared is an opaque pointer to a C-managed struct { pthread_mutex_t }.
+export type Shared = intrinsic("%Shared*");
+
+# Scheduler is an opaque pointer to a C-managed priority task queue.
+export type Scheduler = intrinsic("%Scheduler*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/async.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Task
+extern fn async_spawn_task(f: fn(): void): Task;
+extern fn async_wait_task(t: Task);
+extern fn async_task_free(t: Task);
+
+# Sleep
+extern fn async_sleep_ms(ms: int);
+
+# Context
+extern fn context_background(): Context;
+extern fn context_with_value(ctx: Context, key: string, value: string): Context;
+extern fn context_get(ctx: Context, key: string): string;
+
+# Shared mutex
+extern fn shared_new(): Shared;
+extern fn shared_lock(s: Shared);
+extern fn shared_unlock(s: Shared);
+extern fn shared_free(s: Shared);
+
+# Scheduler
+extern fn scheduler_new(): Scheduler;
+extern fn scheduler_post_task(s: Scheduler, f: fn(): void, priority: int);
+extern fn scheduler_wait_all(s: Scheduler);
+extern fn scheduler_free(s: Scheduler);
+
+# Timers
+extern fn async_set_timeout(f: fn(): void, ms: int): int;
+extern fn async_set_interval(f: fn(): void, ms: int): int;
+extern fn async_clear_timeout(id: int);
+extern fn async_clear_interval(id: int);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Task extends {
+
+    # Wait for this task to finish.
+    export fn wait() { async_wait_task(self); }
+
+    # Free the task handle.  Call only after wait() returns.
+    export fn free() { async_task_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Context extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Context extends {
+
+    # Returns a new background (root) context with no values.
+    export static fn background(): Context {
+        return context_background();
+    }
+
+    # Returns a child context that carries (key, value).
+    # The parent context is unchanged.
+    export fn withValue(key: string, value: string): Context {
+        return context_with_value(self, key, value);
+    }
+
+    # Looks up the most-recently-set value for key.
+    # Returns "" if the key was never set.
+    export fn get(key: string): string {
+        return context_get(self, key);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared (mutex) extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Shared extends {
+
+    # Allocate a new unlocked mutex.
+    export static fn new(): Shared {
+        return shared_new();
+    }
+
+    # Acquire the lock, blocking until available.
+    export fn lock() { shared_lock(self); }
+
+    # Release the lock.
+    export fn unlock() { shared_unlock(self); }
+
+    # Destroy the mutex and free the Shared object.
+    export fn free() { shared_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scheduler extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Scheduler extends {
+
+    # Create a new scheduler with 5 worker threads (one per priority level).
+    export static fn new(): Scheduler {
+        return scheduler_new();
+    }
+
+    # Submit a task at the given Priority level.
+    # The priority determines which worker thread picks up the task:
+    #   Priority::Highest runs before Priority::High, etc.
+    export fn postTask(f: fn(): void, priority: Priority) {
+        scheduler_post_task(self, f, priority.toNumber());
+    }
+
+    # Block until all queued tasks have completed.
+    export fn waitAll() { scheduler_wait_all(self); }
+
+    # Shut down worker threads and free all resources.
+    export fn free() { scheduler_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Async namespace (static helpers)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Async provides top-level helpers as static methods.
+# Usage: Async.spawn(...), Async.sleep(ms), Async.setTimeout(f, ms), etc.
+export type Async = intrinsic("%Async*");
+
+Async extends {
+
+    # Spawn f as a new OS thread.  Returns a Task handle.
+    export static fn spawn(f: fn(): void): Task {
+        return async_spawn_task(f);
+    }
+
+    # Wait for a task spawned with spawn().
+    export static fn wait(t: Task) {
+        async_wait_task(t);
+    }
+
+    # Sleep the current thread for ms milliseconds.
+    export static fn sleep(ms: int) {
+        async_sleep_ms(ms);
+    }
+
+    # Fire f once after ms milliseconds.  Returns a timer ID.
+    export static fn setTimeout(f: fn(): void, ms: int): int {
+        return async_set_timeout(f, ms);
+    }
+
+    # Fire f repeatedly every ms milliseconds.  Returns an interval ID.
+    export static fn setInterval(f: fn(): void, ms: int): int {
+        return async_set_interval(f, ms);
+    }
+
+    # Cancel a one-shot timer created with setTimeout.
+    export static fn clearTimeout(id: int) {
+        async_clear_timeout(id);
+    }
+
+    # Cancel a repeating interval created with setInterval.
+    export static fn clearInterval(id: int) {
+        async_clear_interval(id);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AbortSignal / AbortController
+# ─────────────────────────────────────────────────────────────────────────────
+
+# AbortSignal — read-only cancellation token.
+# Obtained from AbortController.signal() or a static factory.
+export type AbortSignal = intrinsic("%AbortSignal*");
+
+# AbortController — write side; create with AbortController.new().
+export type AbortController = intrinsic("%AbortController*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/async.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# AbortSignal
+extern fn abort_signal_aborted(sig: AbortSignal): int;
+extern fn abort_signal_reason(sig: AbortSignal): string;
+extern fn abort_signal_on_abort(sig: AbortSignal, f: fn(): void);
+extern fn abort_signal_free(sig: AbortSignal);
+extern fn abort_signal_already_aborted(reason: string): AbortSignal;
+extern fn abort_signal_timeout(ms: int): AbortSignal;
+
+# AbortController
+extern fn abort_controller_new(): AbortController;
+extern fn abort_controller_signal(ctrl: AbortController): AbortSignal;
+extern fn abort_controller_abort(ctrl: AbortController, reason: string);
+extern fn abort_controller_free(ctrl: AbortController);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AbortSignal extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+AbortSignal extends {
+
+    # aborted() — true once abort has been called on the linked controller.
+    # Safe to call from any thread; backed by a mutex.
+    export fn aborted(): bool {
+        return abort_signal_aborted(self) == 1;
+    }
+
+    # reason() — the abort reason string passed to abort().
+    # Returns "" if the signal has not been aborted yet.
+    # Defaults to "AbortError" when no reason is provided.
+    export fn reason(): string {
+        return abort_signal_reason(self);
+    }
+
+    # onAbort(f) — register a zero-arg callback invoked when the signal fires.
+    # If the signal is already aborted when onAbort is called, f fires immediately
+    # in the calling thread.  Otherwise f is called inside abort().
+    # Up to 32 callbacks per signal.
+    export fn onAbort(f: fn(): void) {
+        abort_signal_on_abort(self, f);
+    }
+
+    # free() — release the signal.
+    # Only call on signals NOT owned by an AbortController
+    # (i.e. those created via AbortSignal.timeout() or AbortSignal.abort()).
+    # For controller-owned signals, call AbortController.free() instead.
+    export fn free() {
+        abort_signal_free(self);
+    }
+
+    # ── Static factories ───────────────────────────────────────────────────────
+
+    # timeout(ms) — returns a signal that auto-aborts with reason "TimeoutError"
+    # after ms milliseconds.  Uses the shared timer thread.
+    export static fn timeout(ms: int): AbortSignal {
+        return abort_signal_timeout(ms);
+    }
+
+    # abort() — returns a signal that is already in the aborted state
+    # with reason "AbortError".  Useful as a noop / sentinel.
+    export static fn abort(): AbortSignal {
+        return abort_signal_already_aborted("AbortError");
+    }
+
+    # abortWith(reason) — returns an already-aborted signal with a custom reason.
+    export static fn abortWith(reason: string): AbortSignal {
+        return abort_signal_already_aborted(reason);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AbortController extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+AbortController extends {
+
+    # new() — create a new AbortController.
+    # The controller owns its AbortSignal; both are freed when free() is called.
+    export static fn new(): AbortController {
+        return abort_controller_new();
+    }
+
+    # signal() — returns the AbortSignal associated with this controller.
+    # Pass the signal to any operation that should observe cancellation.
+    export fn signal(): AbortSignal {
+        return abort_controller_signal(self);
+    }
+
+    # abort() — abort with the default reason "AbortError".
+    # Idempotent: calling abort() on an already-aborted controller is a no-op.
+    export fn abort() {
+        abort_controller_abort(self, "AbortError");
+    }
+
+    # abortWith(reason) — abort with a custom reason string.
+    # The reason is available via signal.reason().
+    export fn abortWith(reason: string) {
+        abort_controller_abort(self, reason);
+    }
+
+    # free() — destroy the controller and the signal it owns.
+    # Call only after all tasks that captured the signal have finished.
+    export fn free() {
+        abort_controller_free(self);
+    }
+}

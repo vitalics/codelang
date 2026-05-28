@@ -1,0 +1,100 @@
+# tests/fixtures/valid/tui_smoke.code
+#
+# Non-interactive smoke test for stdlib/tui.
+# Runs without a real terminal: just checks that compilation succeeds and that
+# the key data-structure operations work (no screen I/O).
+#
+# We test:
+#   • Buffer.new / reset / setCell / writeStr / getSymbol
+#   • Style builder chain
+#   • Rect constructors and inner/intersect/split helpers
+#   • Block.inner with various Borders combinations
+#   • ListState navigation helpers
+
+import "../../../stdlib/tui";
+
+fn main() {
+    # ── Style builder ─────────────────────────────────────────────────────────
+    let s: Style = Style.default()
+        .fg(Color.Green())
+        .bg(Color.Black())
+        .bold()
+        .underline();
+    print(int_to_string(s.fg));     # 2
+    print(int_to_string(s.bg));     # 0
+    print(int_to_string(s.mods));   # 3  (bold=1 | underline=2)
+
+    # reversed() adds 4
+    let sr: Style = s.reversed();
+    print(int_to_string(sr.mods));  # 7
+
+    # removeModifier removes bold
+    let sn: Style = sr.removeModifier(Modifier.Bold());
+    print(int_to_string(sn.mods));  # 6
+
+    # ── Rect helpers ──────────────────────────────────────────────────────────
+    let r: Rect = Rect { x: 2, y: 3, width: 20, height: 10 };
+    print(int_to_string(r.right()));   # 22
+    print(int_to_string(r.bottom()));  # 13
+
+    let ri: Rect = r.inner(1);
+    print(int_to_string(ri.x));        # 3
+    print(int_to_string(ri.y));        # 4
+    print(int_to_string(ri.width));    # 18
+    print(int_to_string(ri.height));   # 8
+
+    let top: Rect = r.splitTop(4);
+    print(int_to_string(top.height));  # 4
+    let bot: Rect = r.splitBottom(4);
+    print(int_to_string(bot.y));       # 7
+    print(int_to_string(bot.height));  # 6
+
+    # ── Block.inner with Borders.All ─────────────────────────────────────────
+    let b: Block = Block.default();   # borders = All (15)
+    let area: Rect = Rect { x: 0, y: 0, width: 40, height: 20 };
+    let inner: Rect = b.inner(area);
+    print(int_to_string(inner.x));      # 1
+    print(int_to_string(inner.y));      # 1
+    print(int_to_string(inner.width));  # 38
+    print(int_to_string(inner.height)); # 18
+
+    # Borders.None
+    let bn: Block = Block.default().borders(Borders.None());
+    let inn: Rect = bn.inner(area);
+    print(int_to_string(inn.width));    # 40
+
+    # ── Buffer operations ─────────────────────────────────────────────────────
+    let buf: Buffer = Buffer.new(10, 5);
+    print(int_to_string(buf.width()));   # 10
+    print(int_to_string(buf.height()));  # 5
+
+    buf.reset();
+    # After reset every cell should be a space
+    print(buf.getSymbol(0, 0));          # " "
+
+    # setCell
+    buf.setCell(3, 2, "X", Style.default());
+    print(buf.getSymbol(3, 2));          # X
+
+    # writeStr
+    let ts: Style = Style.default().fg(Color.Red());
+    buf.writeStr(0, 0, 5, "Hello", ts);
+    print(buf.getSymbol(0, 0));          # H
+    print(buf.getSymbol(4, 0));          # o
+
+    buf.free();
+
+    # ── ListState navigation ──────────────────────────────────────────────────
+    let ls: ListState = ListState.new().select(2);
+    print(int_to_string(ls.selected));   # 2
+
+    let lu: ListState = ls.up();
+    print(int_to_string(lu.selected));   # 1
+
+    let ld: ListState = ls.down(5);
+    print(int_to_string(ld.selected));   # 3
+
+    # ensureVisible: selected=3, offset=0, visible=3 → offset should become 1
+    let lv: ListState = ld.ensureVisible(3);
+    print(int_to_string(lv.offset));     # 1
+}

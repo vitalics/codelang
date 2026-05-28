@@ -1,0 +1,42 @@
+import "../stdlib/boolean";
+import "../stdlib/string";
+
+fn main() {
+    # ── Bool methods ──────────────────────────────────────────────────────────
+    const flag = true;
+    print(flag.toString());
+    print(flag.toNumber());
+
+    const inv = flag.not();
+    print(inv.toString());
+
+    const zero = false;
+    const zeroBool = zero.toBoolean();
+    print(zeroBool.toString());
+
+    # ── String: Displayable ───────────────────────────────────────────────────
+    const greeting = "hello";
+    print(greeting.toString());
+
+    # ── String: Countable ─────────────────────────────────────────────────────
+    print(greeting.length());
+
+    # ── String: Numeric ───────────────────────────────────────────────────────
+    const numStr = "42";
+    print(numStr.toNumber());
+
+    const badStr = "abc";
+    print(badStr.toNumber());
+
+    # ── String: Logical ───────────────────────────────────────────────────────
+    const truthy = greeting.toBoolean();
+    print(truthy.toString());
+
+    const empty = "";
+    const falsy = empty.toBoolean();
+    print(falsy.toString());
+
+    # ── String: Indexable ─────────────────────────────────────────────────────
+    print(greeting.at(0));
+    print(greeting.at(4));
+}

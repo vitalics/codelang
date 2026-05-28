@@ -1,0 +1,26 @@
+# template_struct_tostring.code
+# A struct value used as a hole inside another template literal.
+# Tests that {structVar} inside a template calls the struct's toString() method.
+
+type Vec2 {
+    x: int
+    y: int
+
+    static fn new(xv: int, yv: int): Vec2 {
+        return Self { x: xv, y: yv };
+    }
+
+    fn toString(): string {
+        return $"({self.x}, {self.y})";
+    }
+}
+
+fn main() {
+    let v = Vec2.new(10, 20);
+
+    # Vec2 appears inside another template — should call Vec2.toString()
+    print($"vector: {v}");
+
+    # Vec2 printed directly — should also call Vec2.toString()
+    print(v);
+}

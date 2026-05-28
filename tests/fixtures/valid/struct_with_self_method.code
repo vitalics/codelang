@@ -1,0 +1,24 @@
+# struct_with_self_method.code
+#
+# Tests `self.field` access inside a struct method combined with a method
+# parameter. This is the core of the user's example:
+#   type MyCustom<T extends Displayable> = {
+#       myProperty: string
+#       fn append(something: string): string { return self.myProperty + something }
+#   }
+#
+# (We use string for T to avoid the generic struct complication in this fixture;
+#  the generic + protocol-bounds struct is tested separately.)
+
+type Wrapper = {
+    prefix: string
+    fn append(const suffix: string): string {
+        return self.prefix + suffix;
+    }
+};
+
+fn main() {
+    let w: Wrapper = Wrapper_new("Hello, ");
+    let result: string = w.append("world");
+    print(result);
+}

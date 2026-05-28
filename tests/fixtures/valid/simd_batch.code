@@ -1,0 +1,48 @@
+import "../../../stdlib/simd";
+
+fn main(): void {
+    # ── Float8: dot product with ones = sum ──────────────────────────────────
+    # dot([1..8], [1,1,...,1]) = 1+2+3+4+5+6+7+8 = 36
+    const w8: Float8    = Float8.of(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+    const ones8: Float8 = Float8.one();
+    print(w8.dot(ones8));            # 36
+
+    # ── Float8: lerp to midpoint ──────────────────────────────────────────────
+    # lerp(zero, one, 0.5) → splat(0.5);  sum = 8 × 0.5 = 4
+    const zero8: Float8 = Float8.zero();
+    const mid8: Float8  = zero8.lerp(ones8, 0.5);
+    print(mid8.sum());               # 4
+
+    # ── Float8: min / max ────────────────────────────────────────────────────
+    const lo8: Float8 = Float8.splat(3.0);
+    const hi8: Float8 = Float8.splat(5.0);
+    print(lo8.min(hi8).sum());       # 8 × 3 = 24
+    print(lo8.max(hi8).sum());       # 8 × 5 = 40
+
+    # ── Float8: abs of all-negative vector ────────────────────────────────────
+    # abs([-1..-8]) = [1..8];  sum = 36
+    const neg8: Float8 = Float8.of(-1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0);
+    const pos8: Float8 = neg8.abs();
+    print(pos8.sum());               # 36
+
+    # ── Float16: sum of ones ─────────────────────────────────────────────────
+    # Float16.one() = 16 lanes of 1.0;  sum = 16
+    const ones16: Float16 = Float16.one();
+    print(ones16.sum());             # 16
+
+    # ── Float16: dot([1..16], ones) = 1+2+…+16 = 136 ────────────────────────
+    const w16: Float16 = Float16.of(
+        1.0,  2.0,  3.0,  4.0,
+        5.0,  6.0,  7.0,  8.0,
+        9.0,  10.0, 11.0, 12.0,
+        13.0, 14.0, 15.0, 16.0
+    );
+    print(w16.dot(ones16));          # 136
+
+    # ── Float16: lerp single-lane value ──────────────────────────────────────
+    # lerp(0, 10, 0.5) = 5 at every lane;  get(0) = 5
+    const zero16: Float16  = Float16.zero();
+    const ten16: Float16   = Float16.splat(10.0);
+    const mid16: Float16   = zero16.lerp(ten16, 0.5);
+    print(mid16.get(0));             # 5
+}

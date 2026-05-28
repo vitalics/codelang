@@ -1,0 +1,128 @@
+import "stdlib/async";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Async — Go-style concurrency without function colouring
+#
+# Any function can be spawned into a new OS thread.  No async/await keywords;
+# just pass a lambda to Async.spawn() and call Async.wait() on the handle.
+#
+# Note on captures: lambdas capture pointer types (like Shared, Context,
+# Scheduler) by value — which passes the pointer itself, giving shared access
+# to the same heap object.  Scalar types (int, float, bool) are captured as
+# snapshots; use Shared to protect shared state between threads.
+#
+# This example demonstrates:
+#   1. Basic task spawn and wait
+#   2. Shared mutex for mutual exclusion (protecting a heap object)
+#   3. Context propagation across async boundaries
+#   4. WICG-inspired Scheduler with priorities
+#   5. setTimeout / sleep-based timing
+# ─────────────────────────────────────────────────────────────────────────────
+
+fn main(): void {
+    print("── 1. Basic spawn ───────────────────────────────────────────────");
+
+    # Spawn a background task and wait for it to finish.
+    const t1: Task = Async.spawn(fn(): void {
+        print("Hello from task!");
+    });
+    Async.wait(t1);
+    print("Task finished.");
+
+    # ── 2. Mutual exclusion ───────────────────────────────────────────────────
+    # Shared is a pthreads mutex.  Pointer types (like Shared) are captured
+    # by pointer value — both tasks share the same C mutex object.
+    print("── 2. Shared mutex ─────────────────────────────────────────────");
+
+    const mu: Shared = Shared.new();
+
+    const t2: Task = Async.spawn(fn(): void {
+        mu.lock();
+        print("task A in critical section");
+        mu.unlock();
+    });
+
+    const t3: Task = Async.spawn(fn(): void {
+        mu.lock();
+        print("task B in critical section");
+        mu.unlock();
+    });
+
+    Async.wait(t2);
+    Async.wait(t3);
+    mu.free();
+    print("Both tasks finished.");
+
+    # ── 3. Context propagation ────────────────────────────────────────────────
+    # Context is an immutable linked-list; captures are safe across threads.
+    print("── 3. Context ──────────────────────────────────────────────────");
+
+    const ctx: Context = Context.background()
+        .withValue("requestId", "req-42")
+        .withValue("user", "alice");
+
+    print(ctx.get("requestId"));   # req-42
+    print(ctx.get("user"));        # alice
+    print(ctx.get("missing"));     # "" (key not set)
+
+    const t4: Task = Async.spawn(fn(): void {
+        # ctx is captured by pointer — the same immutable context object.
+        print(ctx.get("requestId"));  # req-42
+    });
+    Async.wait(t4);
+
+    # Child contexts inherit parent values.
+    const child: Context = ctx.withValue("role", "admin");
+    print(child.get("role"));        # admin
+    print(child.get("requestId"));   # req-42 (inherited)
+
+    # ── 4. Priority Scheduler (WICG scheduler.postTask) ───────────────────────
+    # ── Priority enum ────────────────────────────────────────────────────────
+    print("── Priority.toNumber() ─────────────────────────────────────────");
+    print(Priority::Highest.toNumber());  # 0
+    print(Priority::High.toNumber());     # 1
+    print(Priority::Medium.toNumber());   # 2
+    print(Priority::Low.toNumber());      # 3
+    print(Priority::Lowest.toNumber());   # 4
+
+    # ── 4. Priority Scheduler (WICG scheduler.postTask) ───────────────────────
+    print("── 4. Scheduler ────────────────────────────────────────────────");
+
+    const sched: Scheduler = Scheduler.new();
+
+    sched.postTask(fn(): void {
+        print("background task");
+    }, Priority::Lowest);
+
+    sched.postTask(fn(): void {
+        print("low-priority task");
+    }, Priority::Low);
+
+    sched.postTask(fn(): void {
+        print("default task");
+    }, Priority::Medium);
+
+    sched.postTask(fn(): void {
+        print("high-priority task");
+    }, Priority::High);
+
+    sched.postTask(fn(): void {
+        print("urgent task");
+    }, Priority::Highest);
+
+    sched.waitAll();
+    sched.free();
+    print("All scheduler tasks done.");
+
+    # ── 5. setTimeout ─────────────────────────────────────────────────────────
+    print("── 5. Timers ───────────────────────────────────────────────────");
+
+    # One-shot timer: fires once after 100 ms.
+    Async.setTimeout(fn(): void {
+        print("timeout fired");
+    }, 100);
+
+    # Sleep 300 ms — enough for the timeout to fire.
+    Async.sleep(300);
+    print("Done.");
+}

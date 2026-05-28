@@ -1,0 +1,18 @@
+import "../../../stdlib/async";
+
+# async_priority fixture — Priority enum toNumber() values.
+#
+# Output (5 lines):
+#   [0] 0   (Priority::Highest)
+#   [1] 1   (Priority::High)
+#   [2] 2   (Priority::Medium)
+#   [3] 3   (Priority::Low)
+#   [4] 4   (Priority::Lowest)
+
+fn main(): void {
+    print(Priority::Highest.toNumber());   # 0
+    print(Priority::High.toNumber());      # 1
+    print(Priority::Medium.toNumber());    # 2
+    print(Priority::Low.toNumber());       # 3
+    print(Priority::Lowest.toNumber());    # 4
+}

@@ -1,0 +1,39 @@
+# buffer_slice_ops.code
+# Tests slice(), sliceFrom(), clone(), concat().
+
+import "../../../stdlib/string";
+
+fn main() {
+    const s = "hello";
+    let b: Buffer = s.toBuffer();
+
+    # slice [1, 4) → "ell"
+    let sl: Buffer = b.slice(1, 4);
+    print(sl.length());      # 3
+    print(sl.get(0));        # 101  'e'
+    print(sl.get(1));        # 108  'l'
+    print(sl.get(2));        # 108  'l'
+    sl.free();
+
+    # sliceFrom(3) → "lo"
+    let sf: Buffer = b.sliceFrom(3);
+    print(sf.length());      # 2
+    print(sf.get(0));        # 108  'l'
+    print(sf.get(1));        # 111  'o'
+    sf.free();
+
+    # clone
+    let cl: Buffer = b.clone();
+    print(cl.length());      # 5
+    print(cl.get(0));        # 104  'h'
+    cl.free();
+
+    # concat
+    let b2: Buffer = b.concat(b);
+    print(b2.length());      # 10
+    print(b2.get(0));        # 104  'h'
+    print(b2.get(5));        # 104  'h'  (second copy starts at 5)
+    b2.free();
+
+    b.free();
+}

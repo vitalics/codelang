@@ -1,0 +1,9 @@
+import "../stdlib/string";
+
+fn main() {
+    const s = "hello";
+    using b = s.toBuffer();
+    print(b.length());
+    print(b.get(0));
+    print(b.get(4));
+}

@@ -1,0 +1,25 @@
+# enum_tagged_union.code
+# Tagged union enum with payload variants and inline methods.
+
+enum Shape {
+    Circle(float),
+    Rect(float, float),
+    Point,
+
+    fn area(): float {
+        return switch self {
+            Shape::Circle(r) => 3.14159 * r * r,
+            Shape::Rect(w, h) => w * h,
+            Shape::Point => 0.0,
+        };
+    }
+}
+
+fn main() {
+    let c = Shape::Circle(5.0);
+    print(c.area());
+    let r = Shape::Rect(3.0, 4.0);
+    print(r.area());
+    let pt = Shape::Point;
+    print(pt.area());
+}

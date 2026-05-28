@@ -1,0 +1,51 @@
+# tests/fixtures/valid/generic_new_syntax.code
+#
+# Tests for Map.new() / Set.new() with type annotation on variable,
+# and Map<K,V>.new() / Set<T>.new() with explicit type args (no annotation).
+#
+# Expected output (9 lines):
+#   3       — Set<int>.new() via type annotation: size after 3 adds
+#   2       — Set<string>.new() via type args: size after 2 adds
+#   hello   — Set<string>.at(0) unwrapped
+#   2       — Map<int,int>.new() via type annotation: size after 2 puts
+#   10      — Map<int,int>.get(1) unwrapped
+#   2       — Map<string,int>.new() via type args: size after 2 puts
+#   1       — Map<string,int>.get("a") unwrapped
+#   1       — Map<string,string>.new() via type args: size after 1 put
+#   v       — Map<string,string>.get("k") unwrapped
+
+import "../../../stdlib/set";
+import "../../../stdlib/map";
+
+fn main() {
+    # Set.new() — type annotation tells compiler which concrete type to create
+    let s1: Set<int> = Set.new();
+    s1.add(10); s1.add(20); s1.add(30);
+    print(s1.size());      # 3
+
+    # Set<string>.new() — explicit type arg, no variable annotation needed
+    let s2 = Set<string>.new();
+    s2.add("world");
+    s2.add("hello");
+    print(s2.size());      # 2
+    print(s2.at(0).unwrapOr(""));   # hello  (sorted: hello < world)
+
+    # Map.new() — type annotation
+    let m1: Map<int, int> = Map.new();
+    m1.put(1, 10);
+    m1.put(2, 20);
+    print(m1.size());      # 2
+    print(m1.get(1).unwrapOr(0));   # 10
+
+    # Map<K,V>.new() — explicit type args
+    let m2 = Map<string, int>.new();
+    m2.put("a", 1);
+    m2.put("b", 2);
+    print(m2.size());      # 2
+    print(m2.get("a").unwrapOr(0)); # 1
+
+    let m3 = Map<string, string>.new();
+    m3.put("k", "v");
+    print(m3.size());      # 1
+    print(m3.get("k").unwrapOr("")); # v
+}

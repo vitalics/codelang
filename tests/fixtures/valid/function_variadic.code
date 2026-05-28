@@ -1,0 +1,34 @@
+import "../../../stdlib/function";
+
+fn double(x: int): int { return x * 2; }
+fn square(x: int): int { return x * x; }
+fn add(a: int, b: int): int { return a + b; }
+fn mul3(a: int, b: int, c: int): int { return a * b * c; }
+fn greet(n: int, x: int): int { return n + x; }
+
+fn main() {
+    # Single-argument function via tuple annotation
+    const f: Function<[int], int> = double;
+    print(f(5));          # 10
+    print(f.call(5));     # 10  (Callable protocol still works for single-arg)
+
+    # Two-argument function via tuple annotation
+    const g: Function<[int, int], int> = add;
+    print(g(3, 4));       # 7
+
+    # Lambda with two-arg tuple annotation
+    const h: Function<[int, int], int> = fn(a: int, b: int): int { return a * b; };
+    print(h(6, 7));       # 42
+
+    # Three-argument function
+    const triple: Function<[int, int, int], int> = mul3;
+    print(triple(2, 3, 5));  # 30
+
+    # Mixed with existing stdlib combinators (single-arg apply still works)
+    print(apply(double, 8));  # 16
+    print(identity(99));      # 99
+
+    # Reassign a two-arg Function variable to a lambda
+    const adder: Function<[int, int], int> = fn(x: int, y: int): int { return x + y; };
+    print(adder(10, 20));  # 30
+}

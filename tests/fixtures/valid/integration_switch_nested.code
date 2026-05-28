@@ -1,0 +1,62 @@
+# Nested switch, switch on computed values, switch + if
+fn grade(score: int): string {
+    return switch score {
+        90 => "A",
+        80 => "B",
+        70 => "C",
+        60 => "D",
+        else => "F",
+    };
+}
+
+fn describe(s: string): string {
+    return switch s {
+        "A" => "excellent",
+        "B" => "good",
+        "C" => "average",
+        else => "needs work",
+    };
+}
+
+fn main() {
+    # Nested switch: outer switch value fed into inner switch
+    const score: int = 80;
+    let g = grade(score);
+    let d = describe(g);
+    print(g);   # B
+    print(d);   # good
+
+    # Inline nested: switch on result of switch
+    let level = switch grade(90) {
+        "A" => "top",
+        "B" => "mid",
+        else => "low",
+    };
+    print(level);   # top
+
+    # switch + if combination
+    let x: int = 5;
+    let category = switch x {
+        1 => "tiny",
+        2 => "small",
+        else => "large",
+    };
+    if category == "large" {
+        print("big number");   # big number
+    }
+
+    # switch with arithmetic subject
+    let result = switch 3 * 4 {
+        12 => "twelve",
+        else => "not twelve",
+    };
+    print(result);   # twelve
+
+    # Multiple switches in sequence, each using a prior result
+    let a = switch 1 { 1 => "one", else => "x" };
+    let b = switch 2 { 2 => "two", else => "x" };
+    let c = switch 3 { 3 => "three", else => "x" };
+    print(a);   # one
+    print(b);   # two
+    print(c);   # three
+}

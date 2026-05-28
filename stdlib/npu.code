@@ -1,0 +1,161 @@
+# stdlib/npu.code
+#
+# Hardware-accelerated matrix operations for Apple Silicon.
+#
+# ── Backend ───────────────────────────────────────────────────────────────────
+#   macOS  → Accelerate framework (cblas_sgemm via AMX, vDSP for element-wise)
+#   Linux  → scalar C fallback (correct, no external BLAS required)
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/npu";
+#
+#   # Build a 2×2 weight matrix
+#   const w: Matrix = Matrix.new(2, 2);
+#   w.set(0, 0, 1.0); w.set(0, 1, 0.0);
+#   w.set(1, 0, 0.0); w.set(1, 1, 1.0);
+#
+#   # Multiply (hardware-accelerated on Apple Silicon)
+#   const out: Matrix = w.multiply(w);
+#   print(out);   # Matrix(2x2)[[1, 0], [0, 1]]
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Matrix — heap-allocated row-major float matrix
+#             backed by an opaque C struct (runtime/npu.c)
+
+import "./numbers";
+import "./protocols";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declaration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Matrix is an opaque pointer to the C-managed struct { float* data; int rows; int cols; }.
+# All operations go through the runtime/npu.c C functions.
+export type Matrix = intrinsic("%Matrix*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/npu.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+extern fn matrix_new(rows: int, cols: int): Matrix;
+extern fn matrix_free(m: Matrix);
+extern fn matrix_get(m: Matrix, row: int, col: int): Float;
+extern fn matrix_set(m: Matrix, row: int, col: int, val: Float);
+extern fn matrix_rows(m: Matrix): int;
+extern fn matrix_cols(m: Matrix): int;
+extern fn matrix_multiply(a: Matrix, b: Matrix): Matrix;
+extern fn matrix_add(a: Matrix, b: Matrix): Matrix;
+extern fn matrix_relu(a: Matrix): Matrix;
+extern fn matrix_softmax(a: Matrix): Matrix;
+extern fn matrix_sigmoid(a: Matrix): Matrix;
+extern fn matrix_tanh(a: Matrix): Matrix;
+extern fn matrix_transpose(a: Matrix): Matrix;
+extern fn matrix_fill(m: Matrix, val: Float): Matrix;
+extern fn matrix_scale(m: Matrix, factor: Float): Matrix;
+extern fn matrix_to_string(m: Matrix): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Matrix extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Matrix extends {
+
+    # ── Constructors ─────────────────────────────────────────────────────────
+
+    # Allocate a rows × cols zero matrix.
+    export static fn new(rows: int, cols: int): Matrix {
+        return matrix_new(rows, cols);
+    }
+
+    # rows × cols matrix filled with zeros.
+    export static fn zeros(rows: int, cols: int): Matrix {
+        return matrix_new(rows, cols);
+    }
+
+    # rows × cols matrix filled with ones.
+    export static fn ones(rows: int, cols: int): Matrix {
+        const m: Matrix = matrix_new(rows, cols);
+        return matrix_fill(m, 1.0);
+    }
+
+    # n × n identity matrix (1s on the main diagonal, 0s elsewhere).
+    export static fn identity(n: int): Matrix {
+        const m: Matrix = matrix_new(n, n);
+        let i: int = 0;
+        while i < n {
+            matrix_set(m, i, i, 1.0);
+            i = i + 1;
+        }
+        return m;
+    }
+
+    # ── Dimensions ───────────────────────────────────────────────────────────
+
+    # Number of rows.
+    export fn rows(): int { return matrix_rows(self); }
+
+    # Number of columns.
+    export fn cols(): int { return matrix_cols(self); }
+
+    # ── Element access ───────────────────────────────────────────────────────
+
+    # Read element at (row, col).
+    export fn get(row: int, col: int): Float {
+        return matrix_get(self, row, col);
+    }
+
+    # Write element at (row, col).  Returns self for chaining.
+    export fn set(row: int, col: int, val: Float): Matrix {
+        matrix_set(self, row, col, val);
+        return self;
+    }
+
+    # ── Linear algebra ───────────────────────────────────────────────────────
+
+    # Matrix multiplication: self × other  (hardware-accelerated via AMX on Apple Silicon).
+    # self must be (m×k) and other must be (k×n); result is (m×n).
+    export fn multiply(other: Matrix): Matrix {
+        return matrix_multiply(self, other);
+    }
+
+    # Element-wise addition.
+    export fn add(other: Matrix): Matrix {
+        return matrix_add(self, other);
+    }
+
+    # ── Neural-network activations ────────────────────────────────────────────
+
+    # ReLU: element-wise max(0, x).
+    export fn relu(): Matrix { return matrix_relu(self); }
+
+    # Softmax: row-wise exp(x) / Σ exp(x).  Numerically stable.
+    export fn softmax(): Matrix { return matrix_softmax(self); }
+
+    # Sigmoid: element-wise 1 / (1 + exp(−x)).
+    export fn sigmoid(): Matrix { return matrix_sigmoid(self); }
+
+    # Tanh: element-wise tanh(x).
+    export fn tanh(): Matrix { return matrix_tanh(self); }
+
+    # ── Shape transforms ──────────────────────────────────────────────────────
+
+    # Transpose: swaps rows and cols, producing a (cols × rows) matrix.
+    export fn transpose(): Matrix { return matrix_transpose(self); }
+
+    # ── In-place modifiers ────────────────────────────────────────────────────
+
+    # Fill every element with val.  Returns self.
+    export fn fill(val: Float): Matrix { return matrix_fill(self, val); }
+
+    # Scale every element by factor.  Returns self.
+    export fn scale(factor: Float): Matrix { return matrix_scale(self, factor); }
+
+    # ── Memory ───────────────────────────────────────────────────────────────
+
+    # Release the matrix.  After free(), the variable must not be used.
+    export fn free() { matrix_free(self); }
+}
+
+Matrix extends Displayable {
+    export fn toString(): string { return matrix_to_string(self); }
+}

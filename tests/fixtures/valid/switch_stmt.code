@@ -1,0 +1,52 @@
+# Tests SwitchStatement (switch as a statement, not an expression).
+#
+# Covers:
+#   • string pattern dispatch
+#   • integer pattern dispatch
+#   • bool pattern dispatch
+#   • else (catch-all) arm
+#   • nested if inside a switch arm
+
+fn classify(s: string): string {
+    let result: string = "unknown";
+    switch s {
+        "hello" => { result = "greeting"; }
+        "bye"   => { result = "farewell"; }
+        else    => { result = "other"; }
+    }
+    return result;
+}
+
+fn sign(n: int): string {
+    let r: string = "";
+    switch n {
+        1    => { r = "one"; }
+        2    => { r = "two"; }
+        100  => { r = "hundred"; }
+        else => { r = "other"; }
+    }
+    return r;
+}
+
+fn boolLabel(b: bool): string {
+    let r: string = "";
+    switch b {
+        true  => { r = "yes"; }
+        false => { r = "no"; }
+    }
+    return r;
+}
+
+fn main() {
+    print(classify("hello"));
+    print(classify("bye"));
+    print(classify("xyz"));
+
+    print(sign(1));
+    print(sign(2));
+    print(sign(100));
+    print(sign(99));
+
+    print(boolLabel(true));
+    print(boolLabel(false));
+}

@@ -1,0 +1,9 @@
+const str = import "../../../stdlib/string";
+
+fn main() {
+  print(str.indexOf("hello world", "world"));
+  print(str.lastIndexOf("hello world hello", "hello"));
+  print(str.includes("hello world", "world"));
+  print(str.startsWith("hello", "hel"));
+  print(str.endsWith("hello", "llo"));
+}

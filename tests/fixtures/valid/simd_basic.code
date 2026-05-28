@@ -1,0 +1,59 @@
+import "../../../stdlib/simd";
+
+fn main(): void {
+    # ── Float2: construction and element access ───────────────────────────────
+    const a: Float2 = Float2.of(3.0, 4.0);
+    print(a.x());           # 3
+    print(a.y());           # 4
+    print(a);               # Float2(3, 4)
+
+    # ── Float2: arithmetic operators ──────────────────────────────────────────
+    const b: Float2 = Float2.of(1.0, 2.0);
+    const sum: Float2  = a + b;
+    const diff: Float2 = a - b;
+    const prod: Float2 = a * b;
+    print(sum);             # Float2(4, 6)
+    print(diff);            # Float2(2, 2)
+    print(prod);            # Float2(3, 8)
+
+    # ── Float2: length and normalize ──────────────────────────────────────────
+    print(a.length());      # 5
+    const unit: Float2 = a.normalize();
+    print(unit.x());        # 0.6
+    print(unit.y());        # 0.8
+
+    # ── Float2: dot product ───────────────────────────────────────────────────
+    print(a.dot(b));        # 3*1 + 4*2 = 11
+
+    # ── Float4: construction and element access ───────────────────────────────
+    const v: Float4 = Float4.of(1.0, 2.0, 3.0, 4.0);
+    print(v.x());           # 1
+    print(v.y());           # 2
+    print(v.z());           # 3
+    print(v.w());           # 4
+    print(v);               # Float4(1, 2, 3, 4)
+
+    # ── Float4: arithmetic operators ──────────────────────────────────────────
+    const v2: Float4 = Float4.splat(2.0);
+    print(v * v2);          # Float4(2, 4, 6, 8)
+    print(v + v2);          # Float4(3, 4, 5, 6)
+
+    # ── Float4: dot and cross ─────────────────────────────────────────────────
+    const x: Float4 = Float4.unitX();
+    const y: Float4 = Float4.unitY();
+    print(x.cross3(y));     # Float4(0, 0, 1, 0)
+    print(x.dot3(y));       # 0
+
+    # ── Float4: length and normalize ──────────────────────────────────────────
+    const v3: Float4 = Float4.xyz(0.0, 3.0, 4.0);
+    print(v3.length3());    # 5
+
+    # ── Float8: construction, arithmetic, reduction ───────────────────────────
+    const w: Float8 = Float8.of(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
+    print(w.sum());         # 36
+    print(w.get(0));        # 1
+    print(w.get(7));        # 8
+    const w2: Float8 = Float8.splat(2.0);
+    const ws: Float8 = w + w2;
+    print(ws.sum());        # 36 + 16 = 52
+}

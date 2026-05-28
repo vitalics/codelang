@@ -1,0 +1,72 @@
+import "../../../stdlib/string";
+
+# Basic && and || tests with short-circuit evaluation.
+
+fn main() {
+    const a: int = 1;
+    const b: int = 2;
+    const c: int = 3;
+
+    # ── && (and) ─────────────────────────────────────────────────────────────
+    # true && true  → true
+    if a == 1 && b == 2 {
+        print("and_tt");         # and_tt
+    }
+
+    # true && false → false (skips body)
+    if a == 1 && b == 99 {
+        print("WRONG");
+    }
+
+    # false && anything → false (short-circuits right side)
+    if a == 99 && b == 2 {
+        print("WRONG");
+    }
+
+    # ── || (or) ──────────────────────────────────────────────────────────────
+    # true || false → true
+    if a == 1 || b == 99 {
+        print("or_tf");          # or_tf
+    }
+
+    # false || true → true
+    if a == 99 || b == 2 {
+        print("or_ft");          # or_ft
+    }
+
+    # false || false → false (skips body)
+    if a == 99 || b == 99 {
+        print("WRONG");
+    }
+
+    # ── chained ──────────────────────────────────────────────────────────────
+    # (true && true) && true
+    if a == 1 && b == 2 && c == 3 {
+        print("chain_ttt");      # chain_ttt
+    }
+
+    # (true && false) && true  → false
+    if a == 1 && b == 99 && c == 3 {
+        print("WRONG");
+    }
+
+    # ── mixed precedence: || binds less tightly than && ───────────────────────
+    # a==1 && b==99 || c==3  →  (false) || (true) → true
+    if a == 1 && b == 99 || c == 3 {
+        print("mixed1");         # mixed1
+    }
+
+    # a==99 || b==2 && c==3  →  (false) || (true) → true
+    if a == 99 || b == 2 && c == 3 {
+        print("mixed2");         # mixed2
+    }
+
+    # ── in while condition ────────────────────────────────────────────────────
+    let n: int = 0;
+    while n < 3 && a == 1 {
+        n = n + 1;
+    }
+    print(n);                    # 3
+
+    print("done");               # done
+}

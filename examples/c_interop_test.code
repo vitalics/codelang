@@ -1,0 +1,21 @@
+import "../stdlib/c-interop";
+
+fn main() {
+    const n: C_Int = 42;
+    print(n);
+
+    const s: C_Str = "hello from C interop";
+    print(s);
+
+    # strlen returns byte count (20 bytes)
+    const len: C_SizeT = strlen(s);
+    print(len);
+
+    # abs / labs with negative literals
+    print(abs(-7));
+    print(labs(-1000));
+
+    # getenv
+    const path = getenv("HOME");
+    print(path);
+}

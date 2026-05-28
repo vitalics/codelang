@@ -1,0 +1,31 @@
+# template_static_call.code
+# Template holes containing:
+#   1. Static type method calls — {OS.arch()}, {OS.platform()}
+#   2. Free function calls with args — {double_it(n)}, {greet(who)}
+#   3. Mixed static + local-var expressions in one template
+#
+# Before this fix, static calls like {OS.arch()} produced "undef" output
+# and free function calls like {double_it(n)} lost their arguments entirely.
+import "stdlib/os";
+
+fn double_it(const n: int): int {
+    return n * 2;
+}
+
+fn greet(const name: string): string {
+    return $"Hello, {name}!";
+}
+
+fn main() {
+    # 1. Static type method call directly in template hole (no local pre-binding)
+    print($"arch: {OS.arch()}");
+    print($"platform: {OS.platform()}");
+
+    # 2. Free function call with a local-variable argument
+    let n: int = 5;
+    print($"doubled: {double_it(n)}");
+
+    # 3. Free function returning string used directly in a hole
+    let who: string = "World";
+    print($"msg: {greet(who)}");
+}

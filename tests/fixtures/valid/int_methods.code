@@ -1,0 +1,31 @@
+# int_methods.code
+# Built-in methods on int:
+#   int.toString()  → decimal string, e.g. 42 → "42"
+#   int.length()    → number of decimal digits (sign counts), e.g. -5 → 2
+fn main() {
+    let a: int = 10;
+    let b: int = 0;
+    let c: int = -42;
+    let d: int = 100;
+    let e: int = 1;
+
+    # toString() → store in string variable, then print
+    const sa: string = a.toString();
+    const sb: string = b.toString();
+    const sc: string = c.toString();
+    print(sa);
+    print(sb);
+    print(sc);
+
+    # length() → store in int variable, then print
+    const la: int = a.length();
+    const lb: int = b.length();
+    const lc: int = c.length();
+    const ld: int = d.length();
+    const le: int = e.length();
+    print(la);
+    print(lb);
+    print(lc);
+    print(ld);
+    print(le);
+}

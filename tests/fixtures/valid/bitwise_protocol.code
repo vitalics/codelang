@@ -1,0 +1,68 @@
+import "../../../stdlib/string";
+import "../../../stdlib/protocols";
+
+# ── Custom type exercising the bitwise protocol dispatch path ─────────────────
+#
+# `Flags` wraps a single `int` field and implements BitAnd / BitOr / BitXor /
+# Shl / Shr as extension methods.  The IR generator should call
+# `Flags_bitAnd`, `Flags_bitOr`, etc. instead of native LLVM instructions.
+#
+# Expected output:
+#   8      (f1 & f2)
+#   14     (f1 | f2)
+#   6      (f1 ^ f2)
+#   48     (f1 << 2)
+#   6      (f1 >> 1)
+#   done
+
+type Flags {
+    value: int
+}
+
+Flags extends BitAnd {
+    export fn bitAnd(const other: int): int {
+        const lv: int = self.value;
+        return lv & other;
+    }
+}
+
+Flags extends BitOr {
+    export fn bitOr(const other: int): int {
+        const lv: int = self.value;
+        return lv | other;
+    }
+}
+
+Flags extends BitXor {
+    export fn bitXor(const other: int): int {
+        const lv: int = self.value;
+        return lv ^ other;
+    }
+}
+
+Flags extends Shl {
+    export fn shl(const rhs: int): int {
+        const lv: int = self.value;
+        return lv << rhs;
+    }
+}
+
+Flags extends Shr {
+    export fn shr(const rhs: int): int {
+        const lv: int = self.value;
+        return lv >> rhs;
+    }
+}
+
+fn main() {
+    const f1: Flags = Flags_new(12);  # value = 12  (0b1100)
+    const f2: Flags = Flags_new(10);  # value = 10  (0b1010)
+
+    print(f1 & f2.value);   # Flags_bitAnd(f1, 10)  = 12 & 10 = 8
+    print(f1 | f2.value);   # Flags_bitOr(f1, 10)   = 12 | 10 = 14
+    print(f1 ^ f2.value);   # Flags_bitXor(f1, 10)  = 12 ^ 10 = 6
+    print(f1 << 2);         # Flags_shl(f1, 2)       = 12 << 2 = 48
+    print(f1 >> 1);         # Flags_shr(f1, 1)       = 12 >> 1 = 6
+
+    print("done");
+}

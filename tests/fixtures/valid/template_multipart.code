@@ -1,0 +1,8 @@
+# template_multipart.code
+# Template string with multiple holes, escape sequences, and multi-part literals.
+fn main() {
+    let first = "John";
+    let last = "Doe";
+    let age = 30;
+    print($"Name: {first} {last}, Age: {age}");
+}

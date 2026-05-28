@@ -1,0 +1,190 @@
+# stdlib/terminal.code
+#
+# Full terminal control for TUI applications.
+# Extends the basic Terminal type from stdlib/io with cursor positioning,
+# ANSI colors, text styles, and key reading.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/terminal";
+#
+#   fn main() {
+#     Terminal.enableRaw();
+#     Terminal.hideCursor();
+#     Terminal.clear();
+#
+#     Terminal.moveTo(5, 10);
+#     Terminal.setFg(Color.Green);
+#     write("Hello, TUI!");
+#     Terminal.resetStyle();
+#     flush();
+#
+#     const key = Terminal.readKey();
+#     Terminal.clear();
+#     Terminal.showCursor();
+#     Terminal.disableRaw();
+#   }
+#
+# ── Color palette (ANSI standard) ─────────────────────────────────────────────
+#
+#   Color.Black   = 0    Color.BrightBlack   = 8
+#   Color.Red     = 1    Color.BrightRed     = 9
+#   Color.Green   = 2    Color.BrightGreen   = 10
+#   Color.Yellow  = 3    Color.BrightYellow  = 11
+#   Color.Blue    = 4    Color.BrightBlue    = 12
+#   Color.Magenta = 5    Color.BrightMagenta = 13
+#   Color.Cyan    = 6    Color.BrightCyan    = 14
+#   Color.White   = 7    Color.BrightWhite   = 15
+#
+# ── Key names returned by Terminal.readKey() ─────────────────────────────────
+#
+#   "up" "down" "left" "right"    arrow keys
+#   "enter"  "backspace"          "escape"
+#   "ctrl-c" "ctrl-d" "ctrl-z"   control sequences
+#   "home"   "end"               navigation
+#   "page-up" "page-down"        paging
+#   "delete"                     delete key
+#   "f1".."f4"                   function keys
+#   single character string      any printable key (e.g. "a", "1", " ")
+#
+# ── Notes ─────────────────────────────────────────────────────────────────────
+#
+#   • Always call Terminal.enableRaw() before Terminal.readKey().
+#   • Always restore with Terminal.disableRaw() / Terminal.showCursor() on exit.
+#   • Coordinates are 1-based: (1,1) is the top-left corner.
+
+import "./io";
+import "./c-interop";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# External C helpers (runtime/io.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+extern fn codelang_terminal_move_to(row: C_Int, col: C_Int);
+extern fn codelang_terminal_clear();
+extern fn codelang_terminal_clear_line();
+extern fn codelang_terminal_hide_cursor();
+extern fn codelang_terminal_show_cursor();
+extern fn codelang_terminal_set_fg(color: C_Int);
+extern fn codelang_terminal_set_bg(color: C_Int);
+extern fn codelang_terminal_reset_style();
+extern fn codelang_terminal_bold();
+extern fn codelang_terminal_underline();
+extern fn codelang_terminal_reverse();
+extern fn codelang_terminal_save_cursor();
+extern fn codelang_terminal_restore_cursor();
+extern fn codelang_terminal_read_key(): C_Str;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Color constants
+# ─────────────────────────────────────────────────────────────────────────────
+
+export type Color {
+}
+
+Color extends {
+    export static fn Black():   int { return 0; }
+    export static fn Red():     int { return 1; }
+    export static fn Green():   int { return 2; }
+    export static fn Yellow():  int { return 3; }
+    export static fn Blue():    int { return 4; }
+    export static fn Magenta(): int { return 5; }
+    export static fn Cyan():    int { return 6; }
+    export static fn White():   int { return 7; }
+
+    export static fn BrightBlack():   int { return 8; }
+    export static fn BrightRed():     int { return 9; }
+    export static fn BrightGreen():   int { return 10; }
+    export static fn BrightYellow():  int { return 11; }
+    export static fn BrightBlue():    int { return 12; }
+    export static fn BrightMagenta(): int { return 13; }
+    export static fn BrightCyan():    int { return 14; }
+    export static fn BrightWhite():   int { return 15; }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Extended Terminal methods (cursor, color, key input)
+# ─────────────────────────────────────────────────────────────────────────────
+
+Terminal extends {
+    # ── Screen ────────────────────────────────────────────────────────────────
+
+    # Clear entire screen and move cursor to (1,1).
+    export static fn clear() {
+        codelang_terminal_clear();
+    }
+
+    # Erase the current line from start to end.
+    export static fn clearLine() {
+        codelang_terminal_clear_line();
+    }
+
+    # ── Cursor ────────────────────────────────────────────────────────────────
+
+    # Move the cursor to row/col (1-based).
+    export static fn moveTo(row: int, col: int) {
+        codelang_terminal_move_to(row, col);
+    }
+
+    # Hide the blinking text cursor.
+    export static fn hideCursor() {
+        codelang_terminal_hide_cursor();
+    }
+
+    # Make the text cursor visible again.
+    export static fn showCursor() {
+        codelang_terminal_show_cursor();
+    }
+
+    # Save the current cursor position.
+    export static fn saveCursor() {
+        codelang_terminal_save_cursor();
+    }
+
+    # Restore the last saved cursor position.
+    export static fn restoreCursor() {
+        codelang_terminal_restore_cursor();
+    }
+
+    # ── Color & style ─────────────────────────────────────────────────────────
+
+    # Set foreground (text) color.
+    # Pass a Color.* constant: e.g. Terminal.setFg(Color.Green())
+    export static fn setFg(color: int) {
+        codelang_terminal_set_fg(color);
+    }
+
+    # Set background color.
+    export static fn setBg(color: int) {
+        codelang_terminal_set_bg(color);
+    }
+
+    # Reset all text attributes (color, bold, underline, …) to defaults.
+    export static fn resetStyle() {
+        codelang_terminal_reset_style();
+    }
+
+    # Enable bold / bright text.
+    export static fn bold() {
+        codelang_terminal_bold();
+    }
+
+    # Enable underlined text.
+    export static fn underline() {
+        codelang_terminal_underline();
+    }
+
+    # Reverse foreground and background colors.
+    export static fn reverse() {
+        codelang_terminal_reverse();
+    }
+
+    # ── Input ─────────────────────────────────────────────────────────────────
+
+    # Read one key press in raw mode.
+    # Returns a string describing the key (see module header for key names).
+    # The terminal must be in raw mode before calling this function.
+    export static fn readKey(): string {
+        return codelang_terminal_read_key();
+    }
+}

@@ -1,0 +1,16 @@
+import "../../../stdlib/string";
+
+fn main() {
+    # Allocate a 5-byte zero-filled buffer via the static factory
+    let buf: string = String.new(5);
+
+    # Write individual bytes (ASCII)
+    buf.set(0, 72);   # 'H'
+    buf.set(1, 101);  # 'e'
+    buf.set(2, 108);  # 'l'
+    buf.set(3, 108);  # 'l'
+    buf.set(4, 111);  # 'o'
+
+    print(buf);        # Hello
+    print(length(buf)); # 5
+}

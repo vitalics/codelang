@@ -1,0 +1,39 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # Static factories
+    let a: StringArray = StringArray.new();
+    let b: StringArray = StringArray.with(3, "hi");
+
+    # push / length / get
+    a.push("apple");
+    a.push("banana");
+    a.push("cherry");
+    print(a.length());      # 3
+    print(a.get(0));        # apple
+    print(a.get(1));        # banana
+    print(a.get(2));        # cherry
+
+    # at() with positive index — returns Option<string>
+    print(a.at(0).unwrapOr(""));   # apple
+
+    # at() with negative index (from end)
+    print(a.at(-1).unwrapOr(""));  # cherry
+    print(a.at(-2).unwrapOr(""));  # banana
+
+    # first / last — return Option<string>
+    print(a.first().unwrapOr(""));  # apple
+    print(a.last().unwrapOr(""));   # cherry
+
+    # with() factory
+    print(b.length());      # 3
+    print(b.get(0));        # hi
+    print(b.get(2));        # hi
+
+    # set()
+    b.set(1, "bye");
+    print(b.get(1));        # bye
+
+    a.free();
+    b.free();
+}

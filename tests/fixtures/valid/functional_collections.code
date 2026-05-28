@@ -1,0 +1,141 @@
+# Functional HOF methods on collections: forEach, map, filter, every, some,
+# reduce, find, findIndex — on IntArray, IntSet, and StringArray.
+#
+# All expected outputs are annotated as: # <value>  line N
+
+import "../../../stdlib/collections";
+
+# ── Named helper functions ────────────────────────────────────────────────────
+
+fn isPositive(x: int): bool  { return x > 0; }
+fn isEven(x: int): bool      { return x % 2 == 0; }
+fn double(x: int): int       { return x * 2; }
+fn addInts(acc: int, x: int): int { return acc + x; }
+fn gt3(x: int): bool         { return x > 3; }
+fn printInt(x: int): void    { print(x); }
+
+fn main() {
+    let a: IntArray = IntArray.new();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    a.push(4);
+    a.push(5);
+
+    # ── forEach ──────────────────────────────────────────────────────────────
+    a.forEach(printInt);
+    # line 0: 1
+    # line 1: 2
+    # line 2: 3
+    # line 3: 4
+    # line 4: 5
+
+    # ── map ──────────────────────────────────────────────────────────────────
+    let d: IntArray = a.map(double);
+    print(d.get(0));   # line 5:  2
+    print(d.get(4));   # line 6:  10
+
+    # ── filter ───────────────────────────────────────────────────────────────
+    let evens: IntArray = a.filter(isEven);
+    print(evens.length()); # line 7:  2
+    print(evens.get(0));   # line 8:  2
+    print(evens.get(1));   # line 9:  4
+
+    # ── every ─────────────────────────────────────────────────────────────────
+    # all 5 elements are positive → true → print 1
+    if a.every(isPositive) {
+        print(1);          # line 10: 1
+    }
+    # not all elements are even → every returns false, !false = true → print 0
+    if !a.every(isEven) {
+        print(0);          # line 11: 0
+    }
+
+    # ── some ──────────────────────────────────────────────────────────────────
+    # [1,2,3,4,5] has even numbers → some(isEven) = true → print 1
+    if a.some(isEven) {
+        print(1);          # line 12: 1
+    }
+    # no element > 99 → some returns false → print 0
+    let hasBig: bool = a.some(fn(x: int): bool { return x > 99; });
+    if !hasBig {
+        print(0);          # line 13: 0
+    }
+
+    # ── reduce ────────────────────────────────────────────────────────────────
+    # 1+2+3+4+5 = 15
+    print(a.reduce(addInts, 0));  # line 14: 15
+
+    # ── find ──────────────────────────────────────────────────────────────────
+    # first even in [1,2,3,4,5] = 2
+    print(a.find(isEven).unwrapOr(-1));  # line 15: 2
+    # no element > 99 → None → unwrapOr(-1) = -1
+    let nope: Option<int> = a.find(fn(x: int): bool { return x > 99; });
+    print(nope.unwrapOr(-1));            # line 16: -1
+
+    # ── findIndex ─────────────────────────────────────────────────────────────
+    # index of first even = 1 (element 2 is at index 1)
+    print(a.findIndex(isEven));          # line 17: 1
+    # index of first > 3 = 3 (element 4 is at index 3)
+    print(a.findIndex(gt3));             # line 18: 3
+    # no match → -1
+    print(a.findIndex(fn(x: int): bool { return x > 99; }));  # line 19: -1
+
+    # ── IntSet HOF ────────────────────────────────────────────────────────────
+    # IntSet sorts elements ascending: 10, 20, 30
+    let s: IntSet = IntSet.new();
+    s.add(30);
+    s.add(10);
+    s.add(20);
+
+    s.forEach(printInt);
+    # line 20: 10
+    # line 21: 20
+    # line 22: 30
+
+    # all 3 elements are positive
+    if s.every(isPositive) {
+        print(1);          # line 23: 1
+    }
+    # 10 is even
+    if s.some(isEven) {
+        print(1);          # line 24: 1
+    }
+    # filter: keep even elements  (10, 20, 30 are all even)
+    let evensSet: IntSet = s.filter(isEven);
+    print(evensSet.size());  # line 25: 3
+    # find: first element > 3 in sorted order = 10
+    print(s.find(gt3).unwrapOr(-1));  # line 26: 10
+
+    # ── StringArray HOF ───────────────────────────────────────────────────────
+    let words: StringArray = StringArray.new();
+    words.push("hi");
+    words.push("hello");
+    words.push("banana");
+
+    # some: "hello" is in the array
+    let hasHello: bool = words.some(fn(v: string): bool { return v == "hello"; });
+    if hasHello {
+        print(1);          # line 27: 1
+    }
+
+    # filter: keep only "banana"
+    let longs: StringArray = words.filter(fn(v: string): bool { return v == "banana"; });
+    print(longs.length()); # line 28: 1
+
+    # find: first element == "hello"
+    print(words.find(fn(v: string): bool { return v == "hello"; }).unwrapOr("none"));
+    # line 29: hello
+
+    # findIndex: index of "hello" in ["hi", "hello", "banana"]
+    print(words.findIndex(fn(v: string): bool { return v == "hello"; }));
+    # line 30: 1
+
+    d.free();
+    evens.free();
+    evensSet.free();
+    s.free();
+    longs.free();
+    words.free();
+    a.free();
+}

@@ -1,0 +1,3 @@
+# stdlib/npu/npu_darwin_noop.code
+# Empty stub — selected by switch_import! on macOS to satisfy the guard.
+# No exports; exists only so the "darwin" arm of the switch_import has a valid target.

@@ -1,0 +1,16 @@
+# Auto int-to-float cast (sitofp) fixture.
+#
+# `let count: int = 3` allocates i32.
+# Passing it to a function that expects float (double) should emit:
+#   %loaded = load i32, i32* %count
+#   %cast   = sitofp i32 %loaded to double
+#   call void @take_float(double %cast)
+
+fn take_float(n: float) {
+  print("took float");
+}
+
+fn main() {
+  let count: int = 3;
+  take_float(count);
+}

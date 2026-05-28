@@ -1,0 +1,111 @@
+import "stdlib/os";
+
+# os_basic.code — exercises all OS module functions.
+#
+# Most values are machine-dependent so tests check structural properties
+# (non-empty, positive, valid set membership) rather than exact values.
+#
+# Expected output structure (35 lines):
+#   [0]  arch        — length check in test
+#   [1]  platform    — one of darwin/linux/win32/freebsd/unknown
+#   [2]  endianness  — "LE" or "BE"
+#   [3]  eol length  — 1 (POSIX "\n") or 2 (Windows "\r\n")
+#   [4]  devNull     — "/dev/null" or "\\.\NUL"
+#   [5]  type        — uname sysname, length > 0
+#   [6]  release     — kernel release, length > 0
+#   [7]  hostname    — length > 0
+#   [8]  homedir     — length > 0
+#   [9]  tmpdir      — length > 0
+#   [10] uptime > 0  — true
+#   [11] totalmem > 0 — true
+#   [12] freemem > 0  — true
+#   [13] cpuCount > 0 — true
+#   [14] cpuModel    — length > 0
+#   [15] cpuSpeed >= 0 — true
+#   [16] username    — length > 0
+#   [17] uid >= 0    — true
+#   [18] gid >= 0    — true
+#   [19] gpuCount >= 0 — true
+#   [20] gpuModel(0) — length > 0
+#   [21] hasNpu      — true (Apple Silicon) or false
+#   [22] npuName     — length > 0
+#   [23] arch == arch  — true (idempotent)
+#   [24] totalmem > freemem — true (sanity)
+#   [25] platform length > 0 — true
+#   [26] cpuCount >= 1 — true
+#   [27] endianness == "LE" or "BE" — check via length == 2
+#   [28] eol starts with \n or \r — "LE" sentinel (length check)
+#   [29] devNull length > 0 — true
+#   [30] GPU.isAvailable()  — true or false (compile-time)
+#   [31] GPU.count() >= 0   — true
+#   [32] GPU.model(0)       — length > 0
+#   [33] NPU.isAvailable()  — true or false (compile-time)
+#   [34] NPU.name()         — length > 0
+
+fn main() {
+    # ── 1. Compile-time constants ─────────────────────────────────────────────
+    print(OS.arch());                          # [0]  e.g. "arm64"
+    print(OS.platform());                      # [1]  e.g. "darwin"
+    print(OS.endianness());                    # [2]  "LE" or "BE"
+    print(OS.eol().length());                  # [3]  1 or 2
+    print(OS.devNull());                       # [4]  "/dev/null"
+
+    # ── 2. OS identity ────────────────────────────────────────────────────────
+    print(OS.osType());                        # [5]  e.g. "Darwin"
+    print(OS.release().length() > 0);         # [6]  true
+
+    # ── 3. Machine ────────────────────────────────────────────────────────────
+    print(OS.hostname().length() > 0);        # [7]  true
+    print(OS.homedir().length() > 0);         # [8]  true
+    print(OS.tmpdir().length() > 0);          # [9]  true
+    print(OS.uptime() > 0);                   # [10] true
+
+    # ── 4. Memory ─────────────────────────────────────────────────────────────
+    print(OS.totalmem() > 0);                 # [11] true
+    print(OS.freemem() > 0);                  # [12] true
+
+    # ── 5. CPU ────────────────────────────────────────────────────────────────
+    print(OS.cpuCount() > 0);                 # [13] true
+    print(OS.cpuModel().length() > 0);        # [14] true
+    print(OS.cpuSpeed() >= 0);                # [15] true (0 = unavailable)
+
+    # ── 6. User ───────────────────────────────────────────────────────────────
+    print(OS.username().length() > 0);        # [16] true
+    print(OS.uid() >= 0);                     # [17] true
+    print(OS.gid() >= 0);                     # [18] true
+
+    # ── 7. GPU ────────────────────────────────────────────────────────────────
+    print(OS.gpuCount() >= 0);                # [19] true
+    print(OS.gpuModel(0).length() > 0);       # [20] true
+
+    # ── 8. NPU ────────────────────────────────────────────────────────────────
+    const npu: bool = OS.hasNpu();
+    print(npu);                                # [21] true (Apple M-series) or false
+    print(OS.npuName().length() > 0);         # [22] true
+
+    # ── Sanity / cross-checks ─────────────────────────────────────────────────
+    const a1: string = OS.arch();
+    const a2: string = OS.arch();
+    print(a1 == a2);                           # [23] true — idempotent
+
+    print(OS.totalmem() > OS.freemem());      # [24] true — total > free
+
+    print(OS.platform().length() > 0);        # [25] true
+
+    print(OS.cpuCount() >= 1);                # [26] true
+
+    print(OS.endianness().length() == 2);     # [27] true — "LE" or "BE"
+
+    print(OS.eol().length() >= 1);            # [28] true
+
+    print(OS.devNull().length() > 0);         # [29] true
+
+    # ── 9. GPU sub-namespace ──────────────────────────────────────────────────
+    print(GPU.isAvailable());                  # [30] true or false (compile-time)
+    print(GPU.count() >= 0);                   # [31] true
+    print(GPU.model(0).length() > 0);          # [32] true
+
+    # ── 10. NPU sub-namespace ─────────────────────────────────────────────────
+    print(NPU.isAvailable());                  # [33] true or false (compile-time)
+    print(NPU.name().length() > 0);            # [34] true
+}

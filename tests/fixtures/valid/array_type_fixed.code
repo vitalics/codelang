@@ -1,0 +1,21 @@
+# array_type_fixed.code
+# Tests the int[N] shorthand for a fixed-size embedded array in a struct.
+# int[5] maps to the LLVM type [5 x i32] embedded directly in the struct layout.
+
+type FixedBuffer {
+    data: int[4]
+    capacity: int
+
+    static fn new(): FixedBuffer {
+        return Self { capacity: 4 };
+    }
+
+    fn getCapacity(): int {
+        return self.capacity;
+    }
+}
+
+fn main() {
+    let buf = FixedBuffer.new();
+    print(buf.getCapacity());
+}

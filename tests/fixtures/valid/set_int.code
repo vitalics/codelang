@@ -1,0 +1,15 @@
+import "../../../stdlib/set";
+
+fn main() {
+    let s: IntSet = IntSet.new();
+    s.add(3);
+    s.add(1);
+    s.add(2);
+    s.add(1);                  # duplicate — ignored
+    print(s.size());           # 3
+    print(s.contains(1));      # true
+    print(s.contains(5));      # false
+    print(s);                  # {1, 2, 3}
+    s.remove(2);
+    print(s);                  # {1, 3}
+}

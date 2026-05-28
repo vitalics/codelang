@@ -1,0 +1,33 @@
+import "../stdlib/c-interop";
+
+fn main() {
+    # Unary minus on integer literals
+    print(-7);
+    print(-42);
+
+    # Unary minus on variables
+    const x = 10;
+    print(-x);
+
+    # Unary minus as argument
+    print(abs(-7));
+    print(abs(-100));
+    print(labs(-1000));
+
+    # Unary minus in expressions
+    const a = 5;
+    const b = -a + 3;
+    print(b);
+
+    # Nested unary
+    const c = -(-a);
+    print(c);
+
+    # Unary NOT on bool
+    const flag = true;
+    const inv = !flag;
+    print(inv);
+
+    const f = false;
+    print(!f);
+}

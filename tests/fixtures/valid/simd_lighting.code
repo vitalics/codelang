@@ -1,0 +1,40 @@
+import "../../../stdlib/simd";
+
+fn main(): void {
+    # ── Diffuse lighting (Lambertian): dot3 ──────────────────────────────────
+    # Surface normal pointing straight up; light also from above → full diffuse
+    const normal: Float4    = Float4.unitY();
+    const lightUp: Float4   = Float4.unitY();
+    print(normal.dot3(lightUp));   # 1
+
+    # Light from the side → dot3 = 0 (no contribution)
+    const lightSide: Float4 = Float4.unitX();
+    print(normal.dot3(lightSide)); # 0
+
+    # ── Specular reflection: reflect3 ────────────────────────────────────────
+    # Incident ray at 45° to the floor: (1, -1, 0) normalised
+    # After reflection off upward normal (0,1,0): y-component flips → ≈ 0.707
+    const raw_inc: Float4  = Float4.xyz(1.0, -1.0, 0.0);
+    const incident: Float4 = raw_inc.normalize3();
+    const reflected: Float4 = incident.reflect3(Float4.unitY());
+    print(reflected.y());          # ≈ 0.707
+
+    # ── normalize3 ────────────────────────────────────────────────────────────
+    # (0, 3, 4, 0) has length3 = 5  →  normalised = (0, 0.6, 0.8, 0)
+    const raw3: Float4   = Float4.xyz(0.0, 3.0, 4.0);
+    const unit3: Float4  = raw3.normalize3();
+    print(unit3.y());              # ≈ 0.6
+    print(unit3.z());              # ≈ 0.8
+
+    # ── cross3: right-hand rule ───────────────────────────────────────────────
+    # unitY × unitZ = unitX = (1, 0, 0, 0)
+    const uy: Float4 = Float4.unitY();
+    const uz: Float4 = Float4.unitZ();
+    print(uy.cross3(uz));          # Float4(1, 0, 0, 0)
+
+    # ── distance3 ────────────────────────────────────────────────────────────
+    # distance3((0,0,0), (1,2,2)) = sqrt(1+4+4) = 3
+    const p0: Float4 = Float4.xyz(0.0, 0.0, 0.0);
+    const p1: Float4 = Float4.xyz(1.0, 2.0, 2.0);
+    print(p0.distance3(p1));       # 3
+}

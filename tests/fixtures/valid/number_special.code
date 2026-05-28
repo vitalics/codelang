@@ -1,0 +1,73 @@
+# number_special.code
+# Tests Number.Infinity, Number.NegativeInfinity, Number.NaN (property-style
+# access, no parentheses) and the instance predicates isNaN() / isInfinite() /
+# isFinite().
+
+import "../../../stdlib/limits";
+
+fn main() {
+    const inf: Number = Number.Infinity;
+    const negInf: Number = Number.NegativeInfinity;
+    const nan: Number = Number.NaN;
+    const finite: Number = 42;
+    const zero: Number = 0;
+
+    # ── Static constant semantics ─────────────────────────────────────────
+
+    # +Infinity > 0
+    if inf > zero {
+        print(1);
+    }
+
+    # -Infinity < 0
+    if negInf < zero {
+        print(2);
+    }
+
+    # +Infinity > -Infinity
+    if inf > negInf {
+        print(3);
+    }
+
+    # ── isInfinite() predicate ────────────────────────────────────────────
+
+    const infCheck: int = inf.isInfinite();
+    print(infCheck);    # 1
+
+    const negInfCheck: int = negInf.isInfinite();
+    print(negInfCheck); # 1
+
+    const finCheck: int = finite.isFinite();
+    print(finCheck);    # 1
+
+    const nanFinCheck: int = nan.isFinite();
+    print(nanFinCheck); # 0
+
+    # ── isNaN() predicate ─────────────────────────────────────────────────
+
+    const nanCheck: int = nan.isNaN();
+    print(nanCheck);    # 1
+
+    const infNanCheck: int = inf.isNaN();
+    print(infNanCheck); # 0
+
+    const finNanCheck: int = finite.isNaN();
+    print(finNanCheck); # 0
+
+    # ── isFinite() for infinite values ────────────────────────────────────
+
+    const infFinCheck: int = inf.isFinite();
+    print(infFinCheck); # 0
+
+    # ── Number.NegativeInfinity same as Number.min() ──────────────────────
+
+    if negInf == Number.min() {
+        print(4);
+    }
+
+    # ── Number.Infinity same as Number.max() ──────────────────────────────
+
+    if inf == Number.max() {
+        print(5);
+    }
+}

@@ -1,0 +1,13 @@
+# Tests switch_import! with compile.arch() dispatch.
+# Selects a platform-specific backend module at compile time.
+
+const backend = switch_import! compile.arch() {
+    "arm64"  => "./switch_import_backends/arm64",
+    "x86_64" => "./switch_import_backends/x64",
+    "x64"    => "./switch_import_backends/x64",
+    else     => "./switch_import_backends/generic",
+}
+
+fn main() {
+    print(backend.platformName());
+}

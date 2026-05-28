@@ -1,0 +1,157 @@
+# stdlib/numbers.code
+# Numeric types for CodeLang.
+#
+# ── Signed integers ────────────────────────────────────────────────────────────
+# Width-explicit signed two's-complement integers.
+# LLVM type: iN  (e.g. Int32 → i32)
+
+export type Int8   = intrinsic("i8");
+export type Int16  = intrinsic("i16");
+export type Int32  = intrinsic("i32");
+export type Int64  = intrinsic("i64");
+export type Int128 = intrinsic("i128");
+export type Int256 = intrinsic("i256");
+export type Int512 = intrinsic("i512");
+
+# Short alias used in everyday code (i32).
+export type int = Int32;
+
+# Supertype alias for "any integer type" — used as a bound in generic type
+# parameters.  `N extends Int` means N must be one of the Int* / UInt* / int
+# family.  The default value Int32 is used when no explicit argument is given.
+export type Int = Int32;
+
+# ── Unsigned integers ──────────────────────────────────────────────────────────
+# Unsigned variants of the same widths.  The LLVM bit-representation is
+# identical to the signed types (iN); the compiler uses unsigned opcodes
+# (udiv, urem, zext, icmp ult/ule/ugt/uge) for these types.
+#
+# Ranges:
+#   u8   → 0 … 255
+#   u16  → 0 … 65 535
+#   u32  → 0 … 4 294 967 295
+#   u64  → 0 … 18 446 744 073 709 551 615
+#   u128 → 0 … 340 282 366 920 938 463 463 374 607 431 768 211 455
+
+export type UInt8   = intrinsic("u8");
+export type UInt16  = intrinsic("u16");
+export type UInt32  = intrinsic("u32");
+export type UInt64  = intrinsic("u64");
+export type UInt128 = intrinsic("u128");
+export type UInt256 = intrinsic("u256");
+export type UInt512 = intrinsic("u512");
+
+# Rust-style short aliases.
+export type u8   = UInt8;
+export type u16  = UInt16;
+export type u32  = UInt32;
+export type u64  = UInt64;
+export type u128 = UInt128;
+
+# ── Floating-point types ───────────────────────────────────────────────────────
+# Float / Float32  → 32-bit IEEE 754 single precision
+# Float64          → 64-bit IEEE 754 double precision
+# Float2..Float16  → SIMD vector types (<N x float>)
+
+export type Float   = intrinsic("float");
+export type Float2  = intrinsic("<2 x float>");
+export type Float4  = intrinsic("<4 x float>");
+export type Float6  = intrinsic("<6 x float>");
+export type Float8  = intrinsic("<8 x float>");
+export type Float16 = intrinsic("<16 x float>");
+export type Float32 = intrinsic("float");
+export type Float64 = intrinsic("double");
+
+# Short alias used in everyday code (double).
+export type float = Float64;
+
+# ── IEEE 754 infinity types ───────────────────────────────────────────────────
+# Intrinsic sentinel types representing positive and negative infinity values.
+# Both store a 64-bit IEEE 754 double under the hood (LLVM type: double).
+# Access via Float64.inf / Float64.Infinity, or assign to a float variable:
+#
+#   const x: float = Float64.inf;             # x is +Inf  (short)
+#   const y: float = Float64.Infinity;        # x is +Inf  (long)
+#   const z: float = Float64.NegativeInfinity;# z is -Inf  (long)
+
+export type inf             = intrinsic("inf");
+export type negInf          = intrinsic("negInf");
+
+# Long-hand aliases — same underlying type, different name.
+export type Infinity         = inf;
+export type NegativeInfinity = negInf;
+
+extern fn f64_positive_infinity(): inf;
+extern fn f64_negative_infinity(): negInf;
+
+Float64 extends {
+    export static const inf:             inf             = f64_positive_infinity();
+    export static const negInf:          negInf          = f64_negative_infinity();
+    export static const Infinity:        Infinity        = f64_positive_infinity();
+    export static const NegativeInfinity: NegativeInfinity = f64_negative_infinity();
+}
+
+# ── Dynamic arbitrary-precision type ──────────────────────────────────────────
+# Stored as a heap-allocated tagged union (NUM_INT | NUM_BIGINT | NUM_FLOAT).
+# Automatically promotes int64 → BigInt on overflow.
+# Represented as %Number* in LLVM IR; all arithmetic goes through the runtime.
+export type Number = intrinsic("%Number*");
+
+# Arbitrary-precision aliases.
+# BigInt / BigFloat are synonyms for Number — the same runtime handles all cases.
+export type BigInt   = Number;
+export type BigFloat = Number;
+
+# ── Number runtime helpers ────────────────────────────────────────────────────
+
+# Returns a heap-allocated C string representation of the number.
+# 0 → "0", 3.14 → "3.14", 10^20 → "100000000000000000000", etc.
+extern fn number_to_string(const n: Number): string;
+
+# Returns 1 when `n` is non-zero and not NaN; 0 otherwise.
+# Truthy rule: 0, -0, NaN → false; everything else → true.
+extern fn number_to_bool(const n: Number): bool;
+
+# ── Displayable ───────────────────────────────────────────────────────────────
+# Produces a human-readable decimal representation of the Number.
+#   42       → "42"
+#   3.14     → "3.14"
+#   -1000000 → "-1000000"
+
+import "./protocols";
+
+Number extends Displayable {
+    export fn toString(): string {
+        return number_to_string(self);
+    }
+}
+
+# ── Logical ───────────────────────────────────────────────────────────────────
+# Truthy / falsy interpretation for Number values.
+#   0, NaN → false
+#   any other value → true
+
+Number extends Logical {
+    export fn toBoolean(): bool {
+        return number_to_bool(self);
+    }
+}
+
+# ── Defaultable ───────────────────────────────────────────────────────────────
+# The default value for every numeric type is zero.
+#
+#   Int32.default()   → 0
+#   Float64.default() → 0.0
+#   Number.default()  → 0   (dynamic Number zero)
+
+Int32 extends Defaultable {
+    export static fn default(): int {
+        return 0;
+    }
+}
+
+Float64 extends Defaultable {
+    export static fn default(): float {
+        return 0.0;
+    }
+}

@@ -1,0 +1,164 @@
+# stdlib/random.code
+# Seedable pseudo-random number generator + statistical distributions.
+#
+# PRNG: xorshift64* (Vigna 2014) — period 2^64-1, passes BigCrush.
+#
+# Import:
+#   import "stdlib/random";
+#
+# ── Seed ──────────────────────────────────────────────────────────────────────
+#   Random.seed(s)             # seed with int (deterministic sequences)
+#   Random.timeSeed()          # seed from wall-clock time (non-deterministic)
+#
+# ── Core generators ───────────────────────────────────────────────────────────
+#   Random.float()             # uniform float in [0.0, 1.0)
+#   Random.uniform(lo, hi)     # uniform float in [lo, hi)
+#   Random.randInt(lo, hi)     # uniform int in [lo, hi]  (both inclusive)
+#   Random.bool()              # random true / false  (50/50)
+#   Random.coin(p)             # true with probability p  (Bernoulli trial)
+#
+# ── Distributions ─────────────────────────────────────────────────────────────
+#   Random.gauss(mu, sigma)    # Normal (Gaussian) distribution
+#   Random.exponential(lambda) # Exponential distribution (mean = 1/lambda)
+#   Random.triangular(lo, hi, mode) # Triangular distribution
+#
+# ── Array operations ──────────────────────────────────────────────────────────
+#   Random.shuffleInts(arr)       # Fisher-Yates shuffle IntArray in-place
+#   Random.shuffleStrings(arr)    # Fisher-Yates shuffle StringArray in-place
+#   Random.chooseInt(arr)         # Option<int>   — random element or None
+#   Random.chooseString(arr)      # Option<string> — random element or None
+
+import "./numbers";
+import "./array";
+import "./option";
+
+# ── Raw C bindings ────────────────────────────────────────────────────────────
+
+# Seed
+extern fn random_seed(const seed: int);
+extern fn random_time_seed();
+
+# Core
+extern fn random_float(): float;
+extern fn random_uniform(const lo: float, const hi: float): float;
+extern fn random_int(const lo: int, const hi: int): int;
+extern fn random_bool(): int;      # returns 0/1 (int) — avoids i1 complications
+extern fn random_coin(const p: float): int;
+
+# Distributions
+extern fn random_gauss(const mu: float, const sigma: float): float;
+extern fn random_exponential(const lambda: float): float;
+extern fn random_triangular(const lo: float, const hi: float, const mode: float): float;
+
+# Array operations (operate on raw array struct pointers)
+extern fn random_shuffle_ints(const arr: IntArray);
+extern fn random_shuffle_strings(const arr: StringArray);
+extern fn random_choice_int(const arr: IntArray): int;    # index, or -1 if empty
+extern fn random_choice_string(const arr: StringArray): int;
+
+# ── Random namespace ──────────────────────────────────────────────────────────
+
+export type Random = intrinsic("i8*");
+
+Random extends {
+
+    # ── Seed ──────────────────────────────────────────────────────────────────
+
+    # seed(s) — seed the RNG for reproducible sequences.
+    # Two runs with the same seed and same call sequence produce identical output.
+    export static fn seed(const s: int) {
+        random_seed(s);
+    }
+
+    # timeSeed() — seed from wall-clock time; each run differs.
+    export static fn timeSeed() {
+        random_time_seed();
+    }
+
+    # ── Core generators ───────────────────────────────────────────────────────
+
+    # float() — uniform float in [0.0, 1.0)
+    export static fn float(): float {
+        return random_float();
+    }
+
+    # uniform(lo, hi) — uniform float in [lo, hi)
+    export static fn uniform(const lo: float, const hi: float): float {
+        return random_uniform(lo, hi);
+    }
+
+    # randInt(lo, hi) — uniform int in [lo, hi]  (both bounds inclusive)
+    # Equivalent to Python randint(a, b) or rolling a die: randInt(1, 6)
+    export static fn randInt(const lo: int, const hi: int): int {
+        return random_int(lo, hi);
+    }
+
+    # bool() — random boolean, 50% chance of true
+    export static fn bool(): bool {
+        return random_bool() == 1;
+    }
+
+    # coin(p) — Bernoulli trial: true with probability p, false with 1-p.
+    # coin(0.5) is equivalent to bool().
+    # coin(0.0) always returns false; coin(1.0) always returns true.
+    export static fn coin(const p: float): bool {
+        return random_coin(p) == 1;
+    }
+
+    # ── Distributions ─────────────────────────────────────────────────────────
+
+    # gauss(mu, sigma) — sample from a Normal distribution.
+    # mu    = mean (centre of the bell curve)
+    # sigma = standard deviation (spread)
+    # ~68% of samples fall within [mu-sigma, mu+sigma].
+    # Uses the Box-Muller transform; consecutive calls share a spare value.
+    export static fn gauss(const mu: float, const sigma: float): float {
+        return random_gauss(mu, sigma);
+    }
+
+    # exponential(lambda) — Exponential distribution with rate lambda.
+    # Mean of the distribution = 1/lambda.
+    # Models time between events in a Poisson process.
+    export static fn exponential(const lambda: float): float {
+        return random_exponential(lambda);
+    }
+
+    # triangular(lo, hi, mode) — Triangular distribution.
+    # lo   = minimum possible value
+    # hi   = maximum possible value
+    # mode = most likely value (peak of the triangle)
+    # Useful when min/max/most-likely are known but full data is unavailable.
+    export static fn triangular(const lo: float, const hi: float, const mode: float): float {
+        return random_triangular(lo, hi, mode);
+    }
+
+    # ── Array operations ──────────────────────────────────────────────────────
+
+    # shuffleInts(arr) — Fisher-Yates shuffle IntArray in-place.
+    # After the call every permutation is equally likely.
+    # O(n) time, O(1) extra space.
+    export static fn shuffleInts(const arr: IntArray) {
+        random_shuffle_ints(arr);
+    }
+
+    # shuffleStrings(arr) — Fisher-Yates shuffle StringArray in-place.
+    export static fn shuffleStrings(const arr: StringArray) {
+        random_shuffle_strings(arr);
+    }
+
+    # chooseInt(arr) — pick one random element from an IntArray.
+    # Returns None when the array is empty.
+    export static fn chooseInt(const arr: IntArray): Option<int> {
+        const idx: int = random_choice_int(arr);
+        if idx == -1 { return Option::None; }
+        return Option::Some(arr.get(idx));
+    }
+
+    # chooseString(arr) — pick one random element from a StringArray.
+    # Returns None when the array is empty.
+    export static fn chooseString(const arr: StringArray): Option<string> {
+        const idx: int = random_choice_string(arr);
+        if idx == -1 { return Option::None; }
+        return Option::Some(arr.get(idx));
+    }
+}

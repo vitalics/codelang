@@ -1,0 +1,27 @@
+# enum_recursive.code
+# Recursive tagged union (self-referential variants).
+
+enum Expr {
+    Num(int),
+    Add(Expr, Expr),
+    Mul(Expr, Expr),
+    Neg(Expr),
+
+    fn eval(): int {
+        return switch self {
+            Expr::Num(n)    => n,
+            Expr::Add(l, r) => l.eval() + r.eval(),
+            Expr::Mul(l, r) => l.eval() * r.eval(),
+            Expr::Neg(x)    => 0 - x.eval(),
+        };
+    }
+}
+
+fn main() {
+    # (1 + 2) * -(3) = -9
+    let expr = Expr::Mul(
+        Expr::Add(Expr::Num(1), Expr::Num(2)),
+        Expr::Neg(Expr::Num(3)),
+    );
+    print(expr.eval());
+}

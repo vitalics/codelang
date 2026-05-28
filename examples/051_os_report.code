@@ -1,0 +1,95 @@
+import "stdlib/os";
+
+# ── System report ─────────────────────────────────────────────────────────────
+#
+# Prints a structured system report, similar to combining:
+#   uname -a  +  sysctl hw.memsize hw.ncpu  +  system_profiler SPHardwareDataType
+#
+# Template holes support static method calls and free function calls directly:
+#   print($"arch: {OS.arch()}")          — static call in hole
+#   print($"doubled: {double_it(n)}")    — free function call in hole
+# Pre-binding to a local variable also works and can aid readability.
+#
+# Typical output on Apple Silicon (M2 Pro, 16 GB):
+#   Architecture : arm64
+#   Platform     : darwin
+#   OS type      : Darwin  /  Kernel: 25.4.0
+#   CPU          : Apple M2 Pro  10 cores
+#   RAM          : 16 GB total,  2841 MB free,  91950 s uptime
+
+fn rule() {
+    print("────────────────────────────────────────────");
+}
+
+fn main() {
+    # ── 1. Build target (compile-time constants) ──────────────────────────────
+    # Bind each value to a local variable so it can be used inside $"…{var}…".
+    const arch:    string = OS.arch();
+    const plat:    string = OS.platform();
+    const endian:  string = OS.endianness();
+    const eolLen:  int    = OS.eol().length();
+    const devNull: string = OS.devNull();
+
+    # ── 2. OS identity ────────────────────────────────────────────────────────
+    const osName:    string = OS.osType();
+    const kernel:    string = OS.release();
+    const osVersion: string = OS.version();
+
+    # ── 3. CPU ────────────────────────────────────────────────────────────────
+    const cpuModel:  string = OS.cpuModel();
+    const cpuCores:  int    = OS.cpuCount();
+    const cpuSpeed:  int    = OS.cpuSpeed();
+
+    # ── 4. Memory (pre-divide to human-readable units) ────────────────────────
+    const hostname: string = OS.hostname();
+    const ramGb:    Int64  = OS.totalmem() / 1073741824;
+    const freeMb:   Int64  = OS.freemem() / 1048576;
+    const uptime:   Int64  = OS.uptime();
+
+    # ── 5. User + paths ───────────────────────────────────────────────────────
+    const username: string = OS.username();
+    const uid:      int    = OS.uid();
+    const gid:      int    = OS.gid();
+    const homedir:  string = OS.homedir();
+    const tmpdir:   string = OS.tmpdir();
+
+    # ── Print ─────────────────────────────────────────────────────────────────
+    rule();
+    print($"  System report  —  {hostname}");
+    rule();
+
+    print("");
+    print("  Build target:");
+    print($"    Architecture : {arch}");
+    print($"    Platform     : {plat}");
+    print($"    Endianness   : {endian}");
+    print($"    EOL bytes    : {eolLen}");
+    print($"    Null device  : {devNull}");
+
+    print("");
+    print("  Operating system:");
+    print($"    OS type      : {osName}");
+    print($"    Kernel       : {kernel}");
+    print($"    Version      : {osVersion}");
+
+    print("");
+    print("  CPU:");
+    print($"    Model        : {cpuModel}");
+    print($"    Logical cores: {cpuCores}");
+    print($"    Speed        : {cpuSpeed} MHz");
+
+    print("");
+    print("  Memory:");
+    print($"    Total        : {ramGb} GB");
+    print($"    Free         : {freeMb} MB");
+    print($"    Uptime       : {uptime} s");
+
+    print("");
+    print("  User:");
+    print($"    Login        : {username}");
+    print($"    UID / GID    : {uid} / {gid}");
+    print($"    Home dir     : {homedir}");
+    print($"    Temp dir     : {tmpdir}");
+
+    rule();
+}

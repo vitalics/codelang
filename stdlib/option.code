@@ -1,0 +1,49 @@
+# stdlib/option.code
+#
+# Option<T> — a value that is either present (Some) or absent (None).
+#
+# Used throughout the stdlib as the return type of any fallible read:
+#
+#   arr.get(i)      → Option<int>     (None if out-of-bounds)
+#   map.get(key)    → Option<V>       (None if key missing)
+#   set.at(i)       → Option<T>       (None if out-of-bounds)
+#
+# Pattern-matching:
+#   switch arr.get(i) {
+#       Option::Some(v) => print(v),
+#       Option::None    => print("missing"),
+#   }
+#
+# Convenience methods:
+#   opt.isSome()          → bool
+#   opt.isNone()          → bool
+#   opt.unwrapOr(default) → T      (returns default on None)
+
+export enum Option<T> {
+    Some(T),
+    None,
+
+    # Returns true when a value is present.
+    export fn isSome(): bool {
+        return switch self {
+            Option::Some(_) => true,
+            Option::None    => false,
+        };
+    }
+
+    # Returns true when no value is present.
+    export fn isNone(): bool {
+        return switch self {
+            Option::Some(_) => false,
+            Option::None    => true,
+        };
+    }
+
+    # Returns the contained value, or `default` if None.
+    export fn unwrapOr(const default: T): T {
+        return switch self {
+            Option::Some(v) => v,
+            Option::None    => default,
+        };
+    }
+}

@@ -1,0 +1,15 @@
+import "../../../stdlib/io";
+
+fn main() {
+    # /tmp always exists on Unix
+    if Dir.exists("/tmp") {
+        print("tmp-exists");
+    }
+
+    # Non-existent path should return false
+    if Dir.exists("/tmp/codelang_no_such_dir_xyz_abc") {
+        print("unexpected");
+    } else {
+        print("missing-absent");
+    }
+}

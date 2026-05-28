@@ -1,0 +1,68 @@
+import "../../../stdlib/npu";
+
+fn main(): void {
+    # ── Matrix multiplication (AMX-accelerated on Apple Silicon) ─────────────
+    #
+    # A = [ 1  2  3 ]   (2×3)
+    #     [ 4  5  6 ]
+    #
+    # B = [  7  8 ]     (3×2)
+    #     [  9 10 ]
+    #     [ 11 12 ]
+    #
+    # C = A × B = [ 1*7+2*9+3*11  1*8+2*10+3*12 ] = [ 58   64 ]  (2×2)
+    #             [ 4*7+5*9+6*11  4*8+5*10+6*12 ]   [ 139 154 ]
+
+    const a: Matrix = Matrix.new(2, 3);
+    a.set(0, 0, 1.0); a.set(0, 1, 2.0); a.set(0, 2, 3.0);
+    a.set(1, 0, 4.0); a.set(1, 1, 5.0); a.set(1, 2, 6.0);
+
+    const b: Matrix = Matrix.new(3, 2);
+    b.set(0, 0, 7.0);  b.set(0, 1, 8.0);
+    b.set(1, 0, 9.0);  b.set(1, 1, 10.0);
+    b.set(2, 0, 11.0); b.set(2, 1, 12.0);
+
+    const c: Matrix = a.multiply(b);
+    print(c.get(0, 0));   # 58
+    print(c.get(0, 1));   # 64
+    print(c.get(1, 0));   # 139
+    print(c.get(1, 1));   # 154
+    print(c);             # Matrix(2x2)[[58, 64], [139, 154]]
+
+    # ── Dimensions ───────────────────────────────────────────────────────────
+    print(c.rows());      # 2
+    print(c.cols());      # 2
+
+    # ── Identity matrix ───────────────────────────────────────────────────────
+    const id: Matrix = Matrix.identity(3);
+    print(id.get(0, 0));  # 1
+    print(id.get(0, 1));  # 0
+    print(id.get(1, 1));  # 1
+    print(id.get(2, 2));  # 1
+
+    # ── ReLU activation (vDSP on Apple Silicon) ───────────────────────────────
+    const d: Matrix = Matrix.new(1, 4);
+    d.set(0, 0, -1.0);
+    d.set(0, 1,  2.0);
+    d.set(0, 2, -3.0);
+    d.set(0, 3,  4.0);
+
+    const r: Matrix = d.relu();
+    print(r.get(0, 0));   # 0
+    print(r.get(0, 1));   # 2
+    print(r.get(0, 2));   # 0
+    print(r.get(0, 3));   # 4
+
+    # ── Element-wise add ─────────────────────────────────────────────────────
+    const e: Matrix = Matrix.ones(2, 2);
+    const f: Matrix = e.add(e);
+    print(f.get(0, 0));   # 2
+    print(f.get(1, 1));   # 2
+
+    # ── Scale ─────────────────────────────────────────────────────────────────
+    const g: Matrix = Matrix.ones(1, 3);
+    g.scale(5.0);
+    print(g.get(0, 0));   # 5
+    print(g.get(0, 1));   # 5
+    print(g.get(0, 2));   # 5
+}

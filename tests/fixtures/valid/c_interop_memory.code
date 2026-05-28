@@ -1,0 +1,26 @@
+# c_interop_memory.code
+#
+# Runtime tests for malloc, calloc, free, and memcmp.
+#
+# Expected output (3 lines):
+#   1   ← sentinel: malloc + free completed without crash
+#   2   ← sentinel: calloc + free completed without crash
+#   0   ← memcmp("hello", "hello", 5) — byte-identical regions
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    # malloc + free round-trip
+    const ptr: C_VoidPtr = malloc(128);
+    free(ptr);
+    print(1);
+
+    # calloc + free round-trip
+    const ptr2: C_VoidPtr = calloc(4, 16);
+    free(ptr2);
+    print(2);
+
+    # memcmp — identical byte regions return 0
+    const r: C_Int = memcmp("hello", "hello", 5);
+    print(r);
+}

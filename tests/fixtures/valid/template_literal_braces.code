@@ -1,0 +1,16 @@
+# template_literal_braces.code
+# { followed by a space is treated as a literal brace character, not a hole.
+# Only { immediately followed by an identifier or digit starts a hole.
+fn main() {
+    let x: int = 42;
+    let y: int = 7;
+
+    # Literal { and } surrounding a hole: { {x} }
+    print($"result: { {x} }");
+
+    # Struct-like format: outer braces are literal, inner are holes
+    print($"Point{ x: {x}, y: {y} }");
+
+    # { } with no identifier inside — both braces are literal
+    print($"empty: {}");
+}

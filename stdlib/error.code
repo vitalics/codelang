@@ -1,0 +1,105 @@
+# stdlib/error.code
+# Base Error protocol — a structural contract for all error types.
+#
+# ── Protocol contract ─────────────────────────────────────────────────────────
+#
+#   protocol Error extends Displayable:
+#
+#     Fields every implementing type must declare:
+#       const name:  string              — the error kind, e.g. "NetworkError"
+#       stacktrace:  Option<Stacktrace>  — captured call stack (may be None)
+#
+#     Default static factory (inherited by all implementing types):
+#       static fn new(name: string): Self
+#           Creates a new error with the given name and a captured stacktrace.
+#
+#     Default display (Displayable):
+#       fn toString(): string
+#           Returns "$name" (just the error name).
+#
+# ── Implementing a custom error type ─────────────────────────────────────────
+#
+#   import "stdlib/error";
+#
+#   type NetworkError extends Error {   ← struct must include Error's required fields
+#       const name:       string,
+#       stacktrace:       Option<Stacktrace>,
+#       const statusCode: int,
+#       const url:        string,
+#   };
+#
+#   NetworkError extends Error {        ← conform to the Error protocol
+#       export fn toString(): string {
+#           return $"NetworkError({self.statusCode}): {self.url}";
+#       }
+#   }
+#
+#   fn fetch(const url: string): void {
+#       const err = NetworkError.new("NetworkError");
+#       print(err.name);           # NetworkError
+#       print(err.stacktrace);     # call-stack frames
+#   }
+#
+# ── Creating errors inline ────────────────────────────────────────────────────
+#
+#   const e = NetworkError.new("NetworkError");
+#   # — OR — using the anonymous struct shorthand:
+#   let e: NetworkError = NetworkError.new("NetworkError");
+#
+# ── Pattern matching ──────────────────────────────────────────────────────────
+#
+#   import "stdlib/result";
+#   fn divide(a: int, b: int): Result<int, NetworkError> {
+#       if b == 0 {
+#           return Result::Err(NetworkError.new("DivisionByZero"));
+#       }
+#       return Result::Ok(a / b);
+#   }
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "./protocols";
+import "./option";
+import "./stacktrace";
+
+# ── Error protocol ────────────────────────────────────────────────────────────
+#
+# Implementing types must provide:
+#   const name: string
+#   stacktrace: Option<Stacktrace>
+#
+# Both fields are filled by the default `static fn new(name: string)` factory.
+
+export protocol Error extends Displayable {
+    # The human-readable error identifier (e.g. "NetworkError", "ParseError").
+    const name: string,
+
+    # Call stack at the moment the error was created.
+    # Option::None when stacktrace capture is unavailable or explicitly omitted.
+    stacktrace: Option<Stacktrace>,
+
+    # ── Default static factory ────────────────────────────────────────────────
+    # Creates a new instance of the implementing type with:
+    #   • name       = the supplied string
+    #   • stacktrace = Option::Some(Stacktrace.capture())
+    #
+    # Implementing types that do not declare their own `static fn new` inherit
+    # this default automatically.
+    #
+    # Usage:
+    #   const err = MyError.new("MyError");
+    static fn new(const name: string): Self {
+        let stacktrace: Option<Stacktrace> = Option::Some(Stacktrace.capture());
+        let res = Self {
+            name,
+            stacktrace,
+        };
+        return res;
+    }
+
+    # ── Default Displayable implementation ────────────────────────────────────
+    # Returns just the error name.  Override in the implementing type to include
+    # additional context (e.g. status codes, URLs, inner errors).
+    fn toString(): string {
+        return self.name;
+    }
+}

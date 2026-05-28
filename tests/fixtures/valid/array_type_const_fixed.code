@@ -1,0 +1,21 @@
+# array_type_const_fixed.code
+# Tests `const data: int[N]` — a read-only fixed-size array field.
+# The struct constructor zero-initialises the field; no constructor arg needed.
+
+type Counters {
+    const data: int[3]
+    label: int
+
+    static fn new(lbl: int): Counters {
+        return Self { label: lbl };
+    }
+
+    fn getLabel(): int {
+        return self.label;
+    }
+}
+
+fn main() {
+    let c = Counters.new(42);
+    print(c.getLabel());
+}

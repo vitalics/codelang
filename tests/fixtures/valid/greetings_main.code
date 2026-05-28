@@ -1,0 +1,6 @@
+import "./greetings";
+
+fn main() {
+  greet();
+  farewell();
+}

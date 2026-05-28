@@ -1,0 +1,9 @@
+# buffer_print.code
+# print(buffer) should display [b0, b1, ...] decimal notation.
+
+import "../../../stdlib/string";
+
+fn main() {
+    const hello = "Привет, мир";
+    print(hello.toBuffer());
+}

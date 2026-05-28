@@ -1,0 +1,16 @@
+import "../../../stdlib/protocols";
+import "../../../stdlib/numbers";
+import "../../../stdlib/boolean";
+
+# Type that conforms to Displayable but provides no toString() override
+# → should receive the protocol default: "[Displayable]: default"
+type MyColor = intrinsic("i32");
+MyColor extends Displayable {}
+
+fn main() {
+    const c: MyColor = 0;
+    print(c.toString());   # [Displayable]: default
+
+    const b: bool = true;
+    print(b.toString());   # true  (Boolean overrides)
+}

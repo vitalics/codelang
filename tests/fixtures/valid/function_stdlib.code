@@ -1,0 +1,57 @@
+import "../../../stdlib/string";
+import "../../../stdlib/array";
+import "../../../stdlib/function";
+
+fn double(x: int): int {
+    return x * 2;
+}
+
+fn square(x: int): int {
+    return x * x;
+}
+
+fn inc(x: int): int {
+    return x + 1;
+}
+
+fn main() {
+    # ── 1. apply ─────────────────────────────────────────────────────────────
+    print(apply(double, 5));          # 10
+    print(apply(square, 4));          # 16
+    print(apply(inc, 99));            # 100
+
+    # apply with a lambda
+    print(apply(fn(x: int): int { return x * x * x; }, 3));   # 27
+
+    # ── 2. Function<A, R> type alias ─────────────────────────────────────────
+    const f: Function<int, int> = double;
+    print(apply(f, 6));               # 12
+
+    # ── 3. compose ───────────────────────────────────────────────────────────
+    const ds: fn(int): int = compose(square, double);   # square(double(x))
+    print(ds(3));                     # 36
+
+    const sd: fn(int): int = compose(double, square);   # double(square(x))
+    print(sd(3));                     # 18
+
+    # ── 4. pipe ──────────────────────────────────────────────────────────────
+    const pipeline: fn(int): int = pipe(double, square);   # square(double(x))
+    print(pipeline(3));               # 36
+
+    const rev: fn(int): int = pipe(square, double);         # double(square(x))
+    print(rev(3));                    # 18
+
+    # ── 5. identity ──────────────────────────────────────────────────────────
+    print(identity(0));               # 0
+    print(identity(42));              # 42
+
+    # ── 6. constant ──────────────────────────────────────────────────────────
+    const always7: fn(int): int = constant(7);
+    print(always7(0));                # 7
+    print(always7(999));              # 7
+
+    # constant as identity-compose neutral element: compose(constant(5), anything)
+    # is effectively a const function, same value every time
+    const alwaysNeg: fn(int): int = constant(-1);
+    print(alwaysNeg(100));            # -1
+}

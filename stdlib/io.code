@@ -1,0 +1,472 @@
+# stdlib/io.code
+#
+# Standard I/O for CodeLang.
+#
+# ── Exports ───────────────────────────────────────────────────────────────────
+#
+#   Protocols
+#     Disposable  dispose()                              — auto-cleanup (for `using`)
+#     Writable    write(s), writeln(s), flush()          — output capability
+#     Readable    readLine(): string, readAll(): string  — input capability
+#
+#   Types
+#     Stdout      standard output writer — create with `Stdout {}`
+#     Stdin       standard input reader  — create with `Stdin {}`
+#     File        file I/O — open with File.open(path, mode)
+#     Dir         directory operations (static methods only)
+#     Process     process environment  (static methods only)
+#     Terminal    terminal raw-mode + dimensions  (static methods only)
+#                 For full TUI support import "stdlib/terminal" instead.
+#
+# ── Built-in functions (available without any import) ────────────────────────
+#
+#   write(s)    printf("%s", s)   — output string WITHOUT trailing newline
+#   print(s)    printf("%s\n", s) — output string WITH newline
+#   flush()     fflush(NULL)      — flush all stdio buffers
+#
+# ── Usage ─────────────────────────────────────────────────────────────────────
+#
+#   import "stdlib/io";
+#
+#   fn main() {
+#     # Built-ins work directly — no import needed:
+#     write("Hello");
+#     write(", ");
+#     print("world!");
+#     flush();
+#
+#     # Or use typed Writer instances with auto-cleanup:
+#     using out: Stdout = Stdout { };
+#     out.write("Hello, ");
+#     out.writeln("world!");
+#
+#     # Read from stdin:
+#     let inp: Stdin = Stdin { };
+#     const line = inp.readLine();
+#
+#     # File I/O with auto-close:
+#     using f = File.open("data.txt", "r");
+#     const text = f.readAll();
+#
+#     # Directory listing:
+#     const entries = Dir.list(".");
+#
+#     # Process environment:
+#     const home = Process.env("HOME");
+#     const cwd  = Process.cwd();
+#   }
+#
+# ── main with arguments ───────────────────────────────────────────────────────
+#
+#   import "stdlib/array";
+#   fn main(args: string[]) {
+#     print(args.length());
+#     print(args.get(0));
+#   }
+#
+# The compiler recognises `fn main(args: string[])` and automatically emits
+# `define i32 @main(i32 %argc, i8** %argv)` plus the argv → string[] conversion.
+#
+# ── main with Process ─────────────────────────────────────────────────────────
+#
+#   import "stdlib/io";
+#   fn main(proc: Process) {
+#     print(proc.args.length());   # argv as a string array
+#     const line = proc.stdin.readLine();
+#     proc.stdout.writeln("Hello!");
+#   }
+#
+# The compiler recognises `fn main(proc: Process)` and automatically emits
+# the C-style entry point, builds a Process struct on the heap, and binds it
+# to `proc`.  The `args` field holds the CLI arguments; `stdin` and `stdout`
+# wrap file descriptors 0 and 1 respectively.
+
+import "./c-interop";
+import "./array";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# External C declarations (stdio.h / unistd.h / sys/stat.h)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# stdio.h — FILE handles are passed as opaque pointers (C_VoidPtr / i8*)
+extern fn fopen(path: C_Str, mode: C_Str): C_VoidPtr;
+extern fn fclose(fp: C_VoidPtr): C_Int;
+extern fn fgets(buf: C_Str, n: C_Int, fp: C_VoidPtr): C_Str;
+extern fn fputs(s: C_Str, fp: C_VoidPtr): C_Int;
+extern fn fread(buf: C_VoidPtr, size: C_SizeT, n: C_SizeT, fp: C_VoidPtr): C_SizeT;
+extern fn fwrite(buf: C_VoidPtr, size: C_SizeT, n: C_SizeT, fp: C_VoidPtr): C_SizeT;
+extern fn fseek(fp: C_VoidPtr, offset: C_Long, whence: C_Int): C_Int;
+extern fn ftell(fp: C_VoidPtr): C_Long;
+extern fn feof(fp: C_VoidPtr): C_Int;
+extern fn ferror(fp: C_VoidPtr): C_Int;
+extern fn fflush(fp: C_VoidPtr): C_Int;
+
+# stdlib.h / unistd.h
+extern fn getenv(name: C_Str): C_Str;
+extern fn chdir(path: C_Str): C_Int;
+
+# sys/stat.h
+extern fn mkdir(path: C_Str, mode: C_Int): C_Int;
+extern fn rmdir(path: C_Str): C_Int;
+extern fn remove(path: C_Str): C_Int;
+
+# ─── runtime/io.c helpers ────────────────────────────────────────────────────
+
+# stdin helpers
+extern fn codelang_readline(): C_Str;
+extern fn codelang_readall(): C_Str;
+
+# file helpers
+extern fn codelang_file_readline(fp: C_VoidPtr): C_Str;
+extern fn codelang_file_readall(fp: C_VoidPtr): C_Str;
+
+# directory helpers
+extern fn codelang_dir_list(path: C_Str): StringArray;
+extern fn codelang_path_exists(path: C_Str): C_Int;
+extern fn codelang_getcwd(): C_Str;
+
+# terminal helpers (basic — raw mode + size)
+extern fn codelang_terminal_enable_raw();
+extern fn codelang_terminal_disable_raw();
+extern fn codelang_terminal_rows(): C_Int;
+extern fn codelang_terminal_cols(): C_Int;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Protocols
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Disposable — anything that holds a resource and can release it.
+# Implement this on types that wrap OS handles (files, sockets, …) so that
+# the `using` statement automatically calls dispose() at end of scope.
+export protocol Disposable {
+    fn dispose();
+}
+
+# Writable — anything that can produce text output.
+export protocol Writable {
+    fn write(s: string);
+    fn writeln(s: string);
+    fn flush();
+}
+
+# Readable — anything that can consume text input.
+export protocol Readable {
+    fn readLine(): string;
+    fn readAll(): string;
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stdout
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Stdout wraps file descriptor 1.
+# All methods delegate to the write() / print() / flush() built-ins so that
+# string literals end up in the global constant pool (no heap allocation).
+#
+#   let out: Stdout = Stdout { };
+#   out.write("Hello");
+#   out.writeln(" world!");
+#   out.flush();
+#
+#   # Auto-flush on scope exit:
+#   using out: Stdout = Stdout { };
+#   out.write("buffered output");
+export type Stdout {
+}
+
+Stdout extends Writable {
+    # Write s to stdout without a trailing newline.
+    export fn write(const s: string) {
+        write(s);
+    }
+
+    # Write s to stdout followed by a newline.
+    export fn writeln(const s: string) {
+        print(s);
+    }
+
+    # Flush all pending stdout output.
+    export fn flush() {
+        flush();
+    }
+}
+
+Stdout extends Disposable {
+    # Flush stdout when disposed (e.g. at end of a `using` block).
+    export fn dispose() {
+        flush();
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stdin
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Stdin wraps file descriptor 0.
+#
+#   let inp: Stdin = Stdin { };
+#   const line = inp.readLine();
+#   const all  = inp.readAll();
+export type Stdin {
+}
+
+Stdin extends Readable {
+    # Read one line from stdin.  Strips the trailing newline.
+    # Returns "" at EOF.
+    export fn readLine(): string {
+        return codelang_readline();
+    }
+
+    # Read all of stdin until EOF.
+    export fn readAll(): string {
+        return codelang_readall();
+    }
+}
+
+Stdin extends Disposable {
+    # No-op: stdin is a global resource; disposing doesn't close it.
+    export fn dispose() {
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# File
+# ─────────────────────────────────────────────────────────────────────────────
+
+# File wraps a C FILE* handle (stored as an opaque pointer).
+#
+# fseek whence values (pass as integer literals):
+#   0 = SEEK_SET (from beginning)
+#   1 = SEEK_CUR (from current position)
+#   2 = SEEK_END (from end)
+#
+# Modes: "r" read, "w" write (truncate), "a" append,
+#        "rb"/"wb"/"ab" binary equivalents, "r+" read+write.
+#
+#   using f = File.open("data.txt", "r");
+#   const line = f.readLine();
+#   const text = f.readAll();
+#   # f.dispose() called automatically at end of `using` block
+export type File {
+    fp: C_VoidPtr
+}
+
+File extends Writable {
+    # Write s to this file without a trailing newline.
+    export fn write(const s: string) {
+        fputs(s, self.fp);
+    }
+
+    # Write s followed by a newline character.
+    export fn writeln(const s: string) {
+        fputs(s, self.fp);
+        fputs("\n", self.fp);
+    }
+
+    # Flush pending writes for this file handle.
+    export fn flush() {
+        fflush(self.fp);
+    }
+}
+
+File extends Readable {
+    # Read one line from the file.  Strips the trailing newline.
+    # Returns "" at EOF or on error.
+    export fn readLine(): string {
+        return codelang_file_readline(self.fp);
+    }
+
+    # Read all remaining bytes from this file handle.
+    export fn readAll(): string {
+        return codelang_file_readall(self.fp);
+    }
+}
+
+File extends Disposable {
+    # Close the file handle.  Called automatically by `using`.
+    export fn dispose() {
+        fclose(self.fp);
+    }
+}
+
+File extends {
+    # Open a file.  `mode` mirrors fopen(3): "r", "w", "a", "r+", "rb", …
+    # The returned File has a null fp on failure — check with .isOpen().
+    export static fn open(path: string, mode: string): File {
+        const fp = fopen(path, mode);
+        return File { fp: fp };
+    }
+
+    # Close this file handle.  Subsequent reads/writes are undefined.
+    export fn close() {
+        fclose(self.fp);
+    }
+
+    # Returns true if the file was opened successfully (fp != null).
+    export fn isOpen(): bool {
+        return self.fp != 0;
+    }
+
+    # Returns true if the file pointer is at end-of-file.
+    export fn eof(): bool {
+        return feof(self.fp) != 0;
+    }
+
+    # Returns true if an I/O error has occurred.
+    export fn error(): bool {
+        return ferror(self.fp) != 0;
+    }
+
+    # Seek to `offset` relative to `whence` (SEEK_SET / SEEK_CUR / SEEK_END).
+    # Returns 0 on success, non-zero on error.
+    export fn seek(offset: C_Long, whence: C_Int): C_Int {
+        return fseek(self.fp, offset, whence);
+    }
+
+    # Return the current byte offset within this file.
+    export fn tell(): C_Long {
+        return ftell(self.fp);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dir
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Dir provides static methods for directory operations.
+#
+#   const entries = Dir.list(".");
+#   if Dir.exists("/tmp/mydir") {
+#     Dir.create("/tmp/mydir/sub");
+#   }
+export type Dir {
+}
+
+Dir extends {
+    # Return a StringArray of entry names in `path` (excludes "." and "..").
+    export static fn list(path: string): StringArray {
+        return codelang_dir_list(path);
+    }
+
+    # Return true if `path` exists (file or directory).
+    export static fn exists(path: string): bool {
+        return codelang_path_exists(path) != 0;
+    }
+
+    # Create a directory at `path` with mode 0755 (rwxr-xr-x).
+    # Returns true on success, false if the directory already exists or on error.
+    export static fn create(path: string): bool {
+        return mkdir(path, 493) == 0;
+    }
+
+    # Remove an empty directory.
+    # Returns true on success.
+    export static fn remove(path: string): bool {
+        return rmdir(path) == 0;
+    }
+
+    # Delete a file (or empty directory) at `path`.
+    # Returns true on success.
+    export static fn delete(path: string): bool {
+        return remove(path) == 0;
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Process
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Process bundles CLI arguments and standard streams.
+#
+# Two use patterns are supported:
+#
+#   1. Entry-point parameter (preferred when you need argc/argv):
+#
+#       import "stdlib/io";
+#       fn main(proc: Process) {
+#           print(proc.args.length());
+#           const line = proc.stdin.readLine();
+#           proc.stdout.writeln("echo: " + line);
+#       }
+#
+#   2. Static helper methods (no instance needed):
+#
+#       const home = Process.env("HOME");
+#       const dir  = Process.cwd();
+#       Process.exit(0);
+export type Process {
+    args:   string[]
+    stdin:  Stdin
+    stdout: Stdout
+}
+
+Process extends {
+    # Return the value of environment variable `name`.
+    # Returns "" if the variable is not set.
+    export static fn env(name: string): string {
+        const val = getenv(name);
+        if val == 0 {
+            return "";
+        }
+        return val;
+    }
+
+    # Return the current working directory as an absolute path.
+    export static fn cwd(): string {
+        return codelang_getcwd();
+    }
+
+    # Change the current working directory to `path`.
+    # Returns true on success.
+    export static fn chdir(path: string): bool {
+        return chdir(path) == 0;
+    }
+
+    # Terminate the process with the given exit `code`.
+    # Does not return.
+    export static fn exit(code: int) {
+        exit(code);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Terminal  (basic — raw mode + dimensions only)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# For full TUI support (cursor positioning, colors, key reading) use:
+#   import "stdlib/terminal";
+#
+# Raw mode disables line-buffering and echo so that individual key presses
+# can be read immediately — required for TUI applications.
+#
+#   Terminal.enableRaw();
+#   const r = Terminal.rows();
+#   const c = Terminal.cols();
+#   Terminal.disableRaw();
+export type Terminal {
+}
+
+Terminal extends {
+    # Enable raw mode (no echo, no canonical/line buffering).
+    # Saves the original terminal state; restore it with disableRaw().
+    export static fn enableRaw() {
+        codelang_terminal_enable_raw();
+    }
+
+    # Restore the terminal to its original (cooked) mode.
+    export static fn disableRaw() {
+        codelang_terminal_disable_raw();
+    }
+
+    # Return the terminal height in rows.
+    # Returns 0 when stdout is not connected to a terminal.
+    export static fn rows(): int {
+        return codelang_terminal_rows();
+    }
+
+    # Return the terminal width in columns.
+    # Returns 0 when stdout is not connected to a terminal.
+    export static fn cols(): int {
+        return codelang_terminal_cols();
+    }
+}

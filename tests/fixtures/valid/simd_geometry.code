@@ -1,0 +1,50 @@
+import "../../../stdlib/simd";
+
+fn main(): void {
+    # ── Float2: perpendicular (rotate 90° CCW) ────────────────────────────────
+    # perp(x, y) = (-y, x)
+    const p: Float2  = Float2.of(3.0, 4.0);
+    const pp: Float2 = p.perp();
+    print(pp.x());           # -4
+    print(pp.y());           # 3
+
+    # ── Float2: reflect off axis-aligned surface ──────────────────────────────
+    # v = (1, -1), n = (0, 1)  →  reflected = (1, 1)
+    const vel: Float2 = Float2.of(1.0, -1.0);
+    const n: Float2   = Float2.unitY();
+    const ref: Float2 = vel.reflect(n);
+    print(ref.x());          # 1
+    print(ref.y());          # 1
+
+    # ── Float2: distance ─────────────────────────────────────────────────────
+    # distance((0,0), (3,4)) = 5
+    const orig: Float2 = Float2.zero();
+    const far: Float2  = Float2.of(3.0, 4.0);
+    print(orig.distance(far));  # 5
+
+    # ── Float2: lerp midpoint ─────────────────────────────────────────────────
+    # lerp((0,0), (10,20), 0.5) = (5, 10)
+    const start: Float2 = Float2.zero();
+    const stop: Float2  = Float2.of(10.0, 20.0);
+    const mid: Float2   = start.lerp(stop, 0.5);
+    print(mid);              # Float2(5, 10)
+
+    # ── Float2: 2D cross product (signed area / z-component) ──────────────────
+    # unitX × unitY = 1*1 - 0*0 = 1
+    const cx: Float2 = Float2.unitX();
+    const cy: Float2 = Float2.unitY();
+    print(cx.cross(cy));     # 1
+
+    # ── Float2: clamp to unit square ──────────────────────────────────────────
+    # clamp((-1, 2), (0,0), (1,1)) = (0, 1)
+    const ov: Float2 = Float2.of(-1.0, 2.0);
+    const lo: Float2 = Float2.zero();
+    const hi: Float2 = Float2.one();
+    print(ov.clamp(lo, hi)); # Float2(0, 1)
+
+    # ── Float2: rotate 1.5 rad CCW — y ≈ sin(1.5) ≈ 0.9975 ─────────────────
+    # 1.5 is exactly representable as float32 (= 3/2)
+    const ux: Float2 = Float2.unitX();
+    const rotated: Float2 = ux.rotate(1.5);
+    print(rotated.y());      # ≈ sin(1.5) ≈ 0.9975
+}

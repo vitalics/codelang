@@ -1,0 +1,12 @@
+fn main() {
+  let a: int = 7 / 2;
+  print(a);
+  let b: int = 10 % 3;
+  print(b);
+  let c: int = 9 / 3;
+  print(c);
+  let d: int = 100 / 7;
+  print(d);
+  let e: int = 100 % 7;
+  print(e);
+}

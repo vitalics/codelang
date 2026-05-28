@@ -1,0 +1,57 @@
+import "../../../stdlib/map";
+
+fn main() {
+    # ── Map<int, int> → IntIntMap ─────────────────────────────────────────────
+    let ii: Map<int, int> = Map.new();
+    ii.put(10, 100);
+    ii.put(20, 200);
+    print(ii.size());                   # 2
+    print(ii.get(10).unwrapOr(0));      # 100
+    print(ii);                          # {10: 100, 20: 200}
+    ii.free();
+
+    # ── Map<string, int> → StringIntMap ──────────────────────────────────────
+    let si: Map<string, int> = Map.new();
+    si.put("x", 1);
+    si.put("y", 2);
+    print(si.size());                   # 2
+    print(si.get("x").unwrapOr(0));     # 1
+    print(si);                          # {"x": 1, "y": 2}
+    si.free();
+
+    # ── Map<int, string> → IntStringMap ──────────────────────────────────────
+    let is_m: Map<int, string> = Map.new();
+    is_m.put(1, "one");
+    is_m.put(2, "two");
+    print(is_m.size());                 # 2
+    print(is_m.get(1).unwrapOr(""));    # one
+    print(is_m);                        # {1: "one", 2: "two"}
+    is_m.free();
+
+    # ── Map<string, string> → StringStringMap ────────────────────────────────
+    let ss: Map<string, string> = Map.new();
+    ss.put("hello", "world");
+    ss.put("foo", "bar");
+    print(ss.size());                       # 2
+    print(ss.get("hello").unwrapOr(""));    # world
+    print(ss);                              # {"foo": "bar", "hello": "world"}
+    ss.free();
+
+    # ── Map<K,V>.new() — explicit type args, no variable annotation ───────────
+    let ii2 = Map<int, int>.new();
+    ii2.put(1, 10);
+    ii2.put(2, 20);
+    print(ii2.size());                  # 2
+    print(ii2.get(1).unwrapOr(0));      # 10
+
+    let si2 = Map<string, int>.new();
+    si2.put("a", 1);
+    si2.put("b", 2);
+    print(si2.size());                  # 2
+    print(si2.get("a").unwrapOr(0));    # 1
+
+    let ss2 = Map<string, string>.new();
+    ss2.put("k", "v");
+    print(ss2.size());                  # 1
+    print(ss2.get("k").unwrapOr(""));   # v
+}

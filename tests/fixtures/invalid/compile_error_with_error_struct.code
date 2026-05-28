@@ -1,0 +1,16 @@
+# tests/fixtures/invalid/compile_error_with_error_struct.code
+#
+# Verifies that compileError! accepts an Error-protocol struct literal and
+# extracts the `name` field as the compile-time error message.
+
+import "../../../stdlib/error";
+
+type AppError = {
+    const name:  string,
+    stacktrace:  Option<Stacktrace>,
+};
+AppError extends Error {}
+
+fn main() {
+    compileError!(AppError { name: "unsupported-platform", stacktrace: Option::None });
+}

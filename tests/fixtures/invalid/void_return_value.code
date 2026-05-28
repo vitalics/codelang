@@ -1,0 +1,16 @@
+# Invalid: a void method returning a value.
+# The validator must reject this before it reaches clang.
+
+protocol Lolable {
+    fn lol(): void;
+}
+
+Number extends Lolable {
+    fn lol(): void {
+        return 1;
+    }
+}
+
+fn main() {
+    print("should not compile");
+}

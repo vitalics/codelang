@@ -1,0 +1,31 @@
+# struct_spread.code
+#
+# Demonstrates spread operator in struct literals: Self { ...src, extra: val }
+# Copies matching fields from an existing struct instance into the new one.
+
+type Vec2 {
+  x: int
+  y: int
+
+  static fn new(x: int, y: int): Vec2 {
+    return Self { x: x, y: y };
+  }
+}
+
+type Vec3 extends Vec2 {
+  z: int
+
+  static fn new(base: Vec2, z: int): Vec3 {
+    return Self { ...base, z: z };
+  }
+
+  fn mag2(): int {
+    return self.x * self.x + self.y * self.y + self.z * self.z;
+  }
+}
+
+fn main() {
+  const v2 = Vec2.new(3, 4);
+  const v3 = Vec3.new(v2, 0);
+  print(v3.mag2());
+}

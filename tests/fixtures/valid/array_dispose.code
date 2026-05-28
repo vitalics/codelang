@@ -1,0 +1,14 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # using — auto-dispose on every return path
+    using a: IntArray = IntArray.with(3, 5);
+    print(a.length());              # 3
+    print(a.first().unwrapOr(0));   # 5
+    print(a.last().unwrapOr(0));    # 5
+
+    # Normal push into a using-managed array
+    a.push(10);
+    print(a.length());              # 4
+    print(a.last().unwrapOr(0));    # 10
+}

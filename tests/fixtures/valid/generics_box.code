@@ -1,0 +1,9 @@
+type Box<T> = T;
+
+fn main() {
+    let a: Box<int> = 99;
+    print(a);
+
+    let b: Box<string> = "boxed";
+    print(b);
+}

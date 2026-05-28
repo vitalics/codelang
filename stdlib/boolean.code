@@ -1,0 +1,116 @@
+# stdlib/boolean.code
+# The Boolean type — a 1-bit integer in LLVM IR.
+# Literals `true` and `false` are keywords handled by the parser.
+
+import "./protocols";
+
+export type Boolean = intrinsic("i1");
+
+# Short alias used in everyday code.
+export type bool = Boolean;
+
+# ── Protocols ─────────────────────────────────────────────────────────────────
+
+# Negatable is specific to bool — flips the value.
+# Shared protocols (Displayable, Numeric, Logical) come from protocols.code.
+export protocol Negatable {
+    fn not(): bool;
+}
+
+# ── Extensions ────────────────────────────────────────────────────────────────
+
+Boolean extends Displayable {
+    export fn toString(): string {
+        if self == true {
+            return "true";
+        }
+        return "false";
+    }
+}
+
+Boolean extends Negatable {
+    export fn not(): bool {
+        if self == true {
+            return false;
+        }
+        return true;
+    }
+}
+
+Boolean extends Numeric {
+    export fn toNumber(): int {
+        if self == true {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+Boolean extends Logical {
+    export fn toBoolean(): bool {
+        return self;
+    }
+}
+
+# ── Comparison protocols ───────────────────────────────────────────────────────
+#
+# Ord / PartialOrd provide value equality (`eq`) for booleans.
+# Cmp / PartialCmp provide three-way ordering (`cmp` / `partialCmp`):
+#   false < true  (0 < 1)
+#
+# Implementation note: all methods delegate to `toNumber()` so that the
+# comparison is done on plain i32 values (0 or 1).  The IR generator has a
+# special guard that prevents `if self == true` inside `toNumber()` from
+# recursively dispatching through Boolean_eq — it always uses native `icmp i1`
+# for bool equality, so there is no infinite recursion.
+
+Boolean extends Ord {
+    export fn eq(const other: bool): bool {
+        let a: int = self.toNumber();
+        let b: int = other.toNumber();
+        if a == b {
+            return true;
+        }
+        return false;
+    }
+}
+
+Boolean extends PartialOrd {
+    export fn eq(const other: bool): bool {
+        let a: int = self.toNumber();
+        let b: int = other.toNumber();
+        if a == b {
+            return true;
+        }
+        return false;
+    }
+}
+
+# cmp returns:
+#   -1  when self < other   (false < true)
+#    0  when self == other
+#    1  when self > other   (true > false)
+Boolean extends Cmp {
+    export fn cmp(const other: bool): int {
+        let a: int = self.toNumber();
+        let b: int = other.toNumber();
+        return a - b;
+    }
+}
+
+Boolean extends PartialCmp {
+    export fn partialCmp(const other: bool): int {
+        let a: int = self.toNumber();
+        let b: int = other.toNumber();
+        return a - b;
+    }
+}
+
+# ── Defaultable ───────────────────────────────────────────────────────────────
+# The default value for bool is false (zero / neutral).
+
+Boolean extends Defaultable {
+    export static fn default(): bool {
+        return false;
+    }
+}

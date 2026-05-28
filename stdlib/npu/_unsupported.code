@@ -1,0 +1,7 @@
+# stdlib/npu/_unsupported.code
+#
+# Emitted when the target OS is not macOS.
+# This file exists only to produce a clear compile-time error —
+# never import it directly.
+
+compileError!("stdlib/npu/apple_coreml is macOS-only: Core ML and the Apple Neural Engine are not available on this platform. Compile on macOS (darwin) to use this module.");

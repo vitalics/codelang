@@ -1,0 +1,47 @@
+# struct_defaults.code
+# Struct fields can have default values.
+# A struct literal may omit fields that have defaults.
+# Fields without defaults remain required.
+
+type Point = {
+    x: int = 0,
+    y: int = 0,
+};
+
+type Config = {
+    width: int = 800,
+    height: int = 600,
+    debug: bool = false,
+};
+
+type Named = {
+    label: string = "unnamed",
+    value: int = 42,
+};
+
+fn main() {
+    # All fields omitted — all have defaults
+    const p1: Point = Point {};
+    print(p1.x);      # 0
+    print(p1.y);      # 0
+
+    # Override only one field
+    const p2: Point = Point { x: 10 };
+    print(p2.x);      # 10
+    print(p2.y);      # 0
+
+    # Override all fields explicitly
+    const p3: Point = Point { x: 5, y: 7 };
+    print(p3.x);      # 5
+    print(p3.y);      # 7
+
+    # Multi-type defaults
+    const cfg: Config = Config {};
+    print(cfg.width);    # 800
+    print(cfg.height);   # 600
+
+    # String default
+    const n: Named = Named {};
+    print(n.label);   # unnamed
+    print(n.value);   # 42
+}

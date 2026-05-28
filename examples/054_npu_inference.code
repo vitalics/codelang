@@ -1,0 +1,128 @@
+import "stdlib/npu";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NPU Inference — IoT device health classifier
+#
+# A 2-layer MLP trained to detect whether an industrial sensor reading
+# is normal or indicates a maintenance event.
+#
+# Architecture:
+#   Input (1×3)  →  W1 (3×4, ReLU)  →  W2 (4×2, softmax)  →  class probs
+#
+# Features (all normalised to [0, 1]):
+#   [0] vibration_level   — low = 0,  high = 1
+#   [1] operating_hours   — fresh = 0, worn = 1
+#   [2] current_draw      — idle = 0,  overload = 1
+#
+# Output classes:
+#   [0] healthy           — normal operation
+#   [1] maintenance       — service required
+#
+# The GEMM layers are dispatched to the AMX matrix coprocessor via
+# Accelerate/cblas_sgemm on Apple Silicon.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Load pre-trained weights into an existing 3×4 matrix.
+fn loadW1(w: Matrix) {
+    w.set(0, 0,  0.4);  w.set(0, 1, -0.2);  w.set(0, 2,  0.8);  w.set(0, 3,  0.1);
+    w.set(1, 0,  0.3);  w.set(1, 1,  0.5);  w.set(1, 2, -0.4);  w.set(1, 3,  0.7);
+    w.set(2, 0, -0.1);  w.set(2, 1,  0.3);  w.set(2, 2,  0.5);  w.set(2, 3, -0.2);
+}
+
+# Load pre-trained weights into an existing 4×2 matrix.
+fn loadW2(w: Matrix) {
+    w.set(0, 0,  0.5);  w.set(0, 1, -0.3);
+    w.set(1, 0,  0.2);  w.set(1, 1,  0.8);
+    w.set(2, 0, -0.1);  w.set(2, 1,  0.6);
+    w.set(3, 0,  0.7);  w.set(3, 1, -0.4);
+}
+
+# Run a single forward pass through the two-layer MLP.
+# x must be (1×3); returns a (1×2) probability vector.
+fn predict(x: Matrix, w1: Matrix, w2: Matrix): Matrix {
+    const h:     Matrix = x.multiply(w1).relu();
+    const probs: Matrix = h.multiply(w2).softmax();
+    return probs;
+}
+
+fn main(): void {
+    print("── NPU Inference: IoT Device Health Monitor ─────────────────────");
+
+    # ── Load weights ─────────────────────────────────────────────────────────
+    const w1: Matrix = Matrix.new(3, 4);
+    const w2: Matrix = Matrix.new(4, 2);
+    loadW1(w1);
+    loadW2(w2);
+    print("── Weights loaded (3×4 + 4×2) ──────────────────────────────────");
+    print(w1);
+    print(w2);
+
+    # ── Sample 1: healthy readings ────────────────────────────────────────────
+    # vibration=0.1 (low), operating_hours=0.9 (experienced but ok),
+    # current_draw=0.1 (normal idle)
+    print("── Sample 1 — Normal operation ──────────────────────────────────");
+    const x1: Matrix = Matrix.new(1, 3);
+    x1.set(0, 0, 0.1);
+    x1.set(0, 1, 0.9);
+    x1.set(0, 2, 0.1);
+    print("input:");
+    print(x1);
+
+    const p1: Matrix = predict(x1, w1, w2);
+    print("probs (healthy / maintenance):");
+    print(p1);
+    const p1h: Float = p1.get(0, 0);
+    const p1m: Float = p1.get(0, 1);
+    print("P(healthy)    =");
+    print(p1h);
+    print("P(maintenance)=");
+    print(p1m);
+    if (p1h > p1m) {
+        print("→ healthy");
+    } else {
+        print("→ maintenance");
+    }
+
+    # ── Sample 2: anomalous readings ──────────────────────────────────────────
+    # vibration=0.5 (elevated), operating_hours=0.3 (relatively fresh, but
+    # high current=0.8 suggests something is wrong)
+    print("── Sample 2 — Anomalous readings ────────────────────────────────");
+    const x2: Matrix = Matrix.new(1, 3);
+    x2.set(0, 0, 0.5);
+    x2.set(0, 1, 0.3);
+    x2.set(0, 2, 0.8);
+    print("input:");
+    print(x2);
+
+    const p2: Matrix = predict(x2, w1, w2);
+    print("probs (healthy / maintenance):");
+    print(p2);
+    const p2h: Float = p2.get(0, 0);
+    const p2m: Float = p2.get(0, 1);
+    print("P(healthy)    =");
+    print(p2h);
+    print("P(maintenance)=");
+    print(p2m);
+    if (p2h > p2m) {
+        print("→ healthy");
+    } else {
+        print("→ maintenance");
+    }
+
+    # ── Batch: run 4 samples back-to-back ────────────────────────────────────
+    print("── Batch inference (4 samples) ──────────────────────────────────");
+    const batch: Matrix = Matrix.new(4, 3);
+    # row 0 — healthy (low vibration)
+    batch.set(0, 0, 0.1);  batch.set(0, 1, 0.5);  batch.set(0, 2, 0.2);
+    # row 1 — maintenance (high everything)
+    batch.set(1, 0, 0.8);  batch.set(1, 1, 0.7);  batch.set(1, 2, 0.9);
+    # row 2 — healthy (moderate, good current)
+    batch.set(2, 0, 0.2);  batch.set(2, 1, 0.4);  batch.set(2, 2, 0.3);
+    # row 3 — maintenance (high vibration and current)
+    batch.set(3, 0, 0.9);  batch.set(3, 1, 0.2);  batch.set(3, 2, 0.85);
+
+    const hB:    Matrix = batch.multiply(w1).relu();
+    const probsB: Matrix = hB.multiply(w2).softmax();
+    print("batch probs (4×2):");
+    print(probsB);
+}

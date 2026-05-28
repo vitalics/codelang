@@ -1,0 +1,14 @@
+{
+  "projectName": "CodeLang",
+  "languages": [
+    {
+      "id": "codelang",
+      "grammar": "src/language/codelang.langium",
+      "fileExtensions": [".code"],
+      "textMate": {
+        "out": "syntaxes/codelang.tmLanguage.json"
+      }
+    }
+  ],
+  "out": "src/language/generated"
+}

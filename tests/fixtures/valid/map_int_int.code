@@ -1,0 +1,19 @@
+import "../../../stdlib/map";
+
+fn main() {
+    let m: IntIntMap = IntIntMap.new();
+    m.put(3, 30);
+    m.put(1, 10);
+    m.put(2, 20);
+    m.put(1, 11);               # update existing key
+    print(m.size());            # 3
+    print(m.contains(1));       # true
+    print(m.contains(5));       # false
+    print(m.get(1).unwrapOr(0));  # 11  (updated)
+    print(m.get(2).unwrapOr(0));  # 20
+    print(m.get(99).unwrapOr(0)); # 0   (missing → None → default)
+    print(m);                   # {1: 11, 2: 20, 3: 30}
+    m.remove(2);
+    print(m);                   # {1: 11, 3: 30}
+    m.free();
+}

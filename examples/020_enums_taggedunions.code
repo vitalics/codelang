@@ -1,0 +1,220 @@
+# examples/020_enums_taggedunions.code
+#
+# Enum and Tagged Union syntax reference.
+#
+# Three equivalent ways to attach behaviour to an enum:
+#
+#   1. Inline methods inside the enum body  (own methods, no protocol)
+#   2. `enum Name extends Protocol { … }`   (inline protocol conformance)
+#   3. Separate `Name extends Protocol { }` block (same as for structs)
+#
+# All three forms can be combined freely.
+
+# ── 1. Simple discriminant enum ───────────────────────────────────────────────
+# All variants are unit (no payload).
+# Optional explicit tags; untagged variants are auto-numbered from 0.
+
+enum Direction {
+    North,           # tag 0
+    South,           # tag 1
+    East  = 10,      # tag 10  (explicit)
+    West  = 11,      # tag 11
+}
+
+fn describe_direction(d: Direction): string {
+    return switch d {
+        Direction::North => "north",
+        Direction::South => "south",
+        Direction::East  => "east",
+        Direction::West  => "west",
+    };
+}
+
+# ── 2. Tagged union with typed payloads ───────────────────────────────────────
+# Variants carry zero or more positional fields.
+
+enum Shape {
+    Circle(float),              # tag 0
+    Rect(float, float),         # tag 1
+    Triangle(float, float, float), # tag 2
+    Point,                      # tag 3  (unit variant)
+
+    # Inline own method — not a protocol implementation
+    fn area(): float {
+        return switch self {
+            Shape::Circle(r)         => 3.14159 * r * r,
+            Shape::Rect(w, h)        => w * h,
+            Shape::Triangle(a, b, c) => {
+                let sp = (a + b + c) / 2.0;
+                return sp;   # simplified: semi-perimeter
+            },
+            Shape::Point => 0.0,
+        };
+    }
+}
+
+# ── 3. Enum with inline protocol conformance ──────────────────────────────────
+# `extends Protocol` written directly on the enum declaration.
+# Protocol methods live alongside variants in the same body.
+
+enum Color extends Displayable {
+    Red,
+    Green,
+    Blue,
+
+    # Satisfies the Displayable protocol
+    export fn toString(): string {
+        return switch self {
+            Color::Red   => "Red",
+            Color::Green => "Green",
+            Color::Blue  => "Blue",
+        };
+    }
+
+    # Own method — not part of any protocol
+    fn toHex(): string {
+        return switch self {
+            Color::Red   => "#FF0000",
+            Color::Green => "#00FF00",
+            Color::Blue  => "#0000FF",
+        };
+    }
+}
+
+# ── 4. Separate extends block (struct-style, works on enums too) ──────────────
+
+enum Weekday {
+    Mon, Tue, Wed, Thu, Fri, Sat, Sun,
+}
+
+Weekday extends Displayable {
+    export fn toString(): string {
+        return switch self {
+            Weekday::Mon => "Monday",
+            Weekday::Tue => "Tuesday",
+            Weekday::Wed => "Wednesday",
+            Weekday::Thu => "Thursday",
+            Weekday::Fri => "Friday",
+            Weekday::Sat => "Saturday",
+            Weekday::Sun => "Sunday",
+        };
+    }
+}
+
+Weekday extends {
+    export fn isWeekend(): bool {
+        return switch self {
+            Weekday::Sat => true,
+            Weekday::Sun => true,
+            else         => false,
+        };
+    }
+}
+
+# ── 5. Generic tagged union ───────────────────────────────────────────────────
+
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+fn unwrap_or(opt: Option<int>, default: int): int {
+    return switch opt {
+        Option::Some(x) => x,
+        Option::None    => default,
+    };
+}
+
+fn is_ok(r: Result<int, string>): bool {
+    return switch r {
+        Result::Ok(_)  => true,
+        Result::Err(_) => false,    # _ wildcard — payload discarded
+    };
+}
+
+# ── 6. Recursive tagged union ─────────────────────────────────────────────────
+# Variants that reference the enum type itself.
+# Each payload stored as a heap pointer (automatic boxing).
+
+enum Expr {
+    Num(int),
+    Add(Expr, Expr),
+    Mul(Expr, Expr),
+    Neg(Expr),
+
+    fn eval(): int {
+        return switch self {
+            Expr::Num(n)    => n,
+            Expr::Add(l, r) => l.eval() + r.eval(),
+            Expr::Mul(l, r) => l.eval() * r.eval(),
+            Expr::Neg(x)    => 0 - x.eval(),
+        };
+    }
+}
+
+Expr extends Displayable {
+    export fn toString(): string {
+        return switch self {
+            Expr::Num(n)    => $"Num({n})",
+            Expr::Add(l, r) => $"Add({l}, {r})",
+            Expr::Mul(l, r) => $"Mul({l}, {r})",
+            Expr::Neg(x)    => $"Neg({x})",
+        };
+    }
+}
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+fn main() {
+    # Simple enum
+    let d = Direction::North;
+    print(describe_direction(d));         # north
+
+    let e = Direction::East;
+    print(describe_direction(e));         # east
+
+    # Tagged union + inline method
+    let c  = Shape::Circle(5.0);
+    let r  = Shape::Rect(3.0, 4.0);
+    print(c.area());                      # ~78.54
+    print(r.area());                      # 12.0
+    let pt = Shape::Point;
+    print(pt.area());                      # 0.0
+
+    # Inline protocol conformance
+    let col = Color::Green;
+    print(col.toString());                # Green
+    print(col.toHex());                   # #00FF00
+
+    # Separate extends block
+    let day = Weekday::Sat;
+    print(day.toString());                # Saturday
+    print(day.isWeekend());               # true
+    let mon = Weekday::Mon;
+    print(mon.isWeekend());               # false
+
+    # Generic Option
+    let some_val: Option<int> = Option::Some(42);
+    let none_val: Option<int> = Option::None;
+    print(unwrap_or(some_val, 0));        # 42
+    print(unwrap_or(none_val, 99));       # 99
+
+    # Generic Result with wildcard _
+    let ok_val:  Result<int, string> = Result::Ok(1);
+    let err_val: Result<int, string> = Result::Err("oops");
+    print(is_ok(ok_val));                 # true
+    print(is_ok(err_val));                # false
+
+    # Recursive Expr: (1 + 2) * -(3) = -9
+    let expr = Expr::Mul(
+        Expr::Add(Expr::Num(1), Expr::Num(2)),
+        Expr::Neg(Expr::Num(3)),
+    );
+    print(expr.eval());                   # -9
+    print(expr.toString());               # Mul(Add(Num(1), Num(2)), Neg(Num(3)))
+}

@@ -1,0 +1,36 @@
+# buffer_mutate.code
+# Tests fill() and reverse().
+
+import "../../../stdlib/string";
+
+fn main() {
+    # fill
+    let b: Buffer = buffer_new(4);
+    b.fill(42);
+    print(b.get(0));   # 42
+    print(b.get(1));   # 42
+    print(b.get(2));   # 42
+    print(b.get(3));   # 42
+    b.free();
+
+    # reverse — odd length
+    const hw = "hello";
+    let r: Buffer = hw.toBuffer();
+    r.reverse();
+    print(r.get(0));   # 111  'o'
+    print(r.get(1));   # 108  'l'
+    print(r.get(2));   # 108  'l'
+    print(r.get(3));   # 101  'e'
+    print(r.get(4));   # 104  'h'
+    r.free();
+
+    # reverse — even length
+    const abcd = "abcd";
+    let e: Buffer = abcd.toBuffer();
+    e.reverse();
+    print(e.get(0));   # 100  'd'
+    print(e.get(1));   # 99   'c'
+    print(e.get(2));   # 98   'b'
+    print(e.get(3));   # 97   'a'
+    e.free();
+}

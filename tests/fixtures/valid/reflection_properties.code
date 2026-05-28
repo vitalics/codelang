@@ -1,0 +1,62 @@
+import "../../../stdlib/reflection";
+import "../../../stdlib/numbers";
+import "../../../stdlib/string";
+
+# A struct with initialized and uninitialized fields to exercise
+# isInitialized() / getValue() and the properties() / functions() split.
+
+type Config {
+    const weights: int[3; 1, 2, 4] = [1, 2, 4]   # initialized, const
+    timeout: int                                    # uninitialized
+    export const fn getTimeout(): int {
+        return self.timeout;
+    }
+    export fn reset() {
+    }
+}
+
+fn main() {
+    const c: Config = Config_new(30);
+    const info = typeInfo(c);
+    print(info.name());          # Config
+
+    # ── all members ──────────────────────────────────────────────────────────
+    const all: Array<Field> = info.fields();
+    print(all.length());         # 4 (2 fields + 2 methods)
+
+    # ── properties() — only struct fields ────────────────────────────────────
+    const props: Array<Field> = info.properties();
+    print(props.length());       # 2
+
+    const p0: Field = props.get(0);     # weights
+    print(p0.name());            # weights
+    print(p0.isConst());         # 1
+    print(p0.isInitialized());   # 1
+    print(p0.getValue());        # [1, 2, 4]
+    print(p0.isFunction());      # 0
+
+    const p1: Field = props.get(1);     # timeout
+    print(p1.name());            # timeout
+    print(p1.isConst());         # 0
+    print(p1.isInitialized());   # 0
+    print(p1.getValue());        # (empty string — will print blank line)
+    print(p1.isFunction());      # 0
+
+    # ── functions() — only methods ────────────────────────────────────────────
+    const fns: Array<Field> = info.functions();
+    print(fns.length());         # 2
+
+    const f0: Field = fns.get(0);       # getTimeout
+    print(f0.name());            # getTimeout
+    print(f0.isFunction());      # 1
+    print(f0.isExportable());    # 1
+    print(f0.isConst());         # 1
+    print(f0.returnType());      # int
+    print(f0.isInitialized());   # 0
+    print(f0.getValue());        # (empty string)
+
+    const f1: Field = fns.get(1);       # reset
+    print(f1.name());            # reset
+    print(f1.isExportable());    # 1
+    print(f1.isConst());         # 0
+}

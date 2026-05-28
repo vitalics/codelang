@@ -1,0 +1,39 @@
+import "../../../stdlib/map";
+
+# ── User-defined type used as map KEY (pointer identity) ─────────────────────
+
+type Point {
+    x: int
+    y: int
+}
+
+fn main() {
+    let p1: Point = Point {x: 10, y: 20};
+    let p2: Point = Point {x: 30, y: 40};
+    let p3: Point = Point {x: 10, y: 20};   # same values as p1, but different pointer
+
+    # ── Map<Point, int> → PtrIntMap ───────────────────────────────────────────
+    let pim: Map<Point, int> = PtrIntMap.new();
+    pim.put(p1, 100);
+    pim.put(p2, 200);
+    print(pim.size());                  # 2
+    print(pim.contains(p1));            # true
+    print(pim.contains(p3));            # false  (different pointer than p1)
+    print(pim.get(p1));                 # 100
+    print(pim.get(p2));                 # 200
+    pim.remove(p1);
+    print(pim.size());                  # 1
+    print(pim.contains(p1));            # false
+    pim.free();
+
+    # ── Map<Point, string> → PtrStringMap ─────────────────────────────────────
+    let psm: Map<Point, string> = PtrStringMap.new();
+    psm.put(p1, "hello");
+    psm.put(p2, "world");
+    print(psm.size());                  # 2
+    print(psm.get(p1));                 # hello
+    print(psm.get(p2));                 # world
+    psm.remove(p1);
+    print(psm.size());                  # 1
+    psm.free();
+}

@@ -1,0 +1,40 @@
+# number_cmp.code
+# Tests the Cmp protocol on Number: Number.cmp(other) returns -1 / 0 / 1.
+# Also exercises the cmp-based operator dispatch for a custom type.
+
+import "../../../stdlib/operators";
+
+fn main() {
+    const a: Number = 5;
+    const b: Number = 10;
+    const c: Number = 5;
+
+    # cmp method: a < b → -1
+    const r1: int = a.cmp(b);
+    print(r1);    # -1
+
+    # cmp method: b > a → 1
+    const r2: int = b.cmp(a);
+    print(r2);    # 1
+
+    # cmp method: a == c → 0
+    const r3: int = a.cmp(c);
+    print(r3);    # 0
+
+    # partialCmp: same results
+    const r4: int = a.partialCmp(b);
+    print(r4);    # -1
+
+    # eq method: a == c → true
+    const eq1: bool = a.eq(c);
+    if eq1 == true {
+        print(1);  # 1
+    }
+
+    # eq method: a == b → false
+    const eq2: bool = a.eq(b);
+    if eq2 == true {
+        print(99);   # should NOT print
+    }
+    print(0);  # sentinel — always prints
+}

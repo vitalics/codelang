@@ -1,0 +1,10 @@
+# A module that exports a greeting function.
+# Importers can call greet() to print a standard greeting line.
+
+export fn greet() {
+  print("Hello from imported module!");
+}
+
+export fn farewell() {
+  print("Goodbye from imported module!");
+}

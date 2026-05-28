@@ -1,0 +1,22 @@
+import "../../../stdlib/io";
+
+fn main() {
+    # Opening an existing file should succeed
+    const f = File.open("/tmp/codelang_io_isopen_test.txt", "w");
+    f.writeln("probe");
+    f.close();
+
+    const f2 = File.open("/tmp/codelang_io_isopen_test.txt", "r");
+    if f2.isOpen() {
+        print("open");
+    }
+    f2.close();
+
+    # Opening a non-existent file for reading should fail
+    const bad = File.open("/tmp/codelang_no_such_file_xyz.txt", "r");
+    if bad.isOpen() {
+        print("unexpected");
+    } else {
+        print("closed");
+    }
+}

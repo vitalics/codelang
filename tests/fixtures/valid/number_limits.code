@@ -1,0 +1,33 @@
+# number_limits.code
+# Tests Number.min() (-Infinity) and Number.max() (+Infinity) via the
+# limits stdlib.  We avoid printing Infinity directly because the exact
+# output format ("-inf" vs "-Infinity") is platform-dependent; instead we
+# verify semantic properties (min < 0, max > 0, min < max).
+
+import "../../../stdlib/limits";
+
+fn main() {
+    const lo: Number = Number.min();
+    const hi: Number = Number.max();
+    const z: Number = 0;
+
+    # Number.min() is negative
+    if lo < z {
+        print(1);
+    }
+
+    # Number.max() is positive
+    if hi > z {
+        print(2);
+    }
+
+    # Number.min() < Number.max()
+    if lo < hi {
+        print(3);
+    }
+
+    # Number.max() > Number.min()
+    if hi > lo {
+        print(4);
+    }
+}

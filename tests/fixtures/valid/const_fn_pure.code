@@ -1,0 +1,8 @@
+# A const fn that only returns — no side effects
+const fn label(): string {
+  return "compile-time value";
+}
+
+fn main() {
+  print("const fn ok");
+}

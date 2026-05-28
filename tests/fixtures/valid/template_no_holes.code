@@ -1,0 +1,8 @@
+# template_no_holes.code
+# A template literal with no interpolation holes at all.
+# Should behave identically to a plain string literal.
+fn main() {
+    let s: string = $"just plain text";
+    print(s);
+    print($"another plain string");
+}

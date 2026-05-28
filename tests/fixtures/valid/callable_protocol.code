@@ -1,0 +1,23 @@
+import "../../../stdlib/function";
+
+fn double(x: int): int { return x * 2; }
+fn square(x: int): int { return x * x; }
+
+fn main() {
+    # Basic .call() via Callable protocol on a named function
+    const f: Function<int, int> = double;
+    print(f.call(5));          # 10
+
+    # .call() via Callable protocol on a lambda
+    const g: Function<int, int> = fn(x: int): int { return x * x; };
+    print(g.call(4));          # 16
+
+    # .call() after compose — the composed function is also a Function<int,int>
+    const h: Function<int, int> = compose(square, double);
+    print(h.call(3));          # 36  (double first → 6, then square → 36)
+
+    # Chained: apply(compose(f, g), x) using .call
+    const inc: fn(int): int = fn(n: int): int { return n + 1; };
+    const incThenDouble: Function<int, int> = compose(double, inc);
+    print(incThenDouble.call(4));  # 10  (inc: 5, double: 10)
+}

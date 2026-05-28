@@ -1,0 +1,23 @@
+fn main() {
+    # Nested function declared before use — should work
+    fn greet() {
+        print("hello world");
+    }
+    greet();
+
+    # Nested function with parameters and return value
+    fn add(const a: int, const b: int): int {
+        return a + b;
+    }
+    const result = add(3, 4);
+    print(result);
+
+    # Nested function calling another nested function
+    fn inner() {
+        fn innermost() {
+            print("deeply nested");
+        }
+        innermost();
+    }
+    inner();
+}

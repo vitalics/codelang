@@ -1,0 +1,20 @@
+# number_operators.code
+# Tests Number.add(), sub(), mul(), div(), mod() extension methods.
+
+import "../../../stdlib/operators";
+
+fn main() {
+    const a: Number = 10;
+    const b: Number = 3;
+
+    # Method call syntax
+    print(a.add(b));     # 13
+    print(a.sub(b));     # 7
+    print(a.mul(b));     # 30
+    print(a.div(b));     # 3.33...
+    print(a.mod(b));     # 1
+
+    # Operators and method calls must agree
+    const sum: Number = a.add(b);
+    print(sum);          # 13
+}

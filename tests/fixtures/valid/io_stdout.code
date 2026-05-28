@@ -1,0 +1,9 @@
+import "../../../stdlib/io";
+
+fn main() {
+    let out: Stdout = Stdout { };
+    out.write("Hello");
+    out.write(", ");
+    out.writeln("world!");
+    out.flush();
+}

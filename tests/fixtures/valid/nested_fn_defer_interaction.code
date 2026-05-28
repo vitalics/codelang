@@ -1,0 +1,31 @@
+# nested_fn_defer_interaction.code
+#
+# Demonstrates that inner (nested fn) defers and outer (caller) defers
+# are completely independent — each fires at its own function's return.
+#
+# Timeline:
+#   main starts    → registers defer say_outer()
+#   process()      → enters nested fn
+#                  → registers defer say_inner()
+#                  → prints "process"
+#                  → returns → INNER defer fires → prints "inner"
+#   back in main   → prints "end"
+#   main returns   → OUTER defer fires → prints "outer"
+#
+# Expected output: start / process / inner / end / outer
+
+fn say_outer() { print("outer"); }
+fn say_inner() { print("inner"); }
+
+fn main() {
+    defer say_outer();
+
+    fn process() {
+        defer say_inner();
+        print("process");
+    }
+
+    print("start");
+    process();
+    print("end");
+}

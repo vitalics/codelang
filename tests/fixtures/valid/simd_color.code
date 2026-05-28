@@ -1,0 +1,39 @@
+import "../../../stdlib/simd";
+
+fn main(): void {
+    # RGBA colors stored as Float4(R, G, B, A) in [0, 1] range.
+    # All constants are exact float32 values (powers of 2 and their fractions).
+
+    # ── Alpha blend: lerp from red to blue at t = 0.5 ────────────────────────
+    # lerp((1,0,0,1), (0,0,1,1), 0.5) = (0.5, 0, 0.5, 1)
+    const red: Float4   = Float4.of(1.0, 0.0, 0.0, 1.0);
+    const blue: Float4  = Float4.of(0.0, 0.0, 1.0, 1.0);
+    const blend: Float4 = red.lerp(blue, 0.5);
+    print(blend);                    # Float4(0.5, 0, 0.5, 1)
+
+    # ── Tone-map: clamp HDR values to [0, 1] ────────────────────────────────
+    # R=1.5  →  clamped to 1 (over-bright)
+    # B=-0.25 → clamped to 0 (below-black)
+    const hdr: Float4 = Float4.of(1.5, 0.75, -0.25, 1.0);
+    const ldr: Float4 = hdr.clamp(Float4.zero(), Float4.one());
+    print(ldr.x());                  # 1
+    print(ldr.z());                  # 0
+
+    # ── Exposure boost, then clamp ────────────────────────────────────────────
+    # dark.z = 0.75;  scale by 2 → 1.5;  clamp → 1
+    const dark: Float4  = Float4.of(0.25, 0.5, 0.75, 1.0);
+    const scale: Float4 = Float4.of(2.0, 2.0, 2.0, 1.0);
+    const boost: Float4 = dark * scale;
+    const toned: Float4 = boost.clamp(Float4.zero(), Float4.one());
+    print(toned.z());                # 1
+
+    # ── Difference matte: |fg − bg| ──────────────────────────────────────────
+    # |0.25 − 0.75| = 0.5  (exact float32)
+    # |0.75 − 0.25| = 0.5  (exact float32)
+    const fg: Float4    = Float4.of(0.25, 0.75, 0.5, 1.0);
+    const bg: Float4    = Float4.of(0.75, 0.25, 0.75, 1.0);
+    const diff: Float4  = fg - bg;
+    const matte: Float4 = diff.abs();
+    print(matte.x());                # 0.5
+    print(matte.y());                # 0.5
+}

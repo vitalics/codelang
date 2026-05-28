@@ -1,0 +1,7 @@
+# template_escape.code
+# Template strings with escape sequences.
+fn main() {
+    let x = 2;
+    let msg = $"hello {x}\nworld";
+    print(msg);
+}

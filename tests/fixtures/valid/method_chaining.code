@@ -1,0 +1,43 @@
+# method_chaining.code
+# Tests for postfix method-call chaining: expr.method(args)
+#
+# Before this feature, users had to write:
+#   let opt: Option<int> = arr.getSafe(i);
+#   let val: int = opt.unwrapOr(0);
+#
+# Now the compact form works:
+#   let val: int = arr.getSafe(i).unwrapOr(0);
+
+import "stdlib/array";
+import "stdlib/option";
+
+fn main() {
+    let arr: IntArray = IntArray.new();
+    arr.push(10);
+    arr.push(20);
+    arr.push(30);
+
+    # Single chained call: MemberCallExpression.method(args)
+    let v0: int = arr.getSafe(0).unwrapOr(-1);   # in-bounds  → 10
+    let v1: int = arr.getSafe(1).unwrapOr(-1);   # in-bounds  → 20
+    let v2: int = arr.getSafe(5).unwrapOr(-1);   # out-of-bounds → -1
+    print(v0);   # 10
+    print(v1);   # 20
+    print(v2);   # -1
+
+    # Chaining isSome() — returns bool (printed as 0/1)
+    let s0: bool = arr.getSafe(0).isSome();    # true  → 1
+    let s1: bool = arr.getSafe(99).isSome();   # false → 0
+    print(s0);   # 1
+    print(s1);   # 0
+
+    # StringArray chaining
+    let sarr: StringArray = StringArray.new();
+    sarr.push("hello");
+    sarr.push("world");
+
+    let sv0: string = sarr.getSafe(0).unwrapOr("none");   # hello
+    let sv1: string = sarr.getSafe(9).unwrapOr("none");   # none
+    print(sv0);  # hello
+    print(sv1);  # none
+}

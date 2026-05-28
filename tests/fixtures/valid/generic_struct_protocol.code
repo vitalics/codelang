@@ -1,0 +1,61 @@
+# generic_struct_protocol.code
+#
+# Tests generic struct types with protocol bounds (T extends Proto).
+# Covers:
+#   1. Generic struct declaration: type Box<T extends Proto> = { ... }
+#   2. Protocol method dispatch through T: something.toString()
+#   3. Field access on generic struct: self.myProperty
+#   4. Chained call on struct field: self.value.toString()
+#   5. Instantiation with different concrete types
+
+protocol Displayable {
+    fn toString(): string;
+}
+
+# Generic struct with a string property and a method using T
+type MyCustom<T extends Displayable> = {
+    myProperty: string
+    fn append(const something: T): string {
+        return self.myProperty + something.toString();
+    }
+};
+
+# Generic struct with a T-typed field
+type Box<T extends Displayable> = {
+    value: T
+    fn show(): string {
+        return self.value.toString();
+    }
+};
+
+# Custom type implementing Displayable
+type Label = intrinsic("i8*");
+
+Label extends Displayable {
+    export fn toString(): string {
+        return self;
+    }
+}
+
+fn main() {
+    # MyCustom<string>: append concatenates prefix + something
+    let mc: MyCustom<string> = MyCustom_new("Hello, ");
+    let r1: string = mc.append("world");
+    print(r1);
+
+    # MyCustom<Label>: dispatch through Label.toString()
+    let mc2: MyCustom<Label> = MyCustom_new("Greet: ");
+    let lbl: Label = "CodeLang";
+    let r2: string = mc2.append(lbl);
+    print(r2);
+
+    # Box<string>: show() returns the value directly
+    let b1: Box<string> = Box_new("boxed");
+    let r3: string = b1.show();
+    print(r3);
+
+    # Box<Label>: show() dispatches Label.toString()
+    let b2: Box<Label> = Box_new("labeled");
+    let r4: string = b2.show();
+    print(r4);
+}

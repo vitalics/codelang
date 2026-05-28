@@ -1,0 +1,28 @@
+# array_type_multi_field.code
+# Tests a struct with a fixed-size int[N] array field alongside multiple
+# non-array fields. Verifies that GEP offsets to non-array fields are correct
+# even when an array field precedes them in the struct layout.
+
+type Stats {
+    data: int[5]
+    count: int
+    total: int
+
+    static fn new(n: int, t: int): Stats {
+        return Self { count: n, total: t };
+    }
+
+    fn getCount(): int {
+        return self.count;
+    }
+
+    fn getTotal(): int {
+        return self.total;
+    }
+}
+
+fn main() {
+    let s = Stats.new(3, 60);
+    print(s.getCount());
+    print(s.getTotal());
+}

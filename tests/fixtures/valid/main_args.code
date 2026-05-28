@@ -1,0 +1,6 @@
+import "../../../stdlib/array";
+
+fn main(args: string[]) {
+    print(args.length());
+    print(args.get(0));
+}

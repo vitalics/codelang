@@ -1,0 +1,5 @@
+fn main() {
+  const x = "hello";
+  x = "world";
+  print(x);
+}

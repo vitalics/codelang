@@ -1,0 +1,11 @@
+import "../../../stdlib/boolean";
+
+fn main() {
+  let t: bool = true;
+  let f: bool = false;
+  print(t.toString());
+  print(f.toString());
+  print(t.toNumber());
+  print(f.toNumber());
+  print(f.not());
+}

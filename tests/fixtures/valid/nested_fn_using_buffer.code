@@ -1,0 +1,23 @@
+import "../../../stdlib/string";
+
+# nested_fn_using_buffer.code
+#
+# `using` inside a nested fn allocates a Buffer and automatically disposes it
+# when the nested fn returns.  The outer function is unaffected.
+#
+# Calling the nested fn multiple times verifies that each call allocates a
+# fresh Buffer and frees it independently.
+#
+# Expected output: 5 / 6 / 0 / 3
+
+fn main() {
+    fn byte_len(const s: string): int {
+        using b: Buffer = s.toBuffer();
+        return b.length();
+    }
+
+    print(byte_len("hello"));    # 5
+    print(byte_len("world!"));   # 6
+    print(byte_len(""));         # 0
+    print(byte_len("abc"));      # 3
+}

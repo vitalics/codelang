@@ -1,0 +1,158 @@
+# examples/tui_app.code
+#
+# Interactive menu demo using stdlib/tui — Ratatui-style API.
+#
+# Layout:
+#
+#   ╭─────────────────────────────────────────────────╮
+#   │  ✦ CodeLang TUI Demo ✦                          │
+#   │  ┌────────────────┐ ┌─────────────────────────┐ │
+#   │  │ Menu           │ │ Details                 │ │
+#   │  │  ► New task    │ │                         │ │
+#   │  │    View tasks  │ │ Create a new task.      │ │
+#   │  │    Settings    │ │                         │ │
+#   │  │    About       │ │ [██░░░░░░░░░░░░░]  10%  │ │
+#   │  │    Quit        │ └─────────────────────────┘ │
+#   │  └────────────────┘                             │
+#   │ ↑/k up  ↓/j down  Enter: select  q: quit        │
+#   ╰─────────────────────────────────────────────────╯
+#
+# Demonstrates:
+#   • Tui.init() — double-buffered terminal manager
+#   • Block       — bordered containers, title, borderType
+#   • List        — scrollable list with highlight state
+#   • Paragraph   — text rendering
+#   • Gauge       — horizontal progress bar
+#   • Rect        — layout helpers (splitTop, splitLeft, inner)
+#
+# Controls:
+#   ↑ / k   move selection up
+#   ↓ / j   move selection down
+#   Enter   confirm (Quit item exits)
+#   q / Esc quit
+
+import "stdlib/tui";
+
+const fn ITEMS(): int { return 5; }
+const fn MENU_W(): int { return 20; }
+
+# ── Item data ─────────────────────────────────────────────────────────────────
+
+fn itemDetail(i: int): string {
+    if i == 0 { return "Create a new task."; }
+    if i == 1 { return "Browse existing tasks."; }
+    if i == 2 { return "Configure preferences."; }
+    if i == 3 { return "CodeLang TUI Demo v0.1"; }
+    return "Exit the application.";
+}
+
+fn itemProgress(i: int): int {
+    if i == 0 { return 10; }
+    if i == 1 { return 55; }
+    if i == 2 { return 80; }
+    if i == 3 { return 100; }
+    return 0;
+}
+
+# ── Renderer ──────────────────────────────────────────────────────────────────
+
+fn drawFrame(tui: Tui, state: ListState) {
+    tui.beginFrame();
+
+    let area: Rect  = tui.area();
+    let buf: Buffer = tui.buffer();
+
+    # Outer rounded box ───────────────────────────────────────────────────────
+    let outer: Block = Block.default().title(" ✦ CodeLang TUI Demo ✦ ").borderType(BorderType.Rounded()).borderStyle(Style.default().fg(Color.BrightCyan()));
+    outer.render(area, buf);
+    let body: Rect = outer.inner(area);
+
+    # Status bar at the bottom ─────────────────────────────────────────────────
+    let bh: int      = body.height;
+    let pane: Rect   = body.splitTop(bh - 1);
+    let status: Rect = body.splitBottom(bh - 1);
+
+    let statusPara: Paragraph = Paragraph.new(" ↑/k: up  ↓/j: down  Enter: select  q: quit ").style(Style.default().fg(Color.BrightBlack()));
+    statusPara.render(status, buf);
+
+    # Split pane into left (menu) and right (detail) ──────────────────────────
+    let menu_area:   Rect = pane.splitLeft(MENU_W());
+    let detail_area: Rect = pane.splitRight(MENU_W());
+
+    # ── Menu panel ──────────────────────────────────────────────────────────
+    let menu_block: Block = Block.default().title(" Menu ").borderType(BorderType.Plain()).borderStyle(Style.default().fg(Color.BrightBlue()));
+    menu_block.render(menu_area, buf);
+    let menu_inner: Rect = menu_block.inner(menu_area);
+
+    let menu_items: string[] = [
+        "  New task",
+        "  View tasks",
+        "  Settings",
+        "  About",
+        "  Quit"
+    ];
+    let menuList: List = List.new(menu_items).style(Style.default().fg(Color.White())).highlightStyle(Style.default().bg(Color.BrightCyan()).fg(Color.Black()).bold()).highlightSymbol("► ");
+    menuList.renderStateful(menu_inner, buf, state);
+
+    # ── Detail panel ────────────────────────────────────────────────────────
+    let detail_block: Block = Block.default().title(" Details ").borderType(BorderType.Plain()).borderStyle(Style.default().fg(Color.BrightBlue()));
+    detail_block.render(detail_area, buf);
+    let detail_inner: Rect = detail_block.inner(detail_area);
+
+    let sel: int = state.selected;
+    let dih: int = detail_inner.height;
+    let safe_dih: int = dih - 3;
+    if safe_dih < 1 { safe_dih = 1; }
+
+    let desc_area:  Rect = detail_inner.splitTop(safe_dih);
+    let gauge_area: Rect = detail_inner.splitBottom(safe_dih);
+
+    let detailPara: Paragraph = Paragraph.new(itemDetail(sel)).style(Style.default().fg(Color.BrightWhite()));
+    detailPara.render(desc_area, buf);
+
+    let g1: Rect = gauge_area.splitTop(1);
+    let gauge: Gauge = Gauge.new().ratio(itemProgress(sel)).style(Style.default().fg(Color.BrightBlack())).gaugeStyle(Style.default().fg(Color.BrightGreen()));
+    gauge.render(g1, buf);
+
+    tui.endFrame();
+}
+
+# ── Event loop ────────────────────────────────────────────────────────────────
+
+fn main() {
+    let tui: Tui = Tui.init();
+
+    let state: ListState = ListState.new().select(0);
+    let running: bool = true;
+
+    drawFrame(tui, state);
+
+    while running {
+        const key = tui.readKey();
+
+        switch key {
+            "up"     => { state = state.up(); }
+            "k"      => { state = state.up(); }
+            "down"   => { state = state.down(ITEMS()); }
+            "j"      => { state = state.down(ITEMS()); }
+            "enter"  => { if state.selected == ITEMS() - 1 { running = false; } }
+            "q"      => { running = false; }
+            "escape" => { running = false; }
+            "ctrl-c" => { running = false; }
+            "ctrl-d" => { running = false; }
+            ""       => { running = false; }
+            else     => {}
+        }
+
+        if running {
+            state = state.ensureVisible(ITEMS());
+            drawFrame(tui, state);
+        }
+    }
+
+    # Restore terminal, then show farewell
+    tui.quit();
+    Terminal.setFg(Color.BrightGreen());
+    print("Goodbye from CodeLang TUI!");
+    Terminal.resetStyle();
+}

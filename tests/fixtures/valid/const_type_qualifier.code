@@ -1,0 +1,23 @@
+import "stdlib/numbers";
+
+# `const T` type qualifier — pins the representation, no auto-promotion.
+#   const int    → i32  (no upscale)
+#   const Number → i64  (no BigInt heap allocation)
+
+type ImmutablePoint {
+    const x: const int
+    const y: const int
+}
+
+type FixedCounter {
+    count: const Number    # const Number → i64 (not %Number*)
+}
+
+fn main() {
+    const ip = ImmutablePoint { x: 5, y: 9 };
+    print(ip.x);          # 5
+    print(ip.y);          # 9
+
+    const fc = FixedCounter { count: 100 };
+    print(fc.count);      # 100
+}

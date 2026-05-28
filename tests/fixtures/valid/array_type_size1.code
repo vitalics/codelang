@@ -1,0 +1,21 @@
+# array_type_size1.code
+# Tests the int[1] edge case — a fixed-size array with exactly one element.
+# Verifies that the LLVM type is [1 x i32] and the struct still works correctly.
+
+type Single {
+    data: int[1]
+    value: int
+
+    static fn new(v: int): Single {
+        return Self { value: v };
+    }
+
+    fn getValue(): int {
+        return self.value;
+    }
+}
+
+fn main() {
+    let s = Single.new(99);
+    print(s.getValue());
+}

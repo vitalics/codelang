@@ -1,0 +1,1692 @@
+# stdlib/array.code
+#
+# IntArray — a heap-allocated, dynamically-sized array of 32-bit integers.
+#
+# Inspired by the JavaScript Array API; backed by a contiguous C buffer that
+# doubles in capacity on overflow (amortised O(1) push/pop, O(1) get/set).
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let a: IntArray = IntArray.new();                  # empty array
+#   let b: IntArray = IntArray.with(5, 0);             # [0, 0, 0, 0, 0]
+#   let c: IntArray = IntArray.newWithCapacity(100);   # empty, cap=100
+#
+#   a.push(1)               # append 1
+#   a.pop()                 # remove & return last element
+#   a.unshift(0)            # prepend 0  (O(n))
+#   a.shift()               # remove & return first element  (O(n))
+#
+#   a.length()              # number of elements
+#   a.get(0)                # element at index 0
+#   a.at(-1)                # last element  (negative indices count from end)
+#   a.set(0, 42)            # mutate element at index 0
+#   a.first()               # first element (or 0 if empty)
+#   a.last()                # last element  (or 0 if empty)
+#
+#   a.indexOf(v)            # first position of v, or -1
+#   a.lastIndexOf(v)        # last position of v, or -1
+#   a.includes(v)           # true if v appears anywhere
+#
+#   a.slice(start, end)     # new IntArray [start, end); negative indices OK
+#   a.sliceFrom(start)      # new IntArray from start to end
+#   a.clone()               # full copy
+#   a.concat(b)             # new IntArray = self ++ b
+#
+#   a.fill(v)               # set every element to v (mutates)
+#   a.reverse()             # reverse in-place
+#   a.sort()                # sort ascending in-place
+#
+#   a.join(", ")            # "1, 2, 3"  (heap string, caller frees)
+#   a.toString()            # "[1, 2, 3]"  (Displayable)
+#
+#   a.free()                # release heap memory (also: a.dispose())
+#
+# With `using` (auto-dispose):
+#   using a: IntArray = IntArray.new();
+#   # a.dispose() is called automatically on every return path
+
+import "./numbers";
+import "./any";
+import "./protocols";
+import "./option";
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+# IntArray is a pointer to a heap-allocated struct { int32_t *data; int32_t len; int32_t cap }.
+# %IntArray is opaque in LLVM IR; all operations go through C runtime.
+export type IntArray = intrinsic("%IntArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn intarray_new(): IntArray;
+export extern fn intarray_new_with_capacity(const cap: int): IntArray;
+export extern fn intarray_with(const n: int, const v: int): IntArray;
+export extern fn intarray_free(const a: IntArray);
+export extern fn intarray_print(const a: IntArray);
+
+export extern fn intarray_length(const a: IntArray): int;
+export extern fn intarray_get(const a: IntArray, const i: int): int;
+export extern fn intarray_at(const a: IntArray, const i: int): int;
+export extern fn intarray_set(const a: IntArray, const i: int, const v: int);
+export extern fn intarray_first(const a: IntArray): int;
+export extern fn intarray_last(const a: IntArray): int;
+
+export extern fn intarray_push(const a: IntArray, const v: int);
+export extern fn intarray_pop(const a: IntArray): int;
+export extern fn intarray_unshift(const a: IntArray, const v: int);
+export extern fn intarray_shift(const a: IntArray): int;
+export extern fn intarray_fill(const a: IntArray, const v: int);
+export extern fn intarray_reverse(const a: IntArray);
+export extern fn intarray_sort(const a: IntArray);
+
+export extern fn intarray_index_of(const a: IntArray, const v: int): int;
+export extern fn intarray_last_index_of(const a: IntArray, const v: int): int;
+export extern fn intarray_includes(const a: IntArray, const v: int): int;
+
+export extern fn intarray_slice(const a: IntArray, const start: int, const end: int): IntArray;
+export extern fn intarray_slice_from(const a: IntArray, const start: int): IntArray;
+export extern fn intarray_clone(const a: IntArray): IntArray;
+export extern fn intarray_concat(const a: IntArray, const b: IntArray): IntArray;
+
+export extern fn intarray_join(const a: IntArray, const sep: string): string;
+export extern fn intarray_to_string(const a: IntArray): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+IntArray extends {
+
+    # new(): static factory — creates an empty IntArray.
+    export static fn new(): IntArray {
+        return intarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — creates an empty IntArray pre-reserved for cap elements.
+    # Elements can be added via push(); no reallocation will occur until length exceeds cap.
+    export static fn newWithCapacity(const cap: int): IntArray {
+        return intarray_new_with_capacity(cap);
+    }
+
+    # with(n, v): static factory — creates IntArray of length n filled with v.
+    export static fn with(const n: int, const v: int): IntArray {
+        return intarray_with(n, v);
+    }
+
+    # length(): number of elements in the array.
+    export fn length(): int {
+        return intarray_length(self);
+    }
+
+    # get(i): raw element at index i (0-based, unchecked). Returns 0 for out-of-bounds.
+    # Prefer at(i) for safe access with an explicit bounds check.
+    export fn get(const i: int): int {
+        return intarray_get(self, i);
+    }
+
+    # getOr(i, default): element at i, or default if out-of-bounds.
+    export fn getOr(const i: int, const default: int): int {
+        let len: int = intarray_length(self);
+        if i >= 0 && i < len {
+            return intarray_get(self, i);
+        }
+        return default;
+    }
+
+    # set(i, v): write element v at index i. Out-of-bounds writes are ignored.
+    export fn set(const i: int, const v: int) {
+        intarray_set(self, i, v);
+    }
+
+    # first(): first element wrapped in Some, or None if empty.
+    export fn first(): Option<int> {
+        if intarray_length(self) > 0 {
+            return Option::Some(intarray_first(self));
+        }
+        return Option::None;
+    }
+
+    # last(): last element wrapped in Some, or None if empty.
+    export fn last(): Option<int> {
+        if intarray_length(self) > 0 {
+            return Option::Some(intarray_last(self));
+        }
+        return Option::None;
+    }
+
+    # push(v): append v to the end. Amortised O(1).
+    export fn push(const v: int) {
+        intarray_push(self, v);
+    }
+
+    # pop(): remove and return Some(last element), or None if empty.
+    export fn pop(): Option<int> {
+        if intarray_length(self) > 0 {
+            return Option::Some(intarray_pop(self));
+        }
+        return Option::None;
+    }
+
+    # unshift(v): insert v at the front. O(n).
+    export fn unshift(const v: int) {
+        intarray_unshift(self, v);
+    }
+
+    # shift(): remove and return Some(first element), or None if empty. O(n).
+    export fn shift(): Option<int> {
+        if intarray_length(self) > 0 {
+            return Option::Some(intarray_shift(self));
+        }
+        return Option::None;
+    }
+
+    # indexOf(v): first position of v in self, or -1.
+    export fn indexOf(const v: int): int {
+        return intarray_index_of(self, v);
+    }
+
+    # lastIndexOf(v): last position of v in self, or -1.
+    export fn lastIndexOf(const v: int): int {
+        return intarray_last_index_of(self, v);
+    }
+
+    # includes(v): true if v appears anywhere in self.
+    export fn includes(const v: int): bool {
+        let idx = intarray_includes(self, v);
+        if idx == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new IntArray containing elements [start, end).
+    # Negative indices count from the end.
+    export fn slice(const start: int, const end: int): IntArray {
+        return intarray_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new IntArray from start to end of self.
+    export fn sliceFrom(const start: int): IntArray {
+        return intarray_slice_from(self, start);
+    }
+
+    # clone(): full copy of self.
+    export fn clone(): IntArray {
+        return intarray_clone(self);
+    }
+
+    # concat(other): new IntArray = self ++ other.
+    export fn concat(const other: IntArray): IntArray {
+        return intarray_concat(self, other);
+    }
+
+    # fill(v): set every element to v (mutates in-place).
+    export fn fill(const v: int) {
+        intarray_fill(self, v);
+    }
+
+    # reverse(): reverse the array in-place.
+    export fn reverse() {
+        intarray_reverse(self);
+    }
+
+    # sort(): sort the array in ascending order in-place.
+    export fn sort() {
+        intarray_sort(self);
+    }
+
+    # join(sep): concatenate elements with sep between them.
+    export fn join(const sep: string): string {
+        return intarray_join(self, sep);
+    }
+
+    # free(): release the heap memory owned by this IntArray.
+    export fn free() {
+        intarray_free(self);
+    }
+}
+
+# ── Indexable conformance ─────────────────────────────────────────────────────
+# at(i): safe access — Some(element) or None if out-of-bounds.
+# Negative indices count from end: at(-1) = last element.
+
+IntArray extends {
+    export fn at(const index: int): Option<int> {
+        let len: int = intarray_length(self);
+        let i: int = index;
+        if index < 0 {
+            i = len + index;
+        }
+        if i >= 0 && i < len {
+            return Option::Some(intarray_get(self, i));
+        }
+        return Option::None;
+    }
+}
+
+# ── Countable conformance ─────────────────────────────────────────────────────
+# length() is already defined in the core block above.
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+# toString() produces "[v0, v1, v2, ...]".
+
+IntArray extends Displayable {
+    export fn toString(): string {
+        return intarray_to_string(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+# dispose() is an alias for free(); enables `using a: IntArray = ...` syntax.
+
+IntArray extends Disposable {
+    export fn dispose() {
+        intarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# StringArray — heap-allocated, dynamically-sized array of strings.
+#
+# Ownership note: StringArray stores string *pointers* — it does NOT own the
+# strings themselves.  Callers are responsible for the lifetime of the strings.
+# free() / dispose() releases only the array structure, not the elements.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let a: StringArray = StringArray.new();
+#   let b: StringArray = StringArray.with(3, "default");
+#
+#   a.push("hello")         # append
+#   a.pop()                 # remove & return last element
+#   a.unshift("first")      # prepend (O(n))
+#   a.shift()               # remove & return first element (O(n))
+#
+#   a.length()              # number of elements
+#   a.get(0)                # element at index 0
+#   a.at(-1)                # last element (negative indices OK)
+#   a.set(0, "new")         # mutate element at index 0
+#   a.first()               # first element or "" if empty
+#   a.last()                # last element or "" if empty
+#
+#   a.indexOf("x")          # first position or -1
+#   a.lastIndexOf("x")      # last position or -1
+#   a.includes("x")         # true if found
+#
+#   a.slice(start, end)     # new StringArray [start, end)
+#   a.sliceFrom(start)      # new StringArray from start to end
+#   a.clone()               # full copy (pointer-level, not deep-copy)
+#   a.concat(b)             # new StringArray = self ++ b
+#
+#   a.fill("x")             # set every element to "x"
+#   a.reverse()             # reverse in-place
+#   a.sort()                # sort alphabetically in-place
+#
+#   a.join(", ")            # "hello, world"  (unquoted)
+#   a.toString()            # ["hello", "world"]  (Displayable)
+#
+#   a.free()                # release array structure (also: a.dispose())
+#
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+export type StringArray = intrinsic("%StringArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn stringarray_new(): StringArray;
+export extern fn stringarray_new_with_capacity(const cap: int): StringArray;
+export extern fn stringarray_with(const n: int, const v: string): StringArray;
+export extern fn stringarray_free(const a: StringArray);
+export extern fn stringarray_print(const a: StringArray);
+
+export extern fn stringarray_length(const a: StringArray): int;
+export extern fn stringarray_get(const a: StringArray, const i: int): string;
+export extern fn stringarray_at(const a: StringArray, const i: int): string;
+export extern fn stringarray_set(const a: StringArray, const i: int, const v: string);
+export extern fn stringarray_first(const a: StringArray): string;
+export extern fn stringarray_last(const a: StringArray): string;
+
+export extern fn stringarray_push(const a: StringArray, const v: string);
+export extern fn stringarray_pop(const a: StringArray): string;
+export extern fn stringarray_unshift(const a: StringArray, const v: string);
+export extern fn stringarray_shift(const a: StringArray): string;
+export extern fn stringarray_fill(const a: StringArray, const v: string);
+export extern fn stringarray_reverse(const a: StringArray);
+export extern fn stringarray_sort(const a: StringArray);
+
+export extern fn stringarray_index_of(const a: StringArray, const v: string): int;
+export extern fn stringarray_last_index_of(const a: StringArray, const v: string): int;
+export extern fn stringarray_includes(const a: StringArray, const v: string): int;
+
+export extern fn stringarray_slice(const a: StringArray, const start: int, const end: int): StringArray;
+export extern fn stringarray_slice_from(const a: StringArray, const start: int): StringArray;
+export extern fn stringarray_clone(const a: StringArray): StringArray;
+export extern fn stringarray_concat(const a: StringArray, const b: StringArray): StringArray;
+
+export extern fn stringarray_join(const a: StringArray, const sep: string): string;
+export extern fn stringarray_to_string(const a: StringArray): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+StringArray extends {
+
+    # new(): static factory — creates an empty StringArray.
+    export static fn new(): StringArray {
+        return stringarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty StringArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): StringArray {
+        return stringarray_new_with_capacity(cap);
+    }
+
+    # with(n, v): static factory — n elements all set to v.
+    export static fn with(const n: int, const v: string): StringArray {
+        return stringarray_with(n, v);
+    }
+
+    # length(): number of elements.
+    export fn length(): int {
+        return stringarray_length(self);
+    }
+
+    # get(i): raw element at index i (0-based, unchecked). Returns "" for out-of-bounds.
+    # Prefer at(i) for safe access with an explicit bounds check.
+    export fn get(const i: int): string {
+        return stringarray_get(self, i);
+    }
+
+    # getOr(i, default): element at i, or default if out-of-bounds.
+    export fn getOr(const i: int, const default: string): string {
+        let len: int = stringarray_length(self);
+        if i >= 0 && i < len {
+            return stringarray_get(self, i);
+        }
+        return default;
+    }
+
+    # set(i, v): write string v at index i. Out-of-bounds writes are ignored.
+    export fn set(const i: int, const v: string) {
+        stringarray_set(self, i, v);
+    }
+
+    # first(): first element wrapped in Some, or None if empty.
+    export fn first(): Option<string> {
+        if stringarray_length(self) > 0 {
+            return Option::Some(stringarray_first(self));
+        }
+        return Option::None;
+    }
+
+    # last(): last element wrapped in Some, or None if empty.
+    export fn last(): Option<string> {
+        if stringarray_length(self) > 0 {
+            return Option::Some(stringarray_last(self));
+        }
+        return Option::None;
+    }
+
+    # push(v): append v to the end. Amortised O(1).
+    export fn push(const v: string) {
+        stringarray_push(self, v);
+    }
+
+    # pop(): remove and return Some(last element), or None if empty.
+    export fn pop(): Option<string> {
+        if stringarray_length(self) > 0 {
+            return Option::Some(stringarray_pop(self));
+        }
+        return Option::None;
+    }
+
+    # unshift(v): insert v at the front. O(n).
+    export fn unshift(const v: string) {
+        stringarray_unshift(self, v);
+    }
+
+    # shift(): remove and return Some(first element), or None if empty. O(n).
+    export fn shift(): Option<string> {
+        if stringarray_length(self) > 0 {
+            return Option::Some(stringarray_shift(self));
+        }
+        return Option::None;
+    }
+
+    # indexOf(v): first position of v in self, or -1.
+    export fn indexOf(const v: string): int {
+        return stringarray_index_of(self, v);
+    }
+
+    # lastIndexOf(v): last position of v in self, or -1.
+    export fn lastIndexOf(const v: string): int {
+        return stringarray_last_index_of(self, v);
+    }
+
+    # includes(v): true if v appears anywhere in self.
+    export fn includes(const v: string): bool {
+        let idx = stringarray_includes(self, v);
+        if idx == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new StringArray containing elements [start, end).
+    export fn slice(const start: int, const end: int): StringArray {
+        return stringarray_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new StringArray from start to end of self.
+    export fn sliceFrom(const start: int): StringArray {
+        return stringarray_slice_from(self, start);
+    }
+
+    # clone(): full copy of self (pointer-level, not deep-copy of strings).
+    export fn clone(): StringArray {
+        return stringarray_clone(self);
+    }
+
+    # concat(other): new StringArray = self ++ other.
+    export fn concat(const other: StringArray): StringArray {
+        return stringarray_concat(self, other);
+    }
+
+    # fill(v): set every element to v (mutates in-place).
+    export fn fill(const v: string) {
+        stringarray_fill(self, v);
+    }
+
+    # reverse(): reverse the array in-place.
+    export fn reverse() {
+        stringarray_reverse(self);
+    }
+
+    # sort(): sort alphabetically in-place.
+    export fn sort() {
+        stringarray_sort(self);
+    }
+
+    # join(sep): concatenate elements with sep between them (no quotes).
+    export fn join(const sep: string): string {
+        return stringarray_join(self, sep);
+    }
+
+    # free(): release the heap memory owned by this StringArray.
+    export fn free() {
+        stringarray_free(self);
+    }
+}
+
+# ── at() — safe access with negative index support ────────────────────────────
+
+StringArray extends {
+    export fn at(const index: int): Option<string> {
+        let len: int = stringarray_length(self);
+        let i: int = index;
+        if index < 0 {
+            i = len + index;
+        }
+        if i >= 0 && i < len {
+            return Option::Some(stringarray_get(self, i));
+        }
+        return Option::None;
+    }
+}
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+# toString() produces ["s0", "s1", ...] with double-quoted elements.
+
+StringArray extends Displayable {
+    export fn toString(): string {
+        return stringarray_to_string(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+StringArray extends Disposable {
+    export fn dispose() {
+        stringarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# NumberArray — heap-allocated, dynamically-sized array of Number* values.
+#
+# Number is CodeLang's arbitrary-precision numeric type (%Number* in LLVM IR).
+# NumberArray stores and retrieves Number* pointers; it does NOT own the Number
+# objects themselves.  free() / dispose() releases only the array structure.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let a: NumberArray = NumberArray.new();
+#
+#   a.push(someNumber)      # append
+#   a.pop()                 # remove & return last element
+#   a.length()              # number of elements
+#   a.get(0)                # element at index 0
+#   a.at(-1)                # last element (negative indices OK)
+#   a.set(0, n)             # mutate element at index 0
+#   a.first()  / a.last()   # first / last element
+#   a.slice(s, e)           # new NumberArray [s, e)
+#   a.sliceFrom(s)          # new NumberArray from s to end
+#   a.clone()               # full copy (pointer-level)
+#   a.concat(b)             # new NumberArray = self ++ b
+#   a.includes(n)           # pointer-equality check
+#   a.indexOf(n)            # first position or -1
+#   a.toString()            # "[n0, n1, …]"  (Displayable)
+#   a.free()                # release array structure
+#
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+export type NumberArray = intrinsic("%NumberArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn numberarray_new(): NumberArray;
+export extern fn numberarray_new_with_capacity(const cap: int): NumberArray;
+export extern fn numberarray_free(const a: NumberArray);
+export extern fn numberarray_print(const a: NumberArray);
+
+export extern fn numberarray_length(const a: NumberArray): int;
+export extern fn numberarray_get(const a: NumberArray, const i: int): Number;
+export extern fn numberarray_at(const a: NumberArray, const i: int): Number;
+export extern fn numberarray_set(const a: NumberArray, const i: int, const v: Number);
+export extern fn numberarray_first(const a: NumberArray): Number;
+export extern fn numberarray_last(const a: NumberArray): Number;
+
+export extern fn numberarray_push(const a: NumberArray, const v: Number);
+export extern fn numberarray_pop(const a: NumberArray): Number;
+export extern fn numberarray_index_of(const a: NumberArray, const v: Number): int;
+export extern fn numberarray_includes(const a: NumberArray, const v: Number): int;
+
+export extern fn numberarray_slice(const a: NumberArray, const start: int, const end: int): NumberArray;
+export extern fn numberarray_slice_from(const a: NumberArray, const start: int): NumberArray;
+export extern fn numberarray_clone(const a: NumberArray): NumberArray;
+export extern fn numberarray_concat(const a: NumberArray, const b: NumberArray): NumberArray;
+
+export extern fn numberarray_to_string(const a: NumberArray): string;
+
+# ── Core extension methods ─────────────────────────────────────────────────────
+
+NumberArray extends {
+
+    # new(): static factory — creates an empty NumberArray.
+    export static fn new(): NumberArray {
+        return numberarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty NumberArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): NumberArray {
+        return numberarray_new_with_capacity(cap);
+    }
+
+    # length(): number of elements.
+    export fn length(): int {
+        return numberarray_length(self);
+    }
+
+    # get(i): raw element at index i (0-based, unchecked). Prefer at(i).
+    export fn get(const i: int): Number {
+        return numberarray_get(self, i);
+    }
+
+    # at(i): safe access — Some(element) or None if out-of-bounds.
+    # Negative indices count from end: at(-1) = last element.
+    export fn at(const i: int): Option<Number> {
+        let len: int = numberarray_length(self);
+        let idx: int = i;
+        if i < 0 {
+            idx = len + i;
+        }
+        if idx >= 0 && idx < len {
+            return Option::Some(numberarray_get(self, idx));
+        }
+        return Option::None;
+    }
+
+    # set(i, v): write Number v at index i.
+    export fn set(const i: int, const v: Number) {
+        numberarray_set(self, i, v);
+    }
+
+    # first(): first element wrapped in Some, or None if empty.
+    export fn first(): Option<Number> {
+        if numberarray_length(self) > 0 {
+            return Option::Some(numberarray_first(self));
+        }
+        return Option::None;
+    }
+
+    # last(): last element wrapped in Some, or None if empty.
+    export fn last(): Option<Number> {
+        if numberarray_length(self) > 0 {
+            return Option::Some(numberarray_last(self));
+        }
+        return Option::None;
+    }
+
+    # push(v): append v to the end.
+    export fn push(const v: Number) {
+        numberarray_push(self, v);
+    }
+
+    # pop(): remove and return Some(last element), or None if empty.
+    export fn pop(): Option<Number> {
+        if numberarray_length(self) > 0 {
+            return Option::Some(numberarray_pop(self));
+        }
+        return Option::None;
+    }
+
+    # indexOf(v): first position of v (pointer equality), or -1.
+    export fn indexOf(const v: Number): int {
+        return numberarray_index_of(self, v);
+    }
+
+    # includes(v): true if v appears anywhere in self (pointer equality).
+    export fn includes(const v: Number): bool {
+        let idx = numberarray_includes(self, v);
+        if idx == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new NumberArray containing elements [start, end).
+    export fn slice(const start: int, const end: int): NumberArray {
+        return numberarray_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new NumberArray from start to end of self.
+    export fn sliceFrom(const start: int): NumberArray {
+        return numberarray_slice_from(self, start);
+    }
+
+    # clone(): full copy of self (pointer-level).
+    export fn clone(): NumberArray {
+        return numberarray_clone(self);
+    }
+
+    # concat(other): new NumberArray = self ++ other.
+    export fn concat(const other: NumberArray): NumberArray {
+        return numberarray_concat(self, other);
+    }
+
+    # free(): release the heap memory owned by this NumberArray.
+    export fn free() {
+        numberarray_free(self);
+    }
+}
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+
+NumberArray extends Displayable {
+    export fn toString(): string {
+        return numberarray_to_string(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+NumberArray extends Disposable {
+    export fn dispose() {
+        numberarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# AnyArray — heap-allocated, dynamically-sized array of Any* values.
+#
+# AnyArray stores opaque Any* pointers.  It does NOT own the Any objects.
+# free() / dispose() releases only the array structure.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let a: AnyArray = AnyArray.new();
+#
+#   a.push(someAny)         # append
+#   a.pop()                 # remove & return last element
+#   a.length()              # number of elements
+#   a.get(0)                # element at index 0  (returns Any)
+#   a.at(-1)                # last element
+#   a.set(0, v)             # mutate element at index 0
+#   a.first() / a.last()    # first / last element
+#   a.slice(s, e)           # new AnyArray [s, e)
+#   a.sliceFrom(s)          # new AnyArray from s to end
+#   a.clone()               # full copy
+#   a.concat(b)             # new AnyArray = self ++ b
+#   a.includes(v)           # pointer-equality check
+#   a.indexOf(v)            # first position or -1
+#   a.toString()            # "[<Any>, <Any>, …]"
+#   a.free()                # release array structure
+#
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+export type AnyArray = intrinsic("%AnyArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn anyarray_new(): AnyArray;
+export extern fn anyarray_new_with_capacity(const cap: int): AnyArray;
+export extern fn anyarray_free(const a: AnyArray);
+export extern fn anyarray_print(const a: AnyArray);
+
+export extern fn anyarray_length(const a: AnyArray): int;
+export extern fn anyarray_get(const a: AnyArray, const i: int): Any;
+export extern fn anyarray_at(const a: AnyArray, const i: int): Any;
+export extern fn anyarray_set(const a: AnyArray, const i: int, const v: Any);
+export extern fn anyarray_first(const a: AnyArray): Any;
+export extern fn anyarray_last(const a: AnyArray): Any;
+
+export extern fn anyarray_push(const a: AnyArray, const v: Any);
+export extern fn anyarray_pop(const a: AnyArray): Any;
+export extern fn anyarray_index_of(const a: AnyArray, const v: Any): int;
+export extern fn anyarray_includes(const a: AnyArray, const v: Any): int;
+
+export extern fn anyarray_slice(const a: AnyArray, const start: int, const end: int): AnyArray;
+export extern fn anyarray_slice_from(const a: AnyArray, const start: int): AnyArray;
+export extern fn anyarray_clone(const a: AnyArray): AnyArray;
+export extern fn anyarray_concat(const a: AnyArray, const b: AnyArray): AnyArray;
+
+export extern fn anyarray_to_string(const a: AnyArray): string;
+
+# ── Core extension methods ─────────────────────────────────────────────────────
+
+AnyArray extends {
+
+    # new(): static factory — creates an empty AnyArray.
+    export static fn new(): AnyArray {
+        return anyarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty AnyArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): AnyArray {
+        return anyarray_new_with_capacity(cap);
+    }
+
+    # length(): number of elements.
+    export fn length(): int {
+        return anyarray_length(self);
+    }
+
+    # get(i): raw element at index i (0-based, unchecked). Prefer at(i).
+    export fn get(const i: int): Any {
+        return anyarray_get(self, i);
+    }
+
+    # at(i): safe access — Some(element) or None if out-of-bounds.
+    # Negative indices count from end: at(-1) = last element.
+    export fn at(const i: int): Option<Any> {
+        let len: int = anyarray_length(self);
+        let idx: int = i;
+        if i < 0 {
+            idx = len + i;
+        }
+        if idx >= 0 && idx < len {
+            return Option::Some(anyarray_get(self, idx));
+        }
+        return Option::None;
+    }
+
+    # set(i, v): write Any v at index i.
+    export fn set(const i: int, const v: Any) {
+        anyarray_set(self, i, v);
+    }
+
+    # first(): first element wrapped in Some, or None if empty.
+    export fn first(): Option<Any> {
+        if anyarray_length(self) > 0 {
+            return Option::Some(anyarray_first(self));
+        }
+        return Option::None;
+    }
+
+    # last(): last element wrapped in Some, or None if empty.
+    export fn last(): Option<Any> {
+        if anyarray_length(self) > 0 {
+            return Option::Some(anyarray_last(self));
+        }
+        return Option::None;
+    }
+
+    # push(v): append v to the end.
+    export fn push(const v: Any) {
+        anyarray_push(self, v);
+    }
+
+    # pop(): remove and return Some(last element), or None if empty.
+    export fn pop(): Option<Any> {
+        if anyarray_length(self) > 0 {
+            return Option::Some(anyarray_pop(self));
+        }
+        return Option::None;
+    }
+
+    # indexOf(v): first position of v (pointer equality), or -1.
+    export fn indexOf(const v: Any): int {
+        return anyarray_index_of(self, v);
+    }
+
+    # includes(v): true if v appears anywhere in self (pointer equality).
+    export fn includes(const v: Any): bool {
+        let idx = anyarray_includes(self, v);
+        if idx == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new AnyArray containing elements [start, end).
+    export fn slice(const start: int, const end: int): AnyArray {
+        return anyarray_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new AnyArray from start to end of self.
+    export fn sliceFrom(const start: int): AnyArray {
+        return anyarray_slice_from(self, start);
+    }
+
+    # clone(): full copy of self.
+    export fn clone(): AnyArray {
+        return anyarray_clone(self);
+    }
+
+    # concat(other): new AnyArray = self ++ other.
+    export fn concat(const other: AnyArray): AnyArray {
+        return anyarray_concat(self, other);
+    }
+
+    # free(): release the heap memory owned by this AnyArray.
+    export fn free() {
+        anyarray_free(self);
+    }
+}
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+
+AnyArray extends Displayable {
+    export fn toString(): string {
+        return anyarray_to_string(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+AnyArray extends Disposable {
+    export fn dispose() {
+        anyarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# BoolArray — heap-allocated, dynamically-sized array of bool values.
+#
+# Backed by an int32_t[] buffer (0 = false, non-zero = true).
+# The CodeLang API presents true bool values; the C layer uses int32_t.
+#
+# ── Quick reference ───────────────────────────────────────────────────────────
+#
+#   let a: BoolArray = BoolArray.new();
+#
+#   a.push(true)            # append
+#   a.pop()                 # remove & return last element
+#   a.length()              # number of elements
+#   a.get(0)                # element at index 0  (returns bool)
+#   a.at(-1)                # last element (negative indices OK)
+#   a.set(0, false)         # mutate element at index 0
+#   a.first() / a.last()    # first / last element
+#   a.slice(s, e)           # new BoolArray [s, e)
+#   a.sliceFrom(s)          # new BoolArray from s to end
+#   a.clone()               # full copy
+#   a.concat(b)             # new BoolArray = self ++ b
+#   a.includes(v)           # true if v found
+#   a.indexOf(v)            # first position or -1
+#   a.toString()            # "[true, false, …]"
+#   a.free()                # release array structure
+#
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+export type BoolArray = intrinsic("%BoolArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+# The C layer stores bools as int32_t (0/1); we expose that directly and wrap
+# in the extension methods below.
+
+export extern fn boolarray_new(): BoolArray;
+export extern fn boolarray_new_with_capacity(const cap: int): BoolArray;
+export extern fn boolarray_free(const a: BoolArray);
+export extern fn boolarray_print(const a: BoolArray);
+
+export extern fn boolarray_length(const a: BoolArray): int;
+export extern fn boolarray_get(const a: BoolArray, const i: int): int;
+export extern fn boolarray_at(const a: BoolArray, const i: int): int;
+export extern fn boolarray_set(const a: BoolArray, const i: int, const v: int);
+export extern fn boolarray_first(const a: BoolArray): int;
+export extern fn boolarray_last(const a: BoolArray): int;
+
+export extern fn boolarray_push(const a: BoolArray, const v: int);
+export extern fn boolarray_pop(const a: BoolArray): int;
+export extern fn boolarray_index_of(const a: BoolArray, const v: int): int;
+export extern fn boolarray_includes(const a: BoolArray, const v: int): int;
+
+export extern fn boolarray_slice(const a: BoolArray, const start: int, const end: int): BoolArray;
+export extern fn boolarray_slice_from(const a: BoolArray, const start: int): BoolArray;
+export extern fn boolarray_clone(const a: BoolArray): BoolArray;
+export extern fn boolarray_concat(const a: BoolArray, const b: BoolArray): BoolArray;
+
+export extern fn boolarray_to_string(const a: BoolArray): string;
+
+# ── Core extension methods ─────────────────────────────────────────────────────
+# Bool↔int32 conversion happens here so callers always see true bool values.
+
+BoolArray extends {
+
+    # new(): static factory — creates an empty BoolArray.
+    export static fn new(): BoolArray {
+        return boolarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty BoolArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): BoolArray {
+        return boolarray_new_with_capacity(cap);
+    }
+
+    # length(): number of elements.
+    export fn length(): int {
+        return boolarray_length(self);
+    }
+
+    # get(i): raw element at index i as bool (unchecked). Prefer at(i).
+    export fn get(const i: int): bool {
+        let raw = boolarray_get(self, i);
+        if raw == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # at(i): safe access — Some(bool) or None if out-of-bounds.
+    # Negative indices count from end: at(-1) = last element.
+    export fn at(const i: int): Option<bool> {
+        let len: int = boolarray_length(self);
+        let idx: int = i;
+        if i < 0 {
+            idx = len + i;
+        }
+        if idx >= 0 && idx < len {
+            let raw = boolarray_get(self, idx);
+            if raw == 1 {
+                return Option::Some(true);
+            }
+            return Option::Some(false);
+        }
+        return Option::None;
+    }
+
+    # set(i, v): write bool v at index i.
+    export fn set(const i: int, const v: bool) {
+        if v == true {
+            boolarray_set(self, i, 1);
+        } else {
+            boolarray_set(self, i, 0);
+        }
+    }
+
+    # first(): first element wrapped in Some, or None if empty.
+    export fn first(): Option<bool> {
+        if boolarray_length(self) > 0 {
+            let raw = boolarray_first(self);
+            if raw == 1 {
+                return Option::Some(true);
+            }
+            return Option::Some(false);
+        }
+        return Option::None;
+    }
+
+    # last(): last element wrapped in Some, or None if empty.
+    export fn last(): Option<bool> {
+        if boolarray_length(self) > 0 {
+            let raw = boolarray_last(self);
+            if raw == 1 {
+                return Option::Some(true);
+            }
+            return Option::Some(false);
+        }
+        return Option::None;
+    }
+
+    # push(v): append bool v to the end.
+    export fn push(const v: bool) {
+        if v == true {
+            boolarray_push(self, 1);
+        } else {
+            boolarray_push(self, 0);
+        }
+    }
+
+    # pop(): remove and return Some(last bool), or None if empty.
+    export fn pop(): Option<bool> {
+        if boolarray_length(self) > 0 {
+            let raw = boolarray_pop(self);
+            if raw == 1 {
+                return Option::Some(true);
+            }
+            return Option::Some(false);
+        }
+        return Option::None;
+    }
+
+    # indexOf(v): first position of v, or -1.
+    export fn indexOf(const v: bool): int {
+        if v == true {
+            return boolarray_index_of(self, 1);
+        }
+        return boolarray_index_of(self, 0);
+    }
+
+    # includes(v): true if v appears anywhere in self.
+    export fn includes(const v: bool): bool {
+        let raw: int;
+        if v == true {
+            raw = boolarray_includes(self, 1);
+        } else {
+            raw = boolarray_includes(self, 0);
+        }
+        if raw == 1 {
+            return true;
+        }
+        return false;
+    }
+
+    # slice(start, end): new BoolArray containing elements [start, end).
+    export fn slice(const start: int, const end: int): BoolArray {
+        return boolarray_slice(self, start, end);
+    }
+
+    # sliceFrom(start): new BoolArray from start to end of self.
+    export fn sliceFrom(const start: int): BoolArray {
+        return boolarray_slice_from(self, start);
+    }
+
+    # clone(): full copy of self.
+    export fn clone(): BoolArray {
+        return boolarray_clone(self);
+    }
+
+    # concat(other): new BoolArray = self ++ other.
+    export fn concat(const other: BoolArray): BoolArray {
+        return boolarray_concat(self, other);
+    }
+
+    # free(): release the heap memory owned by this BoolArray.
+    export fn free() {
+        boolarray_free(self);
+    }
+}
+
+# ── Displayable conformance ───────────────────────────────────────────────────
+
+BoolArray extends Displayable {
+    export fn toString(): string {
+        return boolarray_to_string(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+BoolArray extends Disposable {
+    export fn dispose() {
+        boolarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Array<T, N extends Int = Int> — generic alias resolved at compile time.
+#
+# T  — element type.
+# N  — integer type used by length() / Countable<N>.  Defaults to Int (i32).
+#      This mirrors the short-hand form `T[5]` where the index type is int.
+#
+# The IR generator special-cases this type: `Array<T>` / `Array<T, N>` resolve
+# to the concrete element-typed array:
+#
+#   Array<int>      → IntArray     (%IntArray*)
+#   Array<string>   → StringArray  (%StringArray*)
+#   Array<bool>     → BoolArray    (%BoolArray*)
+#   Array<Number>   → NumberArray  (%NumberArray*)
+#   Array<Any>      → AnyArray     (%AnyArray*)
+#
+# The generic body is never used directly — it acts as a placeholder so the
+# parser accepts the type syntax.  All method dispatch goes through the
+# concrete resolved type's extension methods.
+#
+# Example:
+#   type Matrix<T, N extends Int> extends Countable<N> {
+#       fn length(): N { ... }
+#   }
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type Array<T, N extends Int = Int> = intrinsic("%Array");
+
+# ════════════════════════════════════════════════════════════════════════════════
+# FloatArray — heap-allocated, dynamically-sized array of 32-bit floats (f32).
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type FloatArray = intrinsic("%FloatArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn floatarray_new(): FloatArray;
+export extern fn floatarray_new_with_capacity(const cap: int): FloatArray;
+export extern fn floatarray_with(const n: int, const v: Float): FloatArray;
+export extern fn floatarray_free(const a: FloatArray);
+export extern fn floatarray_print(const a: FloatArray);
+
+export extern fn floatarray_length(const a: FloatArray): int;
+export extern fn floatarray_get(const a: FloatArray, const i: int): Float;
+export extern fn floatarray_set(const a: FloatArray, const i: int, const v: Float);
+export extern fn floatarray_first(const a: FloatArray): Float;
+export extern fn floatarray_last(const a: FloatArray): Float;
+
+export extern fn floatarray_push(const a: FloatArray, const v: Float);
+export extern fn floatarray_pop(const a: FloatArray): Float;
+export extern fn floatarray_fill(const a: FloatArray, const v: Float);
+export extern fn floatarray_sort(const a: FloatArray);
+export extern fn floatarray_reverse(const a: FloatArray);
+export extern fn floatarray_to_string(const a: FloatArray): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+FloatArray extends {
+
+    export static fn new(): FloatArray {
+        return floatarray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty FloatArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): FloatArray {
+        return floatarray_new_with_capacity(cap);
+    }
+
+    export static fn with(const n: int, const v: Float): FloatArray {
+        return floatarray_with(n, v);
+    }
+
+    export fn length(): int {
+        return floatarray_length(self);
+    }
+
+    export fn get(const i: int): Float {
+        return floatarray_get(self, i);
+    }
+
+    export fn set(const i: int, const v: Float) {
+        floatarray_set(self, i, v);
+    }
+
+    export fn first(): Float {
+        return floatarray_first(self);
+    }
+
+    export fn last(): Float {
+        return floatarray_last(self);
+    }
+
+    export fn push(const v: Float) {
+        floatarray_push(self, v);
+    }
+
+    export fn pop(): Float {
+        return floatarray_pop(self);
+    }
+
+    export fn fill(const v: Float) {
+        floatarray_fill(self, v);
+    }
+
+    export fn sort() {
+        floatarray_sort(self);
+    }
+
+    export fn reverse() {
+        floatarray_reverse(self);
+    }
+
+    export fn free() {
+        floatarray_free(self);
+    }
+}
+
+FloatArray extends Displayable {
+    export fn toString(): string {
+        return floatarray_to_string(self);
+    }
+}
+
+FloatArray extends Disposable {
+    export fn dispose() {
+        floatarray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# DoubleArray — heap-allocated, dynamically-sized array of 64-bit doubles (f64).
+# Maps to Array<float> / Array<Float64> since `float = Float64 = double` in CodeLang.
+# ════════════════════════════════════════════════════════════════════════════════
+
+export type DoubleArray = intrinsic("%DoubleArray*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn doublearray_new(): DoubleArray;
+export extern fn doublearray_new_with_capacity(const cap: int): DoubleArray;
+export extern fn doublearray_with(const n: int, const v: float): DoubleArray;
+export extern fn doublearray_free(const a: DoubleArray);
+export extern fn doublearray_print(const a: DoubleArray);
+
+export extern fn doublearray_length(const a: DoubleArray): int;
+export extern fn doublearray_get(const a: DoubleArray, const i: int): float;
+export extern fn doublearray_set(const a: DoubleArray, const i: int, const v: float);
+export extern fn doublearray_first(const a: DoubleArray): float;
+export extern fn doublearray_last(const a: DoubleArray): float;
+
+export extern fn doublearray_push(const a: DoubleArray, const v: float);
+export extern fn doublearray_pop(const a: DoubleArray): float;
+export extern fn doublearray_fill(const a: DoubleArray, const v: float);
+export extern fn doublearray_sort(const a: DoubleArray);
+export extern fn doublearray_reverse(const a: DoubleArray);
+export extern fn doublearray_to_string(const a: DoubleArray): string;
+
+# ── Core extension methods ────────────────────────────────────────────────────
+
+DoubleArray extends {
+
+    export static fn new(): DoubleArray {
+        return doublearray_new();
+    }
+
+    # newWithCapacity(cap): static factory — empty DoubleArray pre-reserved for cap elements.
+    export static fn newWithCapacity(const cap: int): DoubleArray {
+        return doublearray_new_with_capacity(cap);
+    }
+
+    export static fn with(const n: int, const v: float): DoubleArray {
+        return doublearray_with(n, v);
+    }
+
+    export fn length(): int {
+        return doublearray_length(self);
+    }
+
+    export fn get(const i: int): float {
+        return doublearray_get(self, i);
+    }
+
+    export fn set(const i: int, const v: float) {
+        doublearray_set(self, i, v);
+    }
+
+    export fn first(): float {
+        return doublearray_first(self);
+    }
+
+    export fn last(): float {
+        return doublearray_last(self);
+    }
+
+    export fn push(const v: float) {
+        doublearray_push(self, v);
+    }
+
+    export fn pop(): float {
+        return doublearray_pop(self);
+    }
+
+    export fn fill(const v: float) {
+        doublearray_fill(self, v);
+    }
+
+    export fn sort() {
+        doublearray_sort(self);
+    }
+
+    export fn reverse() {
+        doublearray_reverse(self);
+    }
+
+    export fn free() {
+        doublearray_free(self);
+    }
+}
+
+DoubleArray extends Displayable {
+    export fn toString(): string {
+        return doublearray_to_string(self);
+    }
+}
+
+DoubleArray extends Disposable {
+    export fn dispose() {
+        doublearray_free(self);
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Backward-compat aliases
+#
+# The primary safe API is now at/first/last/pop/shift (all return Option<T>).
+# The xSafe() names are kept so existing code continues to compile.
+# ════════════════════════════════════════════════════════════════════════════════
+
+# ── IntArray aliases ──────────────────────────────────────────────────────────
+
+IntArray extends {
+    # getSafe(i): strict bounds check — None for any index < 0 or >= length.
+    # Does NOT support negative-index wrapping (use at(i) for that).
+    export fn getSafe(const i: int): Option<int> {
+        if i >= 0 && i < intarray_length(self) {
+            return Option::Some(intarray_get(self, i));
+        }
+        return Option::None;
+    }
+    # popSafe(): alias for pop(). Prefer pop() in new code.
+    export fn popSafe(): Option<int> {
+        return self.pop();
+    }
+    # shiftSafe(): alias for shift(). Prefer shift() in new code.
+    export fn shiftSafe(): Option<int> {
+        return self.shift();
+    }
+    # firstSafe(): alias for first(). Prefer first() in new code.
+    export fn firstSafe(): Option<int> {
+        return self.first();
+    }
+    # lastSafe(): alias for last(). Prefer last() in new code.
+    export fn lastSafe(): Option<int> {
+        return self.last();
+    }
+}
+
+# ── StringArray aliases ───────────────────────────────────────────────────────
+
+StringArray extends {
+    # getSafe(i): strict bounds check — None for any index < 0 or >= length.
+    # Does NOT support negative-index wrapping (use at(i) for that).
+    export fn getSafe(const i: int): Option<string> {
+        if i >= 0 && i < stringarray_length(self) {
+            return Option::Some(stringarray_get(self, i));
+        }
+        return Option::None;
+    }
+    # popSafe(): alias for pop(). Prefer pop() in new code.
+    export fn popSafe(): Option<string> {
+        return self.pop();
+    }
+    # shiftSafe(): alias for shift(). Prefer shift() in new code.
+    export fn shiftSafe(): Option<string> {
+        return self.shift();
+    }
+    # firstSafe(): alias for first(). Prefer first() in new code.
+    export fn firstSafe(): Option<string> {
+        return self.first();
+    }
+    # lastSafe(): alias for last(). Prefer last() in new code.
+    export fn lastSafe(): Option<string> {
+        return self.last();
+    }
+}
+
+# ── BoolArray aliases ─────────────────────────────────────────────────────────
+
+BoolArray extends {
+    # getSafe(i): strict bounds check — None for any index < 0 or >= length.
+    export fn getSafe(const i: int): Option<bool> {
+        if i >= 0 && i < boolarray_length(self) {
+            let raw: int = boolarray_get(self, i);
+            if raw == 1 {
+                return Option::Some(true);
+            }
+            return Option::Some(false);
+        }
+        return Option::None;
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Higher-Order Functions for IntArray
+#
+# Inspired by JavaScript's Array prototype and Rust's Iterator trait.
+# All HOF accept a function value (named fn or inline lambda) as their
+# first argument; they never mutate self unless noted.
+#
+# Quick reference:
+#
+#   a.forEach(fn(x: int): void { print(x); })    # side-effects over each element
+#   a.map(double)                                  # new IntArray: f applied to each
+#   a.filter(isEven)                               # new IntArray: keep matching
+#   a.every(isPositive)                            # true if ALL satisfy predicate
+#   a.some(isEven)                                 # true if ANY satisfies predicate
+#   a.reduce(sum, 0)                               # fold left: acc = f(acc, elem)
+#   a.find(isEven)                                 # Option<int>: first match
+#   a.findIndex(isEven)                            # int: index of first match, or -1
+# ════════════════════════════════════════════════════════════════════════════════
+
+IntArray extends {
+
+    # forEach(f): call f(element) for each element in order.
+    # Side-effects only — does not produce a new array.
+    # JS: arr.forEach(x => ...) / Rust: iter.for_each(|x| ...)
+    export fn forEach(const f: fn(int): void) {
+        let i: int = 0;
+        let len: int = intarray_length(self);
+        while i < len {
+            f(intarray_get(self, i));
+            i = i + 1;
+        }
+    }
+
+    # map(f): new IntArray where each element is f(old_element).
+    # Caller is responsible for freeing the returned array.
+    # JS: arr.map(x => x * 2) / Rust: iter.map(|x| x * 2).collect()
+    export fn map(const f: fn(int): int): IntArray {
+        let len: int = intarray_length(self);
+        let result: IntArray = intarray_new_with_capacity(len);
+        let i: int = 0;
+        while i < len {
+            intarray_push(result, f(intarray_get(self, i)));
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # filter(f): new IntArray with only elements for which f(element) == true.
+    # Caller is responsible for freeing the returned array.
+    # JS: arr.filter(x => x > 0) / Rust: iter.filter(|&x| x > 0).collect()
+    export fn filter(const f: fn(int): bool): IntArray {
+        let len: int = intarray_length(self);
+        let result: IntArray = intarray_new();
+        let i: int = 0;
+        while i < len {
+            let v: int = intarray_get(self, i);
+            if f(v) {
+                intarray_push(result, v);
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # every(f): true if f(element) returns true for ALL elements.
+    # Returns true for an empty array (vacuous truth).
+    # JS: arr.every(x => x > 0) / Rust: iter.all(|&x| x > 0)
+    export fn every(const f: fn(int): bool): bool {
+        let len: int = intarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if !f(intarray_get(self, i)) {
+                return false;
+            }
+            i = i + 1;
+        }
+        return true;
+    }
+
+    # some(f): true if f(element) returns true for AT LEAST ONE element.
+    # Returns false for an empty array.
+    # JS: arr.some(x => x > 0) / Rust: iter.any(|&x| x > 0)
+    export fn some(const f: fn(int): bool): bool {
+        let len: int = intarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if f(intarray_get(self, i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    # reduce(f, init): left fold — acc = f(acc, element) starting from init.
+    # JS: arr.reduce((acc, x) => acc + x, 0) / Rust: iter.fold(0, |acc, x| acc + x)
+    export fn reduce(const f: fn(int, int): int, const init: int): int {
+        let len: int = intarray_length(self);
+        let acc: int = init;
+        let i: int = 0;
+        while i < len {
+            acc = f(acc, intarray_get(self, i));
+            i = i + 1;
+        }
+        return acc;
+    }
+
+    # find(f): first element for which f(element) == true, wrapped in Some; None if none match.
+    # JS: arr.find(x => x > 3) / Rust: iter.find(|&&x| x > 3)
+    export fn find(const f: fn(int): bool): Option<int> {
+        let len: int = intarray_length(self);
+        let i: int = 0;
+        while i < len {
+            let v: int = intarray_get(self, i);
+            if f(v) {
+                return Option::Some(v);
+            }
+            i = i + 1;
+        }
+        return Option::None;
+    }
+
+    # findIndex(f): index of first element where f(element) == true, or -1.
+    # JS: arr.findIndex(x => x > 3) / Rust: iter.position(|&x| x > 3)
+    export fn findIndex(const f: fn(int): bool): int {
+        let len: int = intarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if f(intarray_get(self, i)) {
+                return i;
+            }
+            i = i + 1;
+        }
+        return -1;
+    }
+
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Higher-Order Functions for StringArray
+# ════════════════════════════════════════════════════════════════════════════════
+
+StringArray extends {
+
+    # forEach(f): call f(element) for each element in order.
+    export fn forEach(const f: fn(string): void) {
+        let i: int = 0;
+        let len: int = stringarray_length(self);
+        while i < len {
+            f(stringarray_get(self, i));
+            i = i + 1;
+        }
+    }
+
+    # map(f): new StringArray where each element is f(old_element).
+    export fn map(const f: fn(string): string): StringArray {
+        let len: int = stringarray_length(self);
+        let result: StringArray = stringarray_new_with_capacity(len);
+        let i: int = 0;
+        while i < len {
+            stringarray_push(result, f(stringarray_get(self, i)));
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # filter(f): new StringArray with only elements for which f returns true.
+    export fn filter(const f: fn(string): bool): StringArray {
+        let len: int = stringarray_length(self);
+        let result: StringArray = stringarray_new();
+        let i: int = 0;
+        while i < len {
+            let v: string = stringarray_get(self, i);
+            if f(v) {
+                stringarray_push(result, v);
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    # every(f): true if f(element) == true for ALL elements.
+    export fn every(const f: fn(string): bool): bool {
+        let len: int = stringarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if !f(stringarray_get(self, i)) {
+                return false;
+            }
+            i = i + 1;
+        }
+        return true;
+    }
+
+    # some(f): true if f(element) == true for AT LEAST ONE element.
+    export fn some(const f: fn(string): bool): bool {
+        let len: int = stringarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if f(stringarray_get(self, i)) {
+                return true;
+            }
+            i = i + 1;
+        }
+        return false;
+    }
+
+    # find(f): first element for which f returns true, wrapped in Some; None if none match.
+    export fn find(const f: fn(string): bool): Option<string> {
+        let len: int = stringarray_length(self);
+        let i: int = 0;
+        while i < len {
+            let v: string = stringarray_get(self, i);
+            if f(v) {
+                return Option::Some(v);
+            }
+            i = i + 1;
+        }
+        return Option::None;
+    }
+
+    # findIndex(f): index of first element where f returns true, or -1.
+    export fn findIndex(const f: fn(string): bool): int {
+        let len: int = stringarray_length(self);
+        let i: int = 0;
+        while i < len {
+            if f(stringarray_get(self, i)) {
+                return i;
+            }
+            i = i + 1;
+        }
+        return -1;
+    }
+
+}

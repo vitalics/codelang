@@ -1,0 +1,63 @@
+# generics_ext.code
+#
+# Tests for Phase 3: generic extension method monomorphization.
+#
+# Container<T> is a minimal opaque generic type backed by C runtime functions.
+# The extension methods are generic over T; the IR generator must emit one
+# concrete specialization per distinct T instantiation encountered.
+#
+# IR expectations:
+#   %Container_i32 = type opaque
+#   %Container_str = type opaque
+#   define private %Container_i32* @Container_i32_id(%Container_i32* ...)
+#   define private %Container_str* @Container_str_id(%Container_str* ...)
+#   define private i32             @Container_i32_replaceWith(%Container_i32*, i32 ...)
+#   define private i8*             @Container_str_replaceWith(%Container_str*, i8* ...)
+
+type Container<T> = intrinsic("%Container");
+
+# ── C runtime bindings (one per specialization) ───────────────────────────────
+
+extern fn container_new_i32(const v: int): Container<int>;
+extern fn container_get_i32(const c: Container<int>): int;
+extern fn container_new_str(const v: string): Container<string>;
+extern fn container_get_str(const c: Container<string>): string;
+
+# ── Generic extension methods ─────────────────────────────────────────────────
+#
+# Each method is declared once and monomorphized per T.
+
+Container<T> extends {
+
+    # id(): return self unchanged — exercises zero-argument generic dispatch.
+    export fn id(): Container<T> {
+        return self;
+    }
+
+    # replaceWith(v): ignore self, return v — exercises T-typed parameter dispatch.
+    export fn replaceWith(const v: T): T {
+        return v;
+    }
+}
+
+fn main() {
+    # ── int instantiation ─────────────────────────────────────────────────────
+
+    let a: Container<int> = container_new_i32(42);
+
+    # id() — calls @Container_i32_id
+    let b: Container<int> = a.id();
+
+    # replaceWith() — calls @Container_i32_replaceWith
+    let rv: int = a.replaceWith(99);
+
+    # ── string instantiation ─────────────────────────────────────────────────
+
+    let s: Container<string> = container_new_str("hello");
+
+    # id() — calls @Container_str_id
+    let s2: Container<string> = s.id();
+
+    # replaceWith() — calls @Container_str_replaceWith
+    let sv: string = s.replaceWith("world");
+}

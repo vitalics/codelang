@@ -1,0 +1,16 @@
+import "../../../stdlib/string";
+
+fn on_done() { print("explicit-defer"); }
+
+# using synthesises defer b.dispose() at point of declaration.
+# explicit defer is registered after that.
+# LIFO: explicit-defer fires BEFORE b.dispose (it was registered later).
+fn process(const s: string): int {
+    using b: Buffer = s.toBuffer();   # synthesises: defer b.dispose()  [registered first]
+    defer on_done();                 # registered second → fires first (LIFO)
+    return b.length();
+}
+
+fn main() {
+    print(process("hello"));   # 5  then: explicit-defer  then: b.dispose (silent)
+}

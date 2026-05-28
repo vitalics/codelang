@@ -1,0 +1,526 @@
+# stdlib/macros.code
+# Intrinsic meta-types for the CodeLang macro system.
+#
+# These five types are the building blocks of every macro parameter list.
+# They are not user-constructible values — they exist only at compile time
+# and are erased before code generation.  The compiler recognises them by
+# the `meta.*` intrinsic tag and substitutes the captured syntactic fragment
+# wherever the macro body references the parameter.
+#
+# Usage:
+#   import "stdlib/macros";
+#
+#   macro assert!($cond: Expr, $msg: Literal = "assertion failed") {
+#       if !($cond) { panic($msg); }
+#   }
+#
+#   const macro size_of!($T: Type): const int {
+#       return intrinsic_sizeof($T);
+#   }
+#
+#   const macro stringify!($x: Expr): string {
+#       return source_text_of($x);
+#   }
+#
+# Quick reference:
+#   Expr    — any unevaluated expression (lazy / call-by-name)
+#   Literal — a compile-time constant scalar (string, number, or bool)
+#   Type    — a type reference, including generic and array forms
+#   Ident   — a single identifier token (variable or type name)
+#   Block   — a brace-delimited statement block `{ … }`
+#
+# ── Built-in compile-time type intrinsics (also in stdlib/reflect.code) ───────
+#   alignOf!(T)            — alignment of type T in bytes (compile-time const int)
+#   offsetOf!(T, field)    — byte offset of field inside struct T
+#   compileError!(msg)     — abort compilation with msg
+#   compileLog!(...args)   — print args at compile time, warn about leftover
+
+# ── Expr ──────────────────────────────────────────────────────────────────────
+# Captures an unevaluated expression from the call site.
+#
+# The expression is substituted verbatim each time the macro parameter is used
+# inside the macro body, which means it may be evaluated more than once.
+# If you need a single evaluation, assign it to a local variable first.
+#
+# Equivalent concept: Rust `macro_rules!` `$x:expr`, JAI `#insert`.
+#
+# Examples:
+#   macro dbg!($e: Expr) { print($"dbg = {$e}"); }   # $e evaluated once per print
+#   macro retry!($op: Expr, $n: Literal) {             # $op evaluated up to $n times
+#       let i = 0;
+#       while i < $n { $op; i += 1; }
+#   }
+
+export type Expr = intrinsic("meta.expr");
+
+# ── Literal ───────────────────────────────────────────────────────────────────
+# Captures a compile-time scalar constant: a string literal, an integer or
+# floating-point number literal, or a bool literal.
+#
+# The value must be known at macro-expansion time (before type inference).
+# Trying to pass a runtime variable as a Literal is a compile error.
+#
+# Equivalent concept: Rust `$x:literal`.
+#
+# Examples:
+#   macro todo!($reason: Literal = "not yet implemented") { panic($reason); }
+#   macro log!($level: Literal, ...$parts: Expr) { … }   # level is always a string constant
+#
+# Valid arguments:
+#   todo!("implement magnitude")   ← string literal  ✓
+#   log!("warn", count)            ← "warn" is Literal, count is Expr  ✓
+#   todo!(getMsg())                ← runtime call — compile error  ✗
+
+export type Literal = intrinsic("meta.literal");
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+# Captures a type reference from the call site, including:
+#   • plain types:         int, string, MyStruct
+#   • generic types:       Array<int>, Map<string, Point>
+#   • array shorthands:    int[], string[8]
+#   • function types:      fn(int): bool
+#   • tuple types:         [int, string]
+#
+# Inside a `const macro` body the Type value can be passed to compiler
+# intrinsics such as `intrinsic_sizeof`, `reflect`, and `emit`.
+#
+# Equivalent concept: Rust `$T:ty`, JAI `$T: Type`.
+#
+# Examples:
+#   const macro size_of!($T: Type): const int { return intrinsic_sizeof($T); }
+#   const macro type_name!($T: Type): string  { return reflect($T).name; }
+#   const macro derive_display!($T: Type) {
+#       emit { $T extends Displayable { … } };
+#   }
+
+export type Type = intrinsic("meta.type");
+
+# ── Ident ─────────────────────────────────────────────────────────────────────
+# Captures a single bare identifier token (no operators, no dots, no parens).
+#
+# The identifier is substituted hygienically: it refers to the binding in the
+# *caller's* scope, not in the macro's scope.  This lets a macro generate a
+# variable or field access without risking name collisions with macro-internal
+# names.
+#
+# Equivalent concept: Rust `$x:ident`.
+#
+# Examples:
+#   macro swap!($a: Ident, $b: Ident) {
+#       const __tmp = $a;
+#       $a = $b;
+#       $b = __tmp;
+#   }
+#   swap!(x, y);    # x and y are caller-scope identifiers
+#
+#   macro field_of!($obj: Ident, $field: Ident) { $obj.$field }
+#   field_of!(point, x)   # expands to: point.x
+
+export type Ident = intrinsic("meta.ident");
+
+# ── MacroBlock ────────────────────────────────────────────────────────────────
+# Captures a brace-delimited statement block `{ … }` from the call site.
+#
+# Inside a `const macro` body a MacroBlock can be emitted into the program with
+# the `emit` keyword, or repeated a compile-time number of times (unrolling).
+# Inside a regular `macro` body a MacroBlock is inlined at the expansion site.
+#
+# The block is NOT a closure — it has no implicit return value and does not
+# capture variables by reference.  Use `Expr` if you need an expression result.
+#
+# Equivalent concept: Rust `$b:block`, JAI `Code` parameter.
+#
+# Note: renamed from `Block` to `MacroBlock` to avoid collision with the TUI
+# `Block` widget type in `stdlib/tui`.
+#
+# Examples:
+#   const macro unroll!($n: const int, $body: MacroBlock) {
+#       const macro __loop!($i: const int) {
+#           if $i > 0 { emit $body; __loop!($i - 1); }
+#       }
+#       __loop!($n);
+#   }
+#   unroll!(4, { buf.push(0); });   # → buf.push(0); buf.push(0); … (4×)
+#
+#   const macro derive_display!($T: Type) {
+#       emit {
+#           $T extends Displayable {
+#               export fn toString(): string { return $"[{type_name!($T)}]"; }
+#           }
+#       };
+#   }
+
+export type MacroBlock = intrinsic("meta.block");
+
+# ── Declaration ───────────────────────────────────────────────────────────────
+# Captures the *declaration* that a decorator is applied to.
+#
+# `Declaration` is the sixth meta-type; it is used exclusively as the implicit
+# first parameter ($self) of a decorator macro.  When the compiler expands
+# `@name(args)` on a declaration D it calls `name!($self = D, args)`.
+#
+# The compiler resolves `Declaration` at the decorator attachment site —
+# it is never supplied by hand in user code.
+#
+# A Declaration value supports the following compile-time intrinsics:
+#   declaration_name!($D)      — identifier name as a string literal
+#   declaration_kind!($D)      — "fn" | "type" | "enum" | "field" | "param" | "var"
+#   declaration_type!($D)      — the TypeReference of the declaration (if any)
+#
+# Equivalent concept: Rust proc-macro `TokenStream`, Java `AnnotatedElement`.
+#
+# Examples (from stdlib/decorators.code):
+#   export const macro deprecated!($self: Declaration) {
+#       compile_warning($"'{declaration_name!($self)}' is deprecated.");
+#   }
+#
+#   export const macro doc!($self: Declaration, $text: Literal) {
+#       attach_metadata!($self, "doc", $text);
+#   }
+
+export type Declaration = intrinsic("meta.declaration");
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time type-layout intrinsics
+#
+# These macros are evaluated entirely by the compiler — no runtime code is
+# produced.  They are inspired by Zig's @alignOf, @sizeOf, @offsetOf,
+# @compileError, and @compileLog built-ins.
+#
+# Invocation uses the standard macro `!` suffix:
+#   const s = sizeOf!(Point);               # 8 for { i32, i32 }
+#   const a = alignOf!(Point);              # 4 for { i32, i32 }
+#   const o = offsetOf!(Point, y);          # 4 (after x: i32)
+#   const t = typeId!(int);                 # stable i64 hash of "int"
+#   compileError!("unsupported target");    # aborts compilation
+#   compileLog!("size=", sizeOf!(int));     # prints at compile time
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── sizeOf! ───────────────────────────────────────────────────────────────────
+# Returns the byte size of T (compile-time const int).
+# No runtime code is emitted — the result is a compile-time constant.
+#
+# Also available as `size_of!` (the original snake_case spelling).
+#
+# Rules (LLVM ABI on the current target):
+#   bool           → 1
+#   i8  / u8       → 1
+#   i16 / u16      → 2
+#   i32 / u32 / Float32 → 4
+#   i64 / u64 / float / double / any pointer → 8
+#   struct T       → sum of field sizes + ABI padding
+#
+# Equivalent: Zig @sizeOf(T), C sizeof(T), C++ sizeof(T).
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   const sz_bool  = sizeOf!(bool);    # 1
+#   const sz_int   = sizeOf!(int);     # 4
+#   const sz_float = sizeOf!(float);   # 8   (float = Float64 = double)
+#   const sz_str   = sizeOf!(string);  # 8   (pointer)
+#   const sz_pt    = sizeOf!(Point);   # 8   (two i32 fields, no trailing pad)
+
+# ── typeId! ───────────────────────────────────────────────────────────────────
+# Returns a stable compile-time Int64 hash of the type name T.
+#
+# The hash is computed at compile time using the djb2 algorithm:
+#   hash = 5381; for each char c: hash = hash * 33 ^ c
+# Result is a 32-bit djb2 value zero-extended to Int64.
+#
+# The same type always produces the same constant regardless of compilation
+# order or program context, making it safe to use as a type tag.
+#
+# Equivalent concept: Rust TypeId, C++ typeid(T).hash_code().
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   const intTag   = typeId!(int);     # e.g. 2090452731
+#   const strTag   = typeId!(string);  # e.g. 3002342187
+#   const ptTag    = typeId!(Point);   # hash of "Point"
+#
+# Usage — type-tagged element in a generic array:
+#   type Entry {
+#       tag:   Int64   # typeId!(T) — which type is stored
+#       value: Int64   # addressOf(element) — raw address
+#   }
+
+# ── alignOf! ──────────────────────────────────────────────────────────────────
+# Returns the natural alignment requirement of T in bytes (compile-time const int).
+# No runtime code is emitted — the result is folded to a constant by the compiler.
+#
+# Rules (LLVM ABI on the current target):
+#   bool           → 1
+#   i8  / u8       → 1
+#   i16 / u16      → 2
+#   i32 / u32 / Float32 → 4
+#   i64 / u64 / float / double / any pointer → 8   (note: `float` = Float64 = double in CodeLang)
+#   struct T       → max(alignOf! of each field)
+#
+# Equivalent: Zig @alignOf(T), C11 _Alignof(T), C++ alignof(T).
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   const ptrAlign  = alignOf!(string);    # 8  — i8* pointer
+#   const intAlign  = alignOf!(int);       # 4
+#   const ptAlign   = alignOf!(Point);     # 4  — max(alignOf!(i32), alignOf!(i32))
+
+# ── offsetOf! ─────────────────────────────────────────────────────────────────
+# Returns the byte offset of field $field relative to the start of struct $T
+# (compile-time const int).  Includes all ABI padding between preceding fields.
+#
+# Equivalent: Zig @offsetOf(T, "field"), C stddef.h offsetof(T, field).
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   type Point { x: int  y: int }
+#   offsetOf!(Point, x)   →  0
+#   offsetOf!(Point, y)   →  4   (sizeof(int)=4, y starts at +4)
+#
+#   type Mixed { flag: bool  value: int }
+#   offsetOf!(Mixed, flag)    →  0
+#   offsetOf!(Mixed, value)   →  4   (bool=1 byte → 3 bytes ABI padding → int at 4)
+
+# ── compileError! ─────────────────────────────────────────────────────────────
+# Aborts compilation immediately with a human-readable error message.
+# No IR is produced — the compiler errors out at the call site.
+#
+# Equivalent: Zig @compileError, C++ static_assert(false, msg).
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   compileError!("this platform is not supported");
+#   # Combine with static_assert! for richer invariant checks:
+#   static_assert!(size_of!(int) >= 4, "need at least 32-bit int");
+
+# ── compileLog! ───────────────────────────────────────────────────────────────
+# Prints arguments to the compiler's stderr at compile time.
+# Useful for debugging macros and verifying computed sizes / offsets.
+# A `; compileLog!:` comment is inserted in the IR to remind the author to
+# remove the call before shipping.  The build is NOT aborted (unlike Zig).
+#
+# Equivalent: Zig @compileLog.
+#
+# Built-in — wired directly into the IR generator (no macro body needed).
+#
+#   compileLog!("alignOf Point =", alignOf!(Point));
+#   compileLog!("offsetOf x =",   offsetOf!(Point, x));
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Runtime panic macros
+#
+# panic! terminates the program immediately; it is a built-in grammar construct
+# (PanicStatement) and has no macro body.  unreachable! and todo! are regular
+# macros that expand to panic() with a default message.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── panic! ────────────────────────────────────────────────────────────────────
+# Terminate the program immediately with an error message.
+# The message is printed to stderr followed by a newline, then exit(1) is called.
+#
+# Equivalent: Rust panic!(), Zig @panic(), C abort() + fprintf(stderr, …).
+#
+# Built-in — wired directly into the IR generator via the PanicStatement rule.
+#
+#   panic!("index out of bounds");
+#   panic!("expected Some, got None");
+#
+# A panic! call is always a statement (never an expression); it has type
+# `noreturn` — the compiler knows no code after it is reachable.
+
+export macro panic!($msg: Expr) {}
+
+# ── unreachable! ──────────────────────────────────────────────────────────────
+# Assert that this code path should never be reached.
+# At runtime, reaching an unreachable!() call terminates the program with the
+# message "entered unreachable code" and a non-zero exit code.
+#
+# In optimised builds the compiler may additionally emit `__builtin_unreachable`
+# (LLVM `unreachable` terminator) to let the backend elide dead-code branches.
+#
+# Equivalent: Rust unreachable!(), Zig unreachable.
+#
+#   fn classify(n: int): string {
+#       if n > 0 { return "positive"; }
+#       if n < 0 { return "negative"; }
+#       return "zero";
+#       unreachable!();   # the compiler knows all cases are covered
+#   }
+#   unreachable!("direction exhausted above");
+
+export macro unreachable!($msg: Literal = "entered unreachable code") {
+    panic($msg);
+}
+
+# ── todo! ─────────────────────────────────────────────────────────────────────
+# Mark a code path as not yet implemented.
+# Reaching a todo!() call at runtime prints the supplied reason and terminates
+# with exit(1).  Unlike panic!, todo! signals that the body is incomplete rather
+# than that an invariant was violated.
+#
+# Equivalent: Rust todo!(), Kotlin TODO().
+#
+#   fn deserialize(bytes: string): MyType {
+#       todo!("deserializer not yet written");
+#   }
+#
+#   fn fromHex(s: string): int {
+#       todo!();   # uses default message "not yet implemented"
+#   }
+
+export macro todo!($msg: Literal = "not yet implemented") {
+    panic($msg);
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Runtime assertion macros
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── assert! ───────────────────────────────────────────────────────────────────
+# Panic with a message if the condition is false.
+# $cond is captured as Expr so its source text can appear in error messages
+# without re-evaluation overhead.
+#
+# Equivalent: C assert(), Rust assert!(), Zig std.debug.assert().
+#
+#   assert!(x > 0);
+#   assert!(x > 0, "x must be positive");
+#   assert!(buf.len() == expected, "buffer size mismatch");
+
+export macro assert!($cond: Expr, $msg: Literal = "assertion failed") {
+    if !($cond) {
+        panic($msg);
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Debug / introspection macros
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── stringify! ────────────────────────────────────────────────────────────────
+# Expands to the source text of an expression as a compile-time string literal.
+# Used internally by dbg!; useful for building assertion messages and diagnostics.
+#
+#   stringify!(x + 1)          →  "x + 1"
+#   stringify!(arr.length())   →  "arr.length()"
+
+export const macro stringify!($expr: Expr): string {
+    return source_text_of($expr);
+}
+
+# ── dbg! ──────────────────────────────────────────────────────────────────────
+# Print a labelled debug dump of an expression, then return its value unchanged.
+# The return type mirrors the expression type so dbg! is transparent — you can
+# wrap any sub-expression without changing program behaviour.
+#
+# Equivalent: Rust dbg!().
+#
+#   const area = dbg!(width * height);
+#   # prints:   dbg[width * height] = 42
+#   # returns:  42  (type: int)
+
+export macro dbg!($expr: Expr): typeof($expr) {
+    const __val = $expr;
+    print($"dbg[{stringify!($expr)}] = {__val}");
+    __val
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time reflection macros
+#
+# All three are `const macro` — evaluated entirely by the compiler before IR
+# generation.  No runtime code is emitted for these calls.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── static_assert! ────────────────────────────────────────────────────────────
+# Fail *compilation* if the condition is not compile-time true.
+# The condition must be a const bool (known before IR generation).
+#
+# Equivalent: C++ static_assert, Zig comptime if + @compileError, JAI #assert.
+#
+#   static_assert!(size_of!(int) >= 4, "need at least 32-bit int");
+#   static_assert!(alignOf!(float) == 8);
+
+export const macro static_assert!($cond: const bool, $msg: Literal = "static assertion failed") {
+    if !$cond {
+        compile_error($msg);
+    }
+}
+
+# ── size_of! ──────────────────────────────────────────────────────────────────
+# Snake-case alias for the built-in sizeOf! macro.
+# Returns the byte size of T as a compile-time const int.
+# No runtime code is emitted — the result is folded to a constant.
+#
+# Equivalent: Zig @sizeOf(T), C sizeof(T).
+#
+#   const n = size_of!(int);     # 4
+#   const p = size_of!(Point);   # 8  for { x: int, y: int }
+
+export const macro size_of!($T: Type): const int {
+    return intrinsic_sizeof($T);
+}
+
+# ── type_name! ────────────────────────────────────────────────────────────────
+# Returns the CodeLang source name of a type as a compile-time string literal.
+# Useful for building generic error messages and diagnostics without a vtable.
+#
+# Equivalent: Rust std::any::type_name::<T>(), C++ typeid(T).name().
+#
+#   type_name!(int)     →  "int"
+#   type_name!(Point)   →  "Point"
+
+export const macro type_name!($T: Type): string {
+    return reflect($T).name;
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time conditional import
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── switch_import! ────────────────────────────────────────────────────────────
+# Select which module to import based on a compile-time predicate.
+# The result is a const namespace binding — identical in every way to a normal
+# `import { … } as name` except the source file is chosen at compile time.
+#
+# Syntax:
+#
+#   const name = switch_import! compile.method() {
+#       "pattern1" => "path/to/module1",
+#       "pattern2" => "path/to/module2",
+#       else       => "path/to/fallback",
+#   }
+#
+# Supported predicates:
+#   compile.arch()      — host CPU architecture string (e.g. "x64", "arm64")
+#   compile.os()        — host OS string (e.g. "darwin", "linux", "win32")
+#   compile.platform()  — combined "<os>-<arch>" string
+#
+# The first arm whose pattern equals the compile-time value is selected.
+# If no arm matches, the `else` branch is used.  A compile error is raised
+# if no arm matches and there is no `else`.
+#
+# This construct is resolved at module-load time (before IR generation),
+# so the unselected modules are never parsed or compiled.  This makes it
+# the correct tool for platform-specific backends.
+#
+# Example — architecture dispatch:
+#
+#   const simd = switch_import! compile.arch() {
+#       "arm64" => "./simd/neon",
+#       "x64"   => "./simd/avx2",
+#       else    => "./simd/scalar",
+#   }
+#
+# Example — OS dispatch:
+#
+#   const socket = switch_import! compile.os() {
+#       "darwin" => "./net/kqueue",
+#       "linux"  => "./net/epoll",
+#       else     => "./net/select",
+#   }
+#
+# Built-in grammar rule — handled by the parser and module resolver.
+# No runtime macro expansion occurs; the compiler substitutes the selected
+# module's exported names at compile time.
+
+export const macro switch_import!($cond: Expr) {}

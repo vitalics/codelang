@@ -1,0 +1,16 @@
+# Auto-widening (sext) fixture.
+#
+# `const x = 42` is allocated as i8 (SMI).
+# Passing it to a function that expects int (i32) should emit:
+#   %loaded = load i8, i8* %x
+#   %widened = sext i8 %loaded to i32
+#   call void @take_int(i32 %widened)
+
+fn take_int(n: int) {
+  print("took int");
+}
+
+fn main() {
+  const x = 42;
+  take_int(x);
+}

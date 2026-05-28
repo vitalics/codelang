@@ -1,0 +1,16 @@
+# c_interop_strdup.code
+#
+# Runtime tests for strdup() — heap-duplicates a string; caller must free().
+#
+# Expected output (2 lines):
+#   5   ← strlen(strdup("hello")) == strlen("hello")
+#   1   ← sentinel: free(copy) completed without crash
+
+import "../../../stdlib/c-interop";
+
+fn main() {
+    const copy: C_Str = strdup("hello");
+    print(strlen(copy));
+    free(copy);
+    print(1);
+}

@@ -1,0 +1,28 @@
+import "../../../stdlib/array";
+
+fn main() {
+    let a: StringArray = StringArray.new();
+    a.push("foo");
+    a.push("bar");
+    a.push("baz");
+    a.push("bar");
+    a.push("qux");
+
+    # indexOf
+    print(a.indexOf("bar"));       # 1  (first occurrence)
+    print(a.indexOf("nope"));      # -1 (not found)
+
+    # lastIndexOf
+    print(a.lastIndexOf("bar"));   # 3  (last occurrence)
+    print(a.lastIndexOf("foo"));   # 0
+
+    # includes
+    if a.includes("baz") == true {
+        print(1);               # 1 (found)
+    }
+    if a.includes("nope") == false {
+        print(0);               # 0 (not found)
+    }
+
+    a.free();
+}

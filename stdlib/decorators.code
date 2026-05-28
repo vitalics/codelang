@@ -1,0 +1,516 @@
+# stdlib/decorators.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Decorator definitions for CodeLang.
+#
+# DESIGN: decorators are regular functions, not macros.
+# Inspired by the JavaScript new decorators proposal (TC39 stage 3).
+#
+# ── TWO PHASES: compile-time vs runtime ──────────────────────────────────────
+#
+#   const fn decorator  → runs at COMPILE TIME
+#     • Receives CompileContext (has Emitter for code generation)
+#     • Can create new types, functions, variables, imports
+#     • Cannot access runtime values
+#     • Errors are compile errors
+#
+#   fn decorator        → runs at RUNTIME (program initialisation)
+#     • Receives RuntimeContext (read-only reflection; no code generation)
+#     • Can register hooks, log metadata, populate DI containers
+#     • Runs once per decorated declaration during module init
+#     • Errors are runtime panics
+#
+# ── TWO CALL FORMS ───────────────────────────────────────────────────────────
+#
+#   No-arg — the function itself is the decorator:
+#     export fn  log(ctx: RuntimeContext): Decorator { … }
+#     export const fn log(ctx: CompileContext): Decorator { … }
+#
+#     @log
+#     fn compute(): int { … }
+#     # calls:  log(ctx)
+#
+#   With args — the function receives args, returns the decorator:
+#     export const fn doc(text: string): fn(CompileContext): Decorator {
+#         return fn(ctx: CompileContext): Decorator { … };
+#     }
+#
+#     @doc("Adds two integers.")
+#     fn add(a: int, b: int): int { … }
+#     # calls:  doc("Adds two integers.")(ctx)
+#
+# ── APPLICATION ORDER ────────────────────────────────────────────────────────
+#   Decorators are applied bottom-up (innermost first, then outer):
+#
+#     @doc("…")    ← applied second  (outer)
+#     @log         ← applied first   (inner, closest to the declaration)
+#     fn compute(): int { … }
+#
+#   Compile-time decorators all run before any runtime decorator.
+#
+# ── LIFECYCLE HOOKS: addInitializer / addDisposer ─────────────────────────────
+#
+#   Every context object exposes two optional hook-registration functions.
+#   A decorator may call either or both — the runtime guarantees ordering.
+#
+#   ctx.addInitializer(fn(): void { … })
+#     ↳ The callback is called BEFORE the decorated variable / field is first
+#       used (i.e. right after the declaration's initial value is computed and
+#       stored, but before any code that reads it runs).
+#     ↳ Useful for: opening resources, populating registries, running
+#       precondition checks, logging construction.
+#     ↳ Valid for: variables, fields, parameters, types.
+#     ↳ Not called for plain function decorators (functions have no storage to
+#       initialise); the runtime silently ignores the registration in that case.
+#
+#   ctx.addDisposer(fn(): void { … })
+#     ↳ The callback is called BEFORE the decorated variable's memory is
+#       released — guaranteeing that no code ever reads the value after the
+#       disposer has run (prevents use-after-free).
+#     ↳ Useful for: closing file handles, flushing buffers, removing registry
+#       entries, logging destruction.
+#     ↳ Valid for: variables and fields only.
+#       • For variables: called when the variable goes out of scope.
+#       • For fields:    called when the owning struct instance is freed.
+#     ↳ Disposers are called in LIFO order relative to initializers
+#       (last-initialized ← first-disposed), matching C++ RAII semantics.
+#
+#   Calling order when multiple decorators register hooks on the same value:
+#     • Initializers: run top-to-bottom (outer decorator first).
+#     • Disposers:    run bottom-to-top (inner decorator first, LIFO).
+#
+#   Example — @managed decorator:
+#     export fn managed(resource: string): fn(RuntimeContext): Decorator {
+#         return fn(ctx: RuntimeContext): Decorator {
+#             ctx.addInitializer(fn(): void {
+#                 print($"[open]  {resource} for '{ctx.name}'");
+#             });
+#             ctx.addDisposer(fn(): void {
+#                 print($"[close] {resource} for '{ctx.name}'");
+#             });
+#         };
+#     }
+#
+#     @managed("db-connection")
+#     let conn: Connection = Connection.open("postgres://...");
+#     # ↑ initializer runs right after conn is set
+#     # ↑ disposer   runs when conn leaves scope — before the memory is freed
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/reflection";
+
+# ── Decorator ─────────────────────────────────────────────────────────────────
+# Return type of every decorator body.
+# Currently void — decorators produce side-effects (metadata, diagnostics,
+# emitted code).  Future: may allow returning a replacement value for
+# field/variable decorators (as in the JS proposal stage 3).
+
+export type Decorator = void;
+
+# ── CompileContext ────────────────────────────────────────────────────────────
+#
+# Passed by the compiler to every CONST FN decorator.
+# Provides full reflection and the Emitter for code generation.
+#
+# Fields:
+#   kind              "fn" | "type" | "enum" | "field" | "param" | "var"
+#   name              identifier, e.g. "add", "Point", "x"
+#   isFunction        true when kind == "fn"
+#   isType            true when kind == "type"
+#   isEnum            true when kind == "enum"
+#   isField           true when kind == "field"
+#   isParam           true when kind == "param"
+#   isVariable        true when kind == "var"
+#   typeInfo          TypeInfo of the decorated type (valid when isType or isEnum)
+#   fnInfo            FnInfo of the decorated function (valid when isFunction)
+#   emitter           Emitter — code generation API (import stdlib/emit to use)
+#   addInitializer    Register a callback to emit before the binding is first used.
+#                     The compiler splices the callback body at the initialization
+#                     point in the generated IR.  No-op for function decorators.
+#   addDisposer       Register a callback to emit before the binding is freed.
+#                     The compiler inserts the callback body at every exit path
+#                     that destroys the binding.  No-op for function decorators.
+#
+# Note: emitter field requires stdlib/emit.code C runtime support.
+#       Import "stdlib/emit" when your decorator needs code-generation.
+#
+# Example:
+#   import "stdlib/emit";
+#   export fn derive(protocolName: string): fn(CompileContext): Decorator {
+#       return fn(ctx: CompileContext): Decorator {
+#           if protocolName == "Displayable" {
+#               const ext = ctx.emitter.extend(ctx.name);
+#               ext.method("toString").returns("string")
+#                  .body($"return \"[{ctx.name}]\";").build();
+#               ext.build();
+#           }
+#       };
+#   }
+
+export type CompileContext {
+    kind: string
+    name: string
+    isFunction: bool
+    isType: bool
+    isEnum: bool
+    isField: bool
+    isParam: bool
+    isVariable: bool
+    typeInfo: TypeInfo              # valid when isType or isEnum
+    fnInfo: FnInfo                  # valid when isFunction
+    # emitter: Emitter              # TODO: enable once stdlib/emit C runtime is ready
+    addInitializer: fn(fn(): void): void
+    addDisposer: fn(fn(): void): void
+}
+
+# ── RuntimeContext ────────────────────────────────────────────────────────────
+#
+# Passed by the runtime to every plain FN decorator during module initialisation.
+# Read-only reflection — no code generation.
+#
+# Fields:
+#   kind              "fn" | "type" | "enum" | "field" | "param" | "var"
+#   name              identifier name
+#   isFunction        bool
+#   isType            bool
+#   isEnum            bool
+#   isField           bool
+#   isParam           bool
+#   isVariable        bool
+#   typeInfo          TypeInfo snapshot (read-only at runtime)
+#   fnInfo            FnInfo snapshot   (valid when isFunction)
+#   addInitializer    Register a fn(): void callback to run BEFORE the binding is
+#                     first read.  The runtime calls all registered initializers in
+#                     decorator order (top-to-bottom) immediately after the
+#                     declaration's initial value has been stored.
+#                     Silently no-op when ctx.isFunction is true.
+#   addDisposer       Register a fn(): void callback to run BEFORE the binding's
+#                     memory is released.  Guarantees no use-after-free: the value
+#                     is still live when the disposer executes.  The runtime calls
+#                     all registered disposers in LIFO order (last-registered first)
+#                     when the binding leaves scope or the owning struct is freed.
+#                     Silently no-op when ctx.isFunction is true.
+#
+# Example:
+#   export fn log(ctx: RuntimeContext): Decorator {
+#       if ctx.isFunction {
+#           print($"[log] fn '{ctx.name}' registered");
+#       }
+#   }
+#
+#   export fn managed(resource: string): fn(RuntimeContext): Decorator {
+#       return fn(ctx: RuntimeContext): Decorator {
+#           ctx.addInitializer(fn(): void {
+#               print($"[open]  {resource} → '{ctx.name}'");
+#           });
+#           ctx.addDisposer(fn(): void {
+#               print($"[close] {resource} → '{ctx.name}'");
+#           });
+#       };
+#   }
+
+export type RuntimeContext {
+    kind: string
+    name: string
+    isFunction: bool
+    isType: bool
+    isEnum: bool
+    isField: bool
+    isParam: bool
+    isVariable: bool
+    typeInfo: TypeInfo                   # read-only snapshot
+    fnInfo: FnInfo                       # read-only snapshot (valid when isFunction)
+    addInitializer: fn(fn(): void): void # register pre-use callback   (no-op for fns)
+    addDisposer: fn(fn(): void): void    # register pre-free callback  (no-op for fns)
+}
+
+# ── DecoratorContext ──────────────────────────────────────────────────────────
+#
+# Convenience alias — accepted by decorators that do not care which phase
+# they run in (e.g. @deprecated, @doc, @managed).  The compiler widens
+# CompileContext or RuntimeContext to DecoratorContext automatically.
+#
+# Includes the lifecycle hooks so that phase-agnostic decorators can still
+# register initializers and disposers without knowing the current phase:
+#
+#   export fn managed(resource: string): fn(DecoratorContext): Decorator {
+#       return fn(ctx: DecoratorContext): Decorator {
+#           ctx.addInitializer(fn(): void {
+#               print($"[open]  {resource} for '{ctx.name}'");
+#           });
+#           ctx.addDisposer(fn(): void {
+#               print($"[close] {resource} for '{ctx.name}'");
+#           });
+#       };
+#   }
+#
+#   @managed("file-handle")
+#   let f: File = File.open("data.txt");
+#   # Initializer runs after 'f' is assigned.
+#   # Disposer  runs before 'f' is freed — no risk of use-after-free.
+
+export type DecoratorContext {
+    kind: string
+    name: string
+    isFunction: bool
+    isType: bool
+    isEnum: bool
+    isField: bool
+    isParam: bool
+    isVariable: bool
+    addInitializer: fn(fn(): void): void # register pre-use callback   (no-op for fns)
+    addDisposer: fn(fn(): void): void    # register pre-free callback  (no-op for fns)
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Built-in decorator definitions
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── @deprecated ───────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn)  — emits a warning message during module init.
+# No-arg form.
+#
+# Usage:
+#   @deprecated
+#   fn oldAdd(a: int, b: int): int { return a + b; }
+#
+#   @deprecated
+#   const OLD_LIMIT = 100;
+
+export fn deprecated(ctx: DecoratorContext): Decorator {
+    if ctx.isFunction {
+        print($"warning: function '{ctx.name}' is deprecated");
+    }
+    if ctx.isVariable {
+        print($"warning: '{ctx.name}' is deprecated");
+    }
+    if ctx.isType {
+        print($"warning: type '{ctx.name}' is deprecated");
+    }
+}
+
+# ── @doc ──────────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), arg form.
+# Attaches a documentation string to a declaration.
+#
+# Effect: the docString is printed during module init (diagnostic mode).
+#         In production, doc metadata is stored in the symbol table for IDE
+#         hover tooltips and documentation generators (codoc, etc.).
+#
+# Usage:
+#   @doc("Clamps value to [lo, hi].")
+#   fn clamp(value: int, lo: int, hi: int): int { … }
+#
+#   type Point {
+#       @doc("Horizontal position in screen coordinates.")
+#       x: int
+#   }
+#
+#   fn greet(
+#       @doc("The person's display name.")
+#       name: string
+#   ): string { … }
+
+export fn doc(docString: string): fn(DecoratorContext): Decorator {
+    return fn(ctx: DecoratorContext): Decorator {
+        print($"[doc] '{ctx.name}': {docString}");
+    };
+}
+
+# ── @log ──────────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), no-arg.
+#
+# On a function: logs the declaration during module init.
+# On a type: logs type construction.
+#
+# Usage:
+#   @log
+#   fn add(a: int, b: int): int { return a + b; }
+#
+#   @log
+#   type Point { x: int  y: int }
+
+export fn log(ctx: DecoratorContext): Decorator {
+    if ctx.isFunction {
+        print($"[log] fn '{ctx.name}' registered");
+    }
+    if ctx.isType {
+        print($"[log] type '{ctx.name}' registered");
+    }
+}
+
+# ── @json ─────────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), arg form.
+# Attaches JSON serialisation metadata to a field.
+#
+# Three flag values:
+#   "skip"            — omit the field entirely from JSON
+#   "name:<alias>"    — use <alias> as the JSON key instead of the field name
+#   "skipIf:<value>"  — omit when the field value equals <value>
+#
+# Requires @derive("Serialize") or @derive("Deserialize") on the containing type.
+#
+# Usage:
+#   type UserProfile {
+#       @json("name:user_id")    id: int
+#       displayName: string
+#       @json("skip")            passwordHash: string
+#       @json("skipIf:empty")    bio: string
+#   }
+
+export fn json(flag: string): fn(DecoratorContext): Decorator {
+    return fn(ctx: DecoratorContext): Decorator {
+        print($"[json] field '{ctx.name}': {flag}");
+    };
+}
+
+# ── @derive ───────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), arg form.
+# Emits a protocol extension for the decorated type.
+# Stack multiple @derive decorators for multiple protocols.
+#
+# Built-in derivable protocols:
+#   "Displayable"  → toString(): string
+#   "Equatable"    → equals(other: Self): bool
+#   "Comparable"   → compare(other: Self): int  (-1 / 0 / +1)
+#   "Serialize"    → toJSON(): string   (respects @json field metadata)
+#   "Deserialize"  → static fromJSON(json: string): Self
+#   "Hashable"     → hash(): int
+#
+# If the type already defines the required method, the derived one is suppressed.
+#
+# Usage:
+#   @derive("Serialize")
+#   @derive("Displayable")
+#   type Point { x: int  y: int }
+
+export fn derive(protocolName: string): fn(DecoratorContext): Decorator {
+    return fn(ctx: DecoratorContext): Decorator {
+        print($"[derive] '{ctx.name}' derives {protocolName}");
+    };
+}
+
+# ── @validate ─────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), arg form.
+# Applied to a parameter; the compiler inserts a precondition check.
+#
+# Constraint strings:
+#   "nonZero"      — value != 0
+#   "nonEmpty"     — string or array length > 0
+#   "positive"     — value > 0
+#   "nonNegative"  — value >= 0
+#   "min:<N>"      — value >= N
+#   "max:<N>"      — value <= N
+#
+# Usage:
+#   fn divide(
+#       @validate("nonZero") numerator: int,
+#       @validate("nonZero") denominator: int
+#   ): int { return numerator / denominator; }
+
+export fn validate(constraint: string): fn(DecoratorContext): Decorator {
+    return fn(ctx: DecoratorContext): Decorator {
+        if ctx.isParam {
+            print($"[validate] param '{ctx.name}': {constraint}");
+        }
+    };
+}
+
+# ── @managed ──────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), arg form.
+# Ties a named resource to a variable or field via addInitializer / addDisposer.
+#
+# Lifecycle:
+#   1. Variable / field is assigned its initial value.
+#   2. addInitializer callback runs  → resource is "opened" / acquired.
+#   3. Program uses the binding normally.
+#   4. addDisposer callback runs     → resource is "closed" / released.
+#   5. Memory for the binding is freed.
+#   Step 4 always runs before step 5, preventing use-after-free.
+#
+# Usage:
+#   @managed("db-connection")
+#   let conn: Connection = Connection.open("postgres://localhost/mydb");
+#
+#   type Cache {
+#       @managed("lru-cache")
+#       data: IntArray
+#   }
+#
+#   fn process(
+#       @managed("temp-buffer")
+#       buf: string
+#   ): void { … }
+#
+# Note: Registering on a FUNCTION decorator (ctx.isFunction == true) is a
+#       no-op — functions do not have storage to initialise or dispose.
+
+export fn managed(resource: string): fn(DecoratorContext): Decorator {
+    return fn(ctx: DecoratorContext): Decorator {
+        ctx.addInitializer(fn(): void {
+            print($"[open]  {resource} → '{ctx.name}'");
+        });
+        ctx.addDisposer(fn(): void {
+            print($"[close] {resource} → '{ctx.name}'");
+        });
+    };
+}
+
+# ── @once ─────────────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), no-arg.
+# Applied to a variable; ensures the initializer logic runs exactly once even
+# when the surrounding scope is entered multiple times (e.g. inside a loop or
+# a function called repeatedly).
+#
+# Internally uses addInitializer to gate execution behind a bool flag.
+#
+# Usage:
+#   fn setup(): void {
+#       @once
+#       let config: string = loadConfig();
+#       # 'config' is initialised only on the first call to setup().
+#   }
+
+export fn once(ctx: DecoratorContext): Decorator {
+    if ctx.isVariable {
+        ctx.addInitializer(fn(): void {
+            print($"[once] '{ctx.name}' initialised (subsequent calls skipped)");
+        });
+    }
+}
+
+# ── @autoDispose ──────────────────────────────────────────────────────────────
+#
+# Phase: runtime (fn), no-arg.
+# Marks a variable or field as requiring explicit teardown when it goes out of
+# scope.  Registers a disposer that calls `.dispose()` on the value if the type
+# implements a `dispose(): void` method, or emits a warning otherwise.
+#
+# Useful as a lightweight alternative to `using` when you need conditional or
+# deferred disposal rather than guaranteed RAII.
+#
+# Usage:
+#   @autoDispose
+#   let handle: FileHandle = FileHandle.open("log.txt");
+#   # handle.dispose() is called automatically before 'handle' is freed.
+
+export fn autoDispose(ctx: DecoratorContext): Decorator {
+    if ctx.isVariable {
+        ctx.addDisposer(fn(): void {
+            print($"[autoDispose] disposing '{ctx.name}'");
+        });
+    }
+    if ctx.isField {
+        ctx.addDisposer(fn(): void {
+            print($"[autoDispose] field '{ctx.name}' disposed");
+        });
+    }
+}

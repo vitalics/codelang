@@ -1,0 +1,11 @@
+# template_bool_hole.code
+# Bool values in template holes produce "true" / "false" strings.
+# Uses a select i1 instruction at the IR level.
+fn main() {
+    let t: bool = true;
+    let f: bool = false;
+
+    print($"t is {t}");
+    print($"f is {f}");
+    print($"both: {t} and {f}");
+}

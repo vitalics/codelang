@@ -1,0 +1,73 @@
+import "../../../stdlib/npu/apple_coreml";
+
+# ── CoreML quantization fixture ───────────────────────────────────────────────
+# All float constants use exactly-representable values (powers of 2 or sums):
+#   0.5 = 1/2,  0.25 = 1/4,  0.75 = 3/4,  1.0  — all exact in float32.
+#
+# Expected output (one value per line):
+#   2            ← q8.rows()
+#   3            ← q8.cols()
+#   1            ← q8.getINT8(0,0)   : round(0.5/0.5)+0 = 1
+#   1            ← q8.getINT8(1,2)
+#   0            ← q8.getINT8(0,0) for the negative matrix  (round(-0.5/0.5)+0 = -1 clipped to -1, then 0 for zero)
+#   -1           ← q8_neg.getINT8(0,0)
+#   QuantizedMatrix(INT8, 2x3, scale=0.5, zp=0)[1, 1, 1, 1, 1, 1]
+#   1            ← q4.getINT4(0,0)
+#   QuantizedMatrix(INT4, 2x3, scale=0.5, zp=0)[1, 1, 1, 1, 1, 1]
+#   3            ← q8z.rows()
+#   2            ← q8z.cols()
+#   2            ← q8z.getINT8(0,0)  : round(0.5/0.25)+0 = 2
+
+fn main(): void {
+    # ── INT8: 2×3 matrix of 0.5, scale=0.5 ──────────────────────────────────
+    # q_i = round(0.5 / 0.5) + 0 = 1  for all elements
+    const w: Matrix = Matrix.new(2, 3);
+    w.fill(0.5);
+
+    const q8: QuantizedMatrix = QuantizedMatrix.quantizeINT8(w, 0.5, 0);
+    print(q8.rows());       # 2
+    print(q8.cols());       # 3
+    print(q8.getINT8(0, 0)); # 1
+    print(q8.getINT8(1, 2)); # 1
+    print(q8);              # QuantizedMatrix(INT8, 2x3, scale=0.5, zp=0)[1, 1, 1, 1, 1, 1]
+
+    # ── INT8: negative values ─────────────────────────────────────────────────
+    # Fill with -0.5, scale=0.5 → q_i = round(-0.5/0.5) + 0 = -1
+    const wn: Matrix = Matrix.new(1, 4);
+    wn.fill(-0.5);
+    const q8n: QuantizedMatrix = QuantizedMatrix.quantizeINT8(wn, 0.5, 0);
+    print(q8n.getINT8(0, 0)); # -1
+    print(q8n.getINT8(0, 3)); # -1
+
+    # ── INT8: scale=0.25 → q_i = round(0.5/0.25) = 2 ────────────────────────
+    const ws: Matrix = Matrix.new(3, 2);
+    ws.fill(0.5);
+    const q8s: QuantizedMatrix = QuantizedMatrix.quantizeINT8(ws, 0.25, 0);
+    print(q8s.rows());       # 3
+    print(q8s.cols());       # 2
+    print(q8s.getINT8(0, 0)); # 2
+
+    # ── INT4: 2×3 matrix of 0.5, scale=0.5 ───────────────────────────────────
+    # q_i = round(0.5 / 0.5) = 1  (within [-8, 7])
+    const q4: QuantizedMatrix = QuantizedMatrix.quantizeINT4(w, 0.5, 0);
+    print(q4.getINT4(0, 0)); # 1
+    print(q4.getINT4(1, 2)); # 1
+    print(q4);               # QuantizedMatrix(INT4, 2x3, scale=0.5, zp=0)[1, 1, 1, 1, 1, 1]
+
+    # ── INT4: clipping at boundary (-8, 7) ───────────────────────────────────
+    # Fill with 4.0, scale=0.5 → raw q = 8, clipped to 7
+    const wc: Matrix = Matrix.new(1, 2);
+    wc.fill(4.0);
+    const q4c: QuantizedMatrix = QuantizedMatrix.quantizeINT4(wc, 0.5, 0);
+    print(q4c.getINT4(0, 0)); # 7  (clipped from 8)
+
+    q8.free();
+    q8n.free();
+    q8s.free();
+    q4.free();
+    q4c.free();
+    w.free();
+    wn.free();
+    ws.free();
+    wc.free();
+}

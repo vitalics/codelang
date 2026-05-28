@@ -1,0 +1,15 @@
+# Valid: Number correctly implements Lolable with matching return type.
+
+protocol Lolable {
+    fn lol(): void;
+}
+
+Number extends Lolable {
+    fn lol(): void {
+        print("lol");
+    }
+}
+
+const fn main() {
+    print("ok");
+}

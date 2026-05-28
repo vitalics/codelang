@@ -1,0 +1,7 @@
+const fn impure() {
+  print("this is a side effect");
+}
+
+fn main() {
+  print("hello");
+}

@@ -1,0 +1,375 @@
+# stdlib/reflection.code
+# Compile-time reflection utilities.
+#
+# ── Types ──────────────────────────────────────────────────────────────────────
+#
+#   Field         — base member descriptor (common flags for fields and methods)
+#   PropertyField — semantic alias for a struct field member
+#   FunctionField — semantic alias for a method/function member
+#   FieldArray    — ordered growable list of Field objects
+#   TypeInfo      — compile-time snapshot of a struct type
+#
+# ── TypeInfo API ────────────────────────────────────────────────────────────────
+#
+#   info.name()         → string          type name, e.g. "Point"
+#   info.fields()       → Array<Field>    ALL members (fields + methods)
+#   info.properties()   → Array<Field>    only struct fields (isFunction == 0)
+#   info.functions()    → Array<Field>    only methods     (isFunction == 1)
+#
+# ── Field / PropertyField / FunctionField API ──────────────────────────────────
+#
+#   .name()            → string  member identifier
+#   .typeName()        → string  field type or method return type (CodeLang name)
+#   .returnType()      → string  same as typeName()
+#   .isProperty()      → int     reserved, always 0
+#   .isExportable()    → int     1 when declared `export`
+#   .isFunction()      → int     0 = struct field, 1 = method
+#   .isDisposable()    → int     1 when declared `using`
+#   .isConst()         → int     1 for `const` field / `const fn` method
+#   .isInitialized()   → int     1 when the field has a compile-time initializer
+#   .getValue()        → string  initializer as a string, e.g. "[1, 2, 3]" or ""
+#
+# ── Usage ──────────────────────────────────────────────────────────────────────
+#
+#   import "./reflection";
+#
+#   type Config {
+#       const maxRetries: int[3; 1,2,4] = [1,2,4]
+#       using conn: int
+#       name: string
+#       export const fn getMax(): int { return self.maxRetries[0]; }
+#   }
+#
+#   fn main() {
+#       const c: Config = Config_new("prod");
+#       const info = typeInfo(c);
+#
+#       # ── all members ──────────────────────────────────────────────────────
+#       print(info.fields().length());            # 4 (3 fields + 1 method)
+#
+#       # ── property fields only ─────────────────────────────────────────────
+#       const props = info.properties();
+#       const p0 = props.get(0);                  # maxRetries
+#       print(p0.isConst());                      # 1
+#       print(p0.isInitialized());                # 1
+#       print(p0.getValue());                     # [1, 2, 4]
+#
+#       # ── function members only ─────────────────────────────────────────────
+#       const fns = info.functions();
+#       const f0 = fns.get(0);                   # getMax
+#       print(f0.isExportable());                 # 1
+#       print(f0.returnType());                   # int
+#   }
+
+import "./protocols";
+import "./array";
+
+# ── Code ──────────────────────────────────────────────────────────────────────
+# A type-safe representation of a fragment of CodeLang source code.
+#
+# At the LLVM level `Code` is identical to `string` (both are `i8*`), so a
+# `Code` value can be passed wherever a `string` is expected and vice-versa.
+# The distinction is purely semantic: a `Code` value is guaranteed to contain
+# valid CodeLang source text, while a plain `string` is arbitrary data.
+#
+# `Code` is the preferred type for the `.body()` argument of `FnBuilder` and
+# for any other emit API that expects source-code fragments rather than display
+# strings or identifiers.
+#
+# Typical sources of `Code` values:
+#   • String literals assigned to a `Code`-typed binding
+#   • Template literals (`$"return ${expr};"`)
+#   • Code returned by a `const fn` that builds source text programmatically
+#
+# Example:
+#   const src: Code = $"return self.{field.name()} + 1;";
+#   ctx.emitter.createFn("increment")
+#       .param("self", ctx.name)
+#       .returns("int")
+#       .body(src)
+#       .build();
+
+export type Code = intrinsic("i8*");
+
+# ── Base member descriptor ────────────────────────────────────────────────────
+# Describes one member (struct field or method) inside a type.
+# Backed by `struct Field` in runtime/reflection.c.
+
+export type Field = intrinsic("%Field*");
+
+# ── Typed member views ────────────────────────────────────────────────────────
+# PropertyField and FunctionField are semantic aliases for %Field*.
+# They share all methods from Field extends and carry the same LLVM type, so
+# no bitcast is needed when passing one where the other is expected.
+#
+# Use TypeInfo.properties() to obtain a FieldArray of PropertyFields, and
+# TypeInfo.functions() for FunctionFields.  Cast with cast<PropertyField>(f)
+# when you already know the kind of a Field from TypeInfo.fields().
+
+export type PropertyField = intrinsic("%Field*");
+export type FunctionField = intrinsic("%Field*");
+
+# ── TypeInfo ──────────────────────────────────────────────────────────────────
+# Compile-time snapshot of a type's shape.
+
+export type TypeInfo = intrinsic("%TypeInfo*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn field_new(
+    const name:          string,
+    const typeName:      string,
+    const isProperty:    int,
+    const isExportable:  int,
+    const isFunction:    int,
+    const isDisposable:  int,
+    const isConst:       int,
+    const returnType:    string,
+    const isInitialized: int,
+    const initialValue:  string
+): Field;
+
+export extern fn field_name(const f: Field): string;
+export extern fn field_type_name(const f: Field): string;
+export extern fn field_is_property(const f: Field): int;
+export extern fn field_is_exportable(const f: Field): int;
+export extern fn field_is_function(const f: Field): int;
+export extern fn field_is_disposable(const f: Field): int;
+export extern fn field_is_const(const f: Field): int;
+export extern fn field_return_type(const f: Field): string;
+export extern fn field_is_initialized(const f: Field): int;
+export extern fn field_get_value(const f: Field): string;
+
+export extern fn typeinfo_new(const name: string, const fields: Array<Field>): TypeInfo;
+export extern fn typeinfo_name(const info: TypeInfo): string;
+export extern fn typeinfo_fields(const info: TypeInfo): Array<Field>;
+export extern fn typeinfo_properties(const info: TypeInfo): Array<Field>;
+export extern fn typeinfo_functions(const info: TypeInfo): Array<Field>;
+
+# ── TypeInfo extension ────────────────────────────────────────────────────────
+
+TypeInfo extends Displayable {
+    # The declared name of the type (e.g. "Point", "int", "string").
+    export fn name(): string {
+        return typeinfo_name(self);
+    }
+
+    # All declared members in declaration order (struct fields then methods).
+    export fn fields(): Array<Field> {
+        return typeinfo_fields(self);
+    }
+
+    # Only the struct field members (isFunction == 0).
+    # Each element may be treated as a PropertyField via cast<PropertyField>.
+    export fn properties(): Array<Field> {
+        return typeinfo_properties(self);
+    }
+
+    # Only the method members (isFunction == 1).
+    # Each element may be treated as a FunctionField via cast<FunctionField>.
+    export fn functions(): Array<Field> {
+        return typeinfo_functions(self);
+    }
+
+    # Displayable — print(info) outputs the type name.
+    export fn toString(): string {
+        return typeinfo_name(self);
+    }
+}
+
+# ── Field extension ───────────────────────────────────────────────────────────
+# Methods are registered on %Field* and are therefore shared by Field,
+# PropertyField, and FunctionField (all three are %Field* at the LLVM level).
+
+Field extends {
+    # Declared identifier (e.g. "x", "name", "compute").
+    export fn name(): string {
+        return field_name(self);
+    }
+
+    # CodeLang type name of the field, or return type of the method.
+    export fn typeName(): string {
+        return field_type_name(self);
+    }
+
+    # Reserved — always 0 in the current implementation.
+    export fn isProperty(): int {
+        return field_is_property(self);
+    }
+
+    # True when the method is declared `export`.
+    export fn isExportable(): int {
+        return field_is_exportable(self);
+    }
+
+    # True when the member is a function/method (not a struct field).
+    export fn isFunction(): int {
+        return field_is_function(self);
+    }
+
+    # True when the field is declared `using` (auto-dispose on scope exit).
+    export fn isDisposable(): int {
+        return field_is_disposable(self);
+    }
+
+    # True for `const` struct fields or `const fn` (comptime) methods.
+    export fn isConst(): int {
+        return field_is_const(self);
+    }
+
+    # Declared return type (same as typeName() for plain struct fields).
+    export fn returnType(): string {
+        return field_return_type(self);
+    }
+
+    # True when the struct field carries a compile-time initializer value.
+    # Always 0 for method members.
+    export fn isInitialized(): int {
+        return field_is_initialized(self);
+    }
+
+    # The compile-time initializer as a string (e.g. "[1, 2, 4]").
+    # Returns "" for uninitialized fields and for method members.
+    export fn getValue(): string {
+        return field_get_value(self);
+    }
+}
+
+# ── typeInfo ──────────────────────────────────────────────────────────────────
+# Returns compile-time TypeInfo for the type T inferred from `value`.
+#
+# Two call forms are supported:
+#   typeInfo(value)          T inferred from the argument's type
+#   typeInfo<MyType>(value)  T supplied explicitly (use this for intrinsic /
+#                            alias types to get the precise CodeLang name)
+#
+# The function body below is a placeholder that is NEVER compiled; the IR
+# generator intercepts every call to `typeInfo` and emits inline IR.
+
+export fn typeInfo<T>(const value: T): TypeInfo {
+    return typeinfo_new("unknown", []);
+}
+
+# ── FnInfo ────────────────────────────────────────────────────────────────────
+# Compile-time and runtime snapshot of a function or method declaration.
+# Passed to decorators via CompileContext.fnInfo / RuntimeContext.fnInfo.
+#
+# API:
+#   info.name()             → string   declared identifier, e.g. "add"
+#   info.isConst()          → bool     true when declared `const fn`
+#   info.isExport()         → bool     true when declared `export`
+#   info.paramCount()       → int      number of parameters
+#   info.paramName(i)       → string   name of parameter at index i
+#   info.paramType(i)       → string   CodeLang type name of parameter at index i
+#   info.returnTypeName()   → string   declared return type, e.g. "int"
+
+export type FnInfo = intrinsic("%FnInfo*");
+
+export extern fn fninfo_name(const f: FnInfo): string;
+export extern fn fninfo_is_const(const f: FnInfo): int;
+export extern fn fninfo_is_export(const f: FnInfo): int;
+export extern fn fninfo_param_count(const f: FnInfo): int;
+export extern fn fninfo_param_name(const f: FnInfo, const i: int): string;
+export extern fn fninfo_param_type(const f: FnInfo, const i: int): string;
+export extern fn fninfo_return_type(const f: FnInfo): string;
+
+FnInfo extends {
+    export fn name(): string            { return fninfo_name(self); }
+    export fn isConst(): bool           { return fninfo_is_const(self) == 1; }
+    export fn isExport(): bool          { return fninfo_is_export(self) == 1; }
+    export fn paramCount(): int         { return fninfo_param_count(self); }
+    export fn paramName(i: int): string { return fninfo_param_name(self, i); }
+    export fn paramType(i: int): string { return fninfo_param_type(self, i); }
+    export fn returnTypeName(): string  { return fninfo_return_type(self); }
+}
+
+# ── ParamInfo ─────────────────────────────────────────────────────────────────
+# Snapshot of one function parameter: name, type, optional default.
+#
+# API:
+#   p.name()           → string   parameter identifier
+#   p.typeName()       → string   CodeLang type name, e.g. "int"
+#   p.hasDefault()     → bool     true when a default value is declared
+#   p.defaultValue()   → string   default value as source string, or ""
+
+export type ParamInfo = intrinsic("%ParamInfo*");
+
+export extern fn paraminfo_name(const p: ParamInfo): string;
+export extern fn paraminfo_type_name(const p: ParamInfo): string;
+export extern fn paraminfo_has_default(const p: ParamInfo): int;
+export extern fn paraminfo_default_value(const p: ParamInfo): string;
+
+ParamInfo extends {
+    export fn name(): string         { return paraminfo_name(self); }
+    export fn typeName(): string     { return paraminfo_type_name(self); }
+    export fn hasDefault(): bool     { return paraminfo_has_default(self) == 1; }
+    export fn defaultValue(): string { return paraminfo_default_value(self); }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time type-layout intrinsics
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# These are compile-time-only operations: they are evaluated by the compiler
+# and produce a constant integer.  No runtime code is generated.
+# The macro forms live in stdlib/macros.code; this section documents them
+# together with typeInfo so the reflection API is in one place.
+#
+# ── alignOf!(T) ───────────────────────────────────────────────────────────────
+#
+# Returns the alignment requirement of T in bytes.
+# Matches what the LLVM ABI / C ABI uses on the current target.
+#
+#   type Point { x: int  y: int }
+#
+#   const a0 = alignOf!(bool);        # 1
+#   const a1 = alignOf!(int);         # 4
+#   const a2 = alignOf!(float);       # 8   (float = Float64 = double in CodeLang)
+#   const a3 = alignOf!(string);      # 8   (i8* pointer)
+#   const a4 = alignOf!(Point);       # 4   (max of field alignments)
+#
+# Useful for writing portable serialization, manual memory allocation, or
+# SIMD intrinsics that require a specific alignment.
+#
+# ── offsetOf!(T, field) ───────────────────────────────────────────────────────
+#
+# Returns the byte offset of field `field` from the beginning of struct T.
+# Includes all ABI-mandated padding between preceding fields.
+#
+#   type Point { x: int  y: int }
+#
+#   const ox = offsetOf!(Point, x);   # 0
+#   const oy = offsetOf!(Point, y);   # 4   (sizeof(int) = 4)
+#
+#   type Mixed { flag: bool  count: int }
+#
+#   const of0 = offsetOf!(Mixed, flag);    # 0
+#   const of1 = offsetOf!(Mixed, count);   # 4  (padded: bool=1 byte, then 3 pad)
+#
+# Equivalent to C's `offsetof(T, field)` macro and Zig's `@offsetOf(T, "field")`.
+#
+# ── compileError!($msg: Literal) ─────────────────────────────────────────────
+#
+# Aborts compilation with a human-readable diagnostic.
+# No IR is produced; the compiler errors out at the macro call site.
+#
+#   compileError!("this platform is not supported");
+#
+# Combine with static_assert! for richer error messages:
+#   static_assert!(size_of!(int) >= 4, "need at least 32-bit int");
+#
+# Equivalent to Zig's `@compileError`, C++20 `static_assert(false, msg)`.
+#
+# ── compileLog!(...$args: Expr) ───────────────────────────────────────────────
+#
+# Prints arguments to the compiler diagnostic output (stderr) at compile time.
+# Useful for debugging macro expansion or inspecting computed sizes.
+#
+#   compileLog!("alignOf Point =", alignOf!(Point));
+#   compileLog!("offsetOf x =", offsetOf!(Point, x));
+#
+# A `; compileLog!: …` comment is inserted in the generated IR as a reminder
+# to remove the call before shipping.  Unlike Zig, the build is not aborted.
+#
+# Equivalent to Zig's `@compileLog`.
+# ═══════════════════════════════════════════════════════════════════════════════

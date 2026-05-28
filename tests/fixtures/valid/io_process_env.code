@@ -1,0 +1,15 @@
+import "../../../stdlib/io";
+
+fn main() {
+    # HOME should always be set on Unix
+    const home = Process.env("HOME");
+    if home != "" {
+        print("has-home");
+    }
+
+    # A non-existent variable should return ""
+    const missing = Process.env("CODELANG_NO_SUCH_VAR_XYZ");
+    if missing == "" {
+        print("no-var");
+    }
+}

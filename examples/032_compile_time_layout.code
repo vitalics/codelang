@@ -1,0 +1,67 @@
+# examples/032_compile_time_layout.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time type-layout intrinsics
+#
+# Four macros, all evaluated at compile time with zero runtime cost:
+#
+#   alignOf!(T)            — alignment requirement of T in bytes
+#   offsetOf!(T, field)    — byte offset of field inside struct T
+#   compileError!(msg)     — abort compilation with msg
+#   compileLog!(...args)   — print at compile time (stderr); left in IR as comment
+#
+# Inspired by Zig's @alignOf, @offsetOf, @compileError, @compileLog.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/macros";
+import "stdlib/numbers";
+
+# ── Example types ──────────────────────────────────────────────────────────────
+
+type Point {
+    x: int     # i32 — 4 bytes, 4-byte aligned
+    y: int     # i32 — 4 bytes, 4-byte aligned
+}
+
+type Mixed {
+    flag:  bool    # i1/i8  — 1 byte,  1-byte aligned
+    value: int     # i32    — 4 bytes, 4-byte aligned (3 bytes pad after flag)
+}
+
+type Vec3 {
+    x: float   # double — 8 bytes, 8-byte aligned
+    y: float
+    z: float
+}
+
+# ── Demo ───────────────────────────────────────────────────────────────────────
+
+fn main() {
+    # ── alignOf! ───────────────────────────────────────────────────────────────
+    const bool_align  = alignOf!(bool);     # 1
+    const int_align   = alignOf!(int);      # 4
+    const float_align = alignOf!(float);    # 8   (float = Float64 = double, 8-byte aligned)
+    const str_align   = alignOf!(string);   # 8   (i8* pointer)
+    const pt_align    = alignOf!(Point);    # 4   (max of field alignments)
+
+    print(bool_align);   # 1
+    print(int_align);    # 4
+    print(float_align);  # 8
+    print(str_align);    # 8
+    print(pt_align);     # 4
+
+    # ── offsetOf! ──────────────────────────────────────────────────────────────
+    const px = offsetOf!(Point, x);     # 0   (first field)
+    const py = offsetOf!(Point, y);     # 4   (after i32 x)
+    const mf = offsetOf!(Mixed, flag);  # 0   (first field)
+    const mv = offsetOf!(Mixed, value); # 4   (padded: 1-byte bool → 3 bytes pad → int at 4)
+
+    print(px);   # 0
+    print(py);   # 4
+    print(mf);   # 0
+    print(mv);   # 4
+
+    # ── compileLog! ────────────────────────────────────────────────────────────
+    # Prints to stderr during compilation — no runtime output.
+    # Remove before shipping (leaves a comment in the IR as a reminder).
+    compileLog!("Point layout: alignOf=", alignOf!(Point), " offsetOf(y)=", offsetOf!(Point, y));
+}

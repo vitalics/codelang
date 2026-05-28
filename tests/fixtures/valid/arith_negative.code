@@ -1,0 +1,10 @@
+fn main() {
+  let neg: int = 0 - 7;
+  let div: int = neg / 2;
+  print(div);
+  let mod: int = neg % 3;
+  print(mod);
+  let pos: int = 7;
+  let pmod: int = pos % (0 - 3);
+  print(pmod);
+}

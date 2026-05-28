@@ -1,0 +1,48 @@
+import "../../../stdlib/array";
+import "../../../stdlib/boolean";
+
+fn main() {
+    # ── Array.new() with type annotation ─────────────────────────────────────
+    const ia: Array<int> = Array.new();
+    ia.push(10);
+    ia.push(20);
+    ia.push(30);
+    print(ia.length());       # 3
+    print(ia.get(1));         # 20
+    print(ia.toString());     # [10, 20, 30]
+
+    const sa: Array<string> = Array.new();
+    sa.push("hello");
+    sa.push("world");
+    print(sa.length());       # 2
+    print(sa.get(0));         # hello
+    print(sa.toString());     # ["hello", "world"]
+
+    const ba: Array<bool> = Array.new();
+    ba.push(true);
+    ba.push(false);
+    ba.push(true);
+    print(ba.length());       # 3
+    print(ba.get(0));         # true
+    print(ba.get(1));         # false
+    print(ba.toString());     # [true, false, true]
+
+    # ── Array<T>.new() with explicit type args (no annotation) ───────────────
+    let ia2 = Array<int>.new();
+    ia2.push(1);
+    ia2.push(2);
+    print(ia2.length());      # 2
+    print(ia2.get(0));        # 1
+
+    let sa2 = Array<string>.new();
+    sa2.push("foo");
+    sa2.push("bar");
+    print(sa2.length());      # 2
+    print(sa2.get(1));        # bar
+
+    let ba2 = Array<bool>.new();
+    ba2.push(false);
+    ba2.push(true);
+    print(ba2.length());      # 2
+    print(ba2.get(0));        # false
+}

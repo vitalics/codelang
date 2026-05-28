@@ -1,0 +1,167 @@
+# stdlib/limits.code
+# Minimum and maximum values for all numeric scalar types and Number.
+#
+# ── Usage ──────────────────────────────────────────────────────────────────────
+#
+#   import "./limits";
+#
+#   const lo: Int32 = Int32.min();    # -2 147 483 648
+#   const hi: Int32 = Int32.max();    #  2 147 483 647
+#   const lo8: Int8 = Int8.min();     # -128
+#   const hi8: Int8 = Int8.max();     #  127
+#   const lo_u: UInt8 = UInt8.min();  # 0
+#   const hi_u: UInt8 = UInt8.max();  # 255
+#   const lo_f: Float64 = Float64.min();   # -1.79769e+308
+#   const hi_f: Float64 = Float64.max();   #  1.79769e+308
+#   const lo_n: Number = Number.min();     # -Infinity
+#   const hi_n: Number = Number.max();     # +Infinity
+
+import "./numbers";
+
+# ── C helpers: signed integers ────────────────────────────────────────────────
+
+extern fn i8_min():  Int8;
+extern fn i8_max():  Int8;
+extern fn i16_min(): Int16;
+extern fn i16_max(): Int16;
+extern fn i32_min(): Int32;
+extern fn i32_max(): Int32;
+extern fn i64_min(): Int64;
+extern fn i64_max(): Int64;
+
+# ── C helpers: unsigned integers ──────────────────────────────────────────────
+
+extern fn u8_min():  UInt8;
+extern fn u8_max():  UInt8;
+extern fn u16_min(): UInt16;
+extern fn u16_max(): UInt16;
+extern fn u32_min(): UInt32;
+extern fn u32_max(): UInt32;
+extern fn u64_min(): UInt64;
+extern fn u64_max(): UInt64;
+
+# ── C helpers: floating-point ─────────────────────────────────────────────────
+
+extern fn f32_min(): Float;
+extern fn f32_max(): Float;
+extern fn f64_min(): Float64;
+extern fn f64_max(): Float64;
+
+# ── C helpers: Number (dynamic arbitrary-precision) ───────────────────────────
+
+extern fn number_min_value(): Number;
+extern fn number_max_value(): Number;
+
+# ── C helpers: IEEE 754 special values ────────────────────────────────────────
+
+extern fn number_infinity(): Number;
+extern fn number_negative_infinity(): Number;
+extern fn number_nan(): Number;
+extern fn number_is_nan(const n: Number): int;
+extern fn number_is_infinite(const n: Number): int;
+extern fn number_is_finite(const n: Number): int;
+
+# ── Int8 ──────────────────────────────────────────────────────────────────────
+
+Int8 extends {
+    export static fn min(): Int8 { return i8_min(); }
+    export static fn max(): Int8 { return i8_max(); }
+}
+
+# ── Int16 ─────────────────────────────────────────────────────────────────────
+
+Int16 extends {
+    export static fn min(): Int16 { return i16_min(); }
+    export static fn max(): Int16 { return i16_max(); }
+}
+
+# ── Int32 ─────────────────────────────────────────────────────────────────────
+
+Int32 extends {
+    export static fn min(): Int32 { return i32_min(); }
+    export static fn max(): Int32 { return i32_max(); }
+}
+
+# ── Int64 ─────────────────────────────────────────────────────────────────────
+
+Int64 extends {
+    export static fn min(): Int64 { return i64_min(); }
+    export static fn max(): Int64 { return i64_max(); }
+}
+
+# ── UInt8 ─────────────────────────────────────────────────────────────────────
+
+UInt8 extends {
+    export static fn min(): UInt8 { return u8_min(); }
+    export static fn max(): UInt8 { return u8_max(); }
+}
+
+# ── UInt16 ────────────────────────────────────────────────────────────────────
+
+UInt16 extends {
+    export static fn min(): UInt16 { return u16_min(); }
+    export static fn max(): UInt16 { return u16_max(); }
+}
+
+# ── UInt32 ────────────────────────────────────────────────────────────────────
+
+UInt32 extends {
+    export static fn min(): UInt32 { return u32_min(); }
+    export static fn max(): UInt32 { return u32_max(); }
+}
+
+# ── UInt64 ────────────────────────────────────────────────────────────────────
+
+UInt64 extends {
+    export static fn min(): UInt64 { return u64_min(); }
+    export static fn max(): UInt64 { return u64_max(); }
+}
+
+# ── Float (Float32) ───────────────────────────────────────────────────────────
+
+Float extends {
+    export static fn min(): Float { return f32_min(); }
+    export static fn max(): Float { return f32_max(); }
+}
+
+# ── Float64 ───────────────────────────────────────────────────────────────────
+
+Float64 extends {
+    export static fn min(): Float64 { return f64_min(); }
+    export static fn max(): Float64 { return f64_max(); }
+}
+
+# ── Number ────────────────────────────────────────────────────────────────────
+# Static methods (called with parentheses):
+#   Number.min()              = -Infinity  (lower bound alias)
+#   Number.max()              = +Infinity  (upper bound alias)
+#
+# Static properties (accessed without parentheses — property syntax):
+#   Number.Infinity           = +Infinity  (IEEE 754 positive infinity)
+#   Number.NegativeInfinity   = -Infinity  (IEEE 754 negative infinity)
+#   Number.NaN                = NaN        (IEEE 754 not-a-number)
+#
+# Instance predicates:
+#   n.isNaN()      → 1 (true) if n is NaN
+#   n.isInfinite() → 1 (true) if n is ±Infinity
+#   n.isFinite()   → 1 (true) if n is a finite value
+
+Number extends {
+    export static fn min(): Number { return number_min_value(); }
+    export static fn max(): Number { return number_max_value(); }
+}
+
+# Static const properties — accessed without parentheses: Number.Infinity, Number.NaN, etc.
+# The `const` keyword marks them as read-only compile-time constants.
+# Each becomes a private zero-arg LLVM function emitted by the IR generator.
+Number extends {
+    export static const Infinity: Number = number_infinity();
+    export static const NegativeInfinity: Number = number_negative_infinity();
+    export static const NaN: Number = number_nan();
+}
+
+Number extends {
+    export fn isNaN(): int { return number_is_nan(self); }
+    export fn isInfinite(): int { return number_is_infinite(self); }
+    export fn isFinite(): int { return number_is_finite(self); }
+}

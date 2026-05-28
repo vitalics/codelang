@@ -1,0 +1,84 @@
+import "../stdlib/boolean";
+import "../stdlib/array";
+
+# Integer stack backed by an IntArray.
+# Demonstrates: struct type with explicit static constructor, Self {} literal,
+#               chained member calls, and automatic disposal via `using`.
+type IntStack {
+    data: Int[]
+
+    # Static factory — called as IntStack.new()
+    static fn new(): IntStack {
+        return Self {
+            data: []
+        };
+    }
+
+    # Push an element onto the top of the stack.
+    fn push(const item: int) {
+        self.data.push(item);
+    }
+
+    # Remove and return the top element (0 if empty).
+    fn pop(): int {
+        return self.data.pop();
+    }
+
+    # Return the top element without removing it (0 if empty).
+    fn peek(): int {
+        return self.data.last();
+    }
+
+    # Number of elements in the stack.
+    fn size(): int {
+        return self.data.length();
+    }
+
+    # True when the stack has no elements.
+    fn isEmpty(): bool {
+        let s: int = self.data.length();
+        if s == 0 {
+            return true;
+        }
+        return false;
+    }
+
+    # Release heap memory — called automatically by `using`.
+    fn dispose() {
+        self.data.free();
+    }
+
+    fn toString(): string {
+        return $"IntStack{
+            data: {self.data}
+        }";
+    }
+}
+
+fn main() {
+    # `using` ensures dispose() is called on every return path.
+    using stack = IntStack.new();
+    print(stack);
+
+    stack.push(10);
+    stack.push(2.4);
+    stack.push(30);
+
+    let top: int = stack.peek();
+    print(top);          # 30
+
+    let n: int = stack.size();
+    print(n);            # 3
+
+    let popped: int = stack.pop();
+    print(popped);       # 30
+
+    let n2: int = stack.size();
+    print(n2);           # 2
+
+    let empty: bool = stack.isEmpty();
+    if empty == false {
+        print("Stack still has elements");
+    }
+    print(stack);
+}

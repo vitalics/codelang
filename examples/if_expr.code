@@ -1,0 +1,55 @@
+# examples/if_expr.code
+# Demonstrates if-expressions, if-statements, and return inside if blocks.
+
+fn sign(n: Int32): Int32 {
+    return if n > 0 { 1 } else { 0 };
+}
+
+fn abs_val(n: Int32): Int32 {
+    let result: Int32 = if n >= 0 { n } else { 0 };
+    return result;
+}
+
+fn classify(n: Int32): Int32 {
+    if n > 0 {
+        return 1;
+    }
+    if n < 0 {
+        return 0;
+    }
+    return 42;
+}
+
+fn main() {
+    # if-expression in let binding
+    let x: Int32 = if sign(3) == 1 { 100 } else { 200 };
+
+    # if-statement with else
+    if x == 100 {
+        print("x is 100");
+    } else {
+        print("x is not 100");
+    }
+
+    # if-statement without else
+    if x > 50 {
+        print("x is large");
+    }
+
+    # return from if-branch
+    let a: Int32 = classify(5);
+    let b: Int32 = classify(0);
+
+    if a == 1 {
+        print("positive");
+    }
+    if b == 42 {
+        print("zero");
+    }
+
+    # nested if-expression
+    let y: Int32 = if x == 100 { if a == 1 { 7 } else { 8 } } else { 9 };
+    if y == 7 {
+        print("nested if works");
+    }
+}

@@ -1,0 +1,175 @@
+# stdlib/c-interop.code
+#
+# C-compatible type aliases and extern function declarations for FFI.
+# Import this module when writing `extern fn` bindings for C libraries.
+#
+# Platform assumption: LP64 (macOS / Linux, x86_64 or aarch64)
+#   char       = 8-bit
+#   short      = 16-bit
+#   int        = 32-bit
+#   long       = 64-bit (LP64)
+#   long long  = 64-bit
+#   size_t     = 64-bit (unsigned)
+#   pointers   = 64-bit
+#
+# Usage:
+#   import "../stdlib/c-interop";
+#
+#   extern fn my_c_func(n: C_Int, s: C_Str): C_Int;
+#
+#   fn main() {
+#       const result = my_c_func(42, "hello");
+#   }
+
+import "./numbers";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C Type Map
+#
+#  C type          CodeLang alias   LLVM IR type   Notes
+#  ─────────────   ──────────────   ────────────   ──────────────────────────
+#  char            C_Char           i8
+#  short           C_Short          i16
+#  int             C_Int            i32            same as `int`
+#  long            C_Long           i64            LP64 only
+#  long long       C_LongLong       i64
+#  unsigned char   C_UChar          i8  (u8)
+#  unsigned short  C_UShort         i16 (u16)
+#  unsigned int    C_UInt           i32 (u32)
+#  unsigned long   C_ULong          i64 (u64)      LP64 only
+#  float           C_Float          float
+#  double          C_Double         double         same as `float`
+#  size_t          C_SizeT          i64 (u64)
+#  ssize_t         C_SSizeT         i64
+#  intptr_t        C_IntPtr         i64
+#  uintptr_t       C_UIntPtr        i64 (u64)
+#  ptrdiff_t       C_PtrDiff        i64
+#  char*           C_Str            i8*            null-terminated string
+#  void*           C_VoidPtr        i8*            opaque pointer
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Signed integer types ──────────────────────────────────────────────────────
+
+export type C_Char     = Int8;
+export type C_Short    = Int16;
+export type C_Int      = Int32;
+export type C_Long     = Int64;
+export type C_LongLong = Int64;
+
+# ── Unsigned integer types ────────────────────────────────────────────────────
+
+export type C_UChar     = UInt8;
+export type C_UShort    = UInt16;
+export type C_UInt      = UInt32;
+export type C_ULong     = UInt64;
+export type C_ULongLong = UInt64;
+
+# ── Floating-point types ──────────────────────────────────────────────────────
+
+export type C_Float  = Float32;
+export type C_Double = Float64;
+
+# ── Platform / ABI sizes ──────────────────────────────────────────────────────
+
+# size_t  — result of sizeof; used by malloc, memcpy, strlen, …
+export type C_SizeT  = UInt64;
+
+# ssize_t — signed counterpart; returned by read(), write(), …
+export type C_SSizeT = Int64;
+
+# intptr_t / uintptr_t — integer wide enough to hold any pointer value
+export type C_IntPtr  = Int64;
+export type C_UIntPtr = UInt64;
+
+# ptrdiff_t — difference between two pointer values
+export type C_PtrDiff = Int64;
+
+# ── Pointer types ─────────────────────────────────────────────────────────────
+#
+# All pointer types lower to `i8*` in LLVM IR.
+# Use the most semantically accurate alias in extern declarations so the
+# intent is clear at the call site.
+
+# char* / const char* — null-terminated C string
+export type C_Str = intrinsic("i8*");
+
+# void* — generic / opaque pointer (cast from any C pointer type)
+export type C_VoidPtr = intrinsic("i8*");
+
+# ── Memory management (stdlib.h) ──────────────────────────────────────────────
+#
+# Note: malloc / calloc return null on allocation failure.
+# Callers are responsible for null checks and lifetime management.
+# Use `using` + a Disposable wrapper for automatic cleanup.
+
+export extern fn malloc(size: C_SizeT): C_VoidPtr;
+export extern fn calloc(count: C_SizeT, size: C_SizeT): C_VoidPtr;
+export extern fn realloc(ptr: C_VoidPtr, size: C_SizeT): C_VoidPtr;
+export extern fn free(ptr: C_VoidPtr);
+
+# ── Memory operations (string.h) ──────────────────────────────────────────────
+
+# memcpy(dst, src, n)  — copy n bytes; regions must not overlap
+export extern fn memcpy(dst: C_VoidPtr, src: C_VoidPtr, n: C_SizeT): C_VoidPtr;
+
+# memmove(dst, src, n) — copy n bytes; regions may overlap
+export extern fn memmove(dst: C_VoidPtr, src: C_VoidPtr, n: C_SizeT): C_VoidPtr;
+
+# memset(ptr, val, n)  — fill n bytes with `val` (only low 8 bits used)
+export extern fn memset(ptr: C_VoidPtr, val: C_Int, n: C_SizeT): C_VoidPtr;
+
+# memcmp(a, b, n)      → 0 if equal, negative if a < b, positive if a > b
+export extern fn memcmp(a: C_VoidPtr, b: C_VoidPtr, n: C_SizeT): C_Int;
+
+# ── Raw C string operations (string.h) ────────────────────────────────────────
+#
+# These operate on raw bytes (not Unicode codepoints).
+# For Unicode-aware operations, use the string extension methods in string.code
+# (e.g., s.length() counts codepoints; strlen counts bytes).
+
+# strlen(s)  → byte length of the null-terminated string (does NOT count the NUL)
+export extern fn strlen(const s: C_Str): C_SizeT;
+
+# strcmp(a, b)  → 0 if equal, <0 if a < b, >0 if a > b  (lexicographic, byte-wise)
+export extern fn strcmp(const a: C_Str, const b: C_Str): C_Int;
+
+# strncmp(a, b, n)  → same as strcmp but compares at most n bytes
+export extern fn strncmp(const a: C_Str, const b: C_Str, n: C_SizeT): C_Int;
+
+# strcpy(dst, src)  — copy src into dst (dst must be large enough); returns dst
+export extern fn strcpy(dst: C_Str, const src: C_Str): C_Str;
+
+# strncpy(dst, src, n)  — copy at most n bytes; NUL-pads dst to n bytes
+export extern fn strncpy(dst: C_Str, const src: C_Str, n: C_SizeT): C_Str;
+
+# strcat(dst, src)  — append src to dst; returns dst
+export extern fn strcat(dst: C_Str, const src: C_Str): C_Str;
+
+# strdup(s)  — heap-duplicate of s; caller must free()
+export extern fn strdup(const s: C_Str): C_Str;
+
+# ── Integer math (stdlib.h / math.h) ─────────────────────────────────────────
+
+export extern fn abs(n: C_Int): C_Int;
+export extern fn labs(n: C_Long): C_Long;
+
+# ── Process control (stdlib.h) ────────────────────────────────────────────────
+
+# exit(code) — flush stdio buffers and terminate; code 0 = success
+export extern fn exit(code: C_Int);
+
+# abort() — terminate with SIGABRT (no stdio flush, no atexit)
+export extern fn abort();
+
+# atexit(fn) — register a function to call at normal exit (no-arg callback)
+# Note: function pointer support is limited; use with care
+# export extern fn atexit(fn: C_VoidPtr): C_Int;
+
+# ── Environment (stdlib.h) ────────────────────────────────────────────────────
+
+# getenv(name)  → value of environment variable, or null if not set
+export extern fn getenv(const name: C_Str): C_Str;
+
+# putenv(str)   — set/modify environment; str must be "NAME=VALUE"
+#                 returns 0 on success, non-zero on error
+export extern fn putenv(assignment: C_Str): C_Int;

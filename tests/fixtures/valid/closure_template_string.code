@@ -1,0 +1,14 @@
+fn makeGreeter(greeting: string): fn(string): string {
+    return fn(name: string): string {
+        return $"{greeting}, {name}!";
+    };
+}
+
+fn main() {
+    const hello = makeGreeter("Hello");
+    print(hello("Alice"));
+    print(hello("Bob"));
+
+    const hi = makeGreeter("Hi");
+    print(hi("World"));
+}

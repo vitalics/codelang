@@ -1,0 +1,14 @@
+import "../../../stdlib/set";
+
+fn main() {
+    let s: BoolSet = BoolSet.new();
+    s.add(false);
+    s.add(true);
+    s.add(false);              # duplicate — ignored
+    print(s.size());           # 2
+    print(s.contains(true));   # true
+    print(s.contains(false));  # true
+    print(s);                  # {false, true}
+    s.remove(false);
+    print(s);                  # {true}
+}

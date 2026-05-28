@@ -1,0 +1,21 @@
+# Valid: a generic protocol with two type parameters, both explicitly supplied.
+# The validator must substitute both A→int and B→int before comparing.
+
+protocol Transformer<A, B> {
+    fn transform(input: A): B;
+}
+
+type Doubler {
+    factor: int
+}
+
+Doubler extends Transformer<int, int> {
+    export fn transform(input: int): int {
+        return input * self.factor;
+    }
+}
+
+fn main() {
+    let d = Doubler { factor: 2 };
+    print(d.transform(21));
+}

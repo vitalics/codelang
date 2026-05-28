@@ -1,0 +1,314 @@
+# stdlib/os.code
+# Operating system and hardware information — inspired by Node.js `os` module.
+#
+# Import:
+#   import "stdlib/os";
+#
+# ── Compile-time constants (determined by the target at build time) ────────────
+#   OS.arch()            → "arm64" | "x64" | "x86" | "arm" | "riscv64" | "unknown"
+#   OS.platform()        → "darwin" | "linux" | "win32" | "freebsd" | "unknown"
+#   OS.endianness()      → "LE" | "BE"
+#   OS.eol()             → "\n"  (POSIX)  or  "\r\n"  (Windows)
+#   OS.devNull()         → "/dev/null"  (POSIX)  or  "\\.\NUL"  (Windows)
+#
+# ── OS identity ───────────────────────────────────────────────────────────────
+#   OS.osType()          → uname sysname  e.g. "Darwin", "Linux"
+#   OS.release()         → kernel release  e.g. "23.4.0"
+#   OS.version()         → kernel version  e.g. "#1 SMP Thu Feb 15 …"
+#
+# ── Machine ───────────────────────────────────────────────────────────────────
+#   OS.hostname()        → current hostname
+#   OS.homedir()         → current user's home directory
+#   OS.tmpdir()          → temporary files directory
+#   OS.uptime()          → system uptime in seconds  (Int64)
+#
+# ── Memory ────────────────────────────────────────────────────────────────────
+#   OS.totalmem()        → total installed RAM in bytes  (Int64)
+#   OS.freemem()         → available (free + inactive) RAM in bytes  (Int64)
+#
+# ── CPU ───────────────────────────────────────────────────────────────────────
+#   OS.cpuCount()        → logical CPU core count
+#   OS.cpuModel()        → CPU model name string  e.g. "Apple M3 Pro"
+#   OS.cpuSpeed()        → nominal speed in MHz (0 if not available)
+#
+# ── User ──────────────────────────────────────────────────────────────────────
+#   OS.username()        → login name of the current user
+#   OS.uid()             → POSIX numeric user ID  (−1 on non-POSIX)
+#   OS.gid()             → POSIX numeric group ID (−1 on non-POSIX)
+#
+# ── GPU (best-effort) ─────────────────────────────────────────────────────────
+#   OS.gpuCount()        → number of detected GPU devices (0 if none / unknown)
+#   OS.gpuModel(i)       → model string for GPU at index i
+#   GPU.isAvailable()    → compile-time: true if GPU is present on this target
+#   GPU.count()          → number of detected GPU devices
+#   GPU.model(i)         → model string for GPU at index i
+#
+# ── NPU / Neural Engine ───────────────────────────────────────────────────────
+#   OS.hasNpu()          → true if a neural processing unit is detected
+#   OS.npuName()         → NPU name  e.g. "Apple M3 Pro Neural Engine"
+#   NPU.isAvailable()    → compile-time: true if NPU is present on this target
+#   NPU.name()           → NPU name  e.g. "Apple M3 Pro Neural Engine"
+
+import "./numbers";
+import "./string";
+
+# ── Raw C bindings ────────────────────────────────────────────────────────────
+
+# Compile-time
+extern fn os_arch(): string;
+extern fn os_platform(): string;
+extern fn os_endianness(): string;
+extern fn os_eol(): string;
+extern fn os_dev_null(): string;
+
+# OS identity
+extern fn os_type(): string;
+extern fn os_release(): string;
+extern fn os_version(): string;
+
+# Machine
+extern fn os_hostname(): string;
+extern fn os_homedir(): string;
+extern fn os_tmpdir(): string;
+extern fn os_uptime(): Int64;
+
+# Memory
+extern fn os_totalmem(): Int64;
+extern fn os_freemem(): Int64;
+
+# CPU
+extern fn os_cpu_count(): int;
+extern fn os_cpu_model(): string;
+extern fn os_cpu_speed(): int;
+
+# User
+extern fn os_username(): string;
+extern fn os_uid(): int;
+extern fn os_gid(): int;
+
+# GPU
+extern fn os_gpu_count(): int;
+extern fn os_gpu_model(const i: int): string;
+extern fn os_gpu_is_available(): int;
+
+# NPU
+extern fn os_has_npu(): int;
+extern fn os_npu_name(): string;
+extern fn os_npu_is_available(): int;
+
+# ── OS namespace ──────────────────────────────────────────────────────────────
+
+export type OS = intrinsic("i8*");
+
+OS extends {
+
+    # ── Compile-time constants ────────────────────────────────────────────────
+
+    # arch() — target CPU architecture known at compile time.
+    # Values: "arm64", "x64", "x86", "arm", "riscv64", "unknown".
+    export static const fn arch(): string {
+        return os_arch();
+    }
+
+    # platform() — target operating system known at compile time.
+    # Values: "darwin", "linux", "win32", "freebsd", "unknown".
+    export static const fn platform(): string {
+        return os_platform();
+    }
+
+    # endianness() — byte order of the CPU.
+    # "LE" (little-endian, e.g. x64/arm64) or "BE" (big-endian, e.g. SPARC).
+    export static const fn endianness(): string {
+        return os_endianness();
+    }
+
+    # eol() — platform end-of-line string.
+    # "\n" on POSIX, "\r\n" on Windows.
+    export static const fn eol(): string {
+        return os_eol();
+    }
+
+    # devNull() — path to the null device.
+    # "/dev/null" on POSIX, "\\.\NUL" on Windows.
+    export static const fn devNull(): string {
+        return os_dev_null();
+    }
+
+    # ── OS identity ───────────────────────────────────────────────────────────
+
+    # osType() — OS type from uname sysname.
+    # e.g. "Darwin", "Linux", "FreeBSD".
+    export static fn osType(): string {
+        return os_type();
+    }
+
+    # release() — kernel release string.
+    # e.g. "23.4.0" (macOS Sonoma), "6.8.0-45-generic" (Ubuntu).
+    export static fn release(): string {
+        return os_release();
+    }
+
+    # version() — kernel version / build string.
+    # e.g. "#1 SMP Thu Feb 15 00:10:06 UTC 2024".
+    export static fn version(): string {
+        return os_version();
+    }
+
+    # ── Machine ───────────────────────────────────────────────────────────────
+
+    # hostname() — current machine hostname.
+    export static fn hostname(): string {
+        return os_hostname();
+    }
+
+    # homedir() — home directory of the current user.
+    export static fn homedir(): string {
+        return os_homedir();
+    }
+
+    # tmpdir() — system temporary directory.
+    export static fn tmpdir(): string {
+        return os_tmpdir();
+    }
+
+    # uptime() — system uptime in whole seconds as Int64.
+    export static fn uptime(): Int64 {
+        return os_uptime();
+    }
+
+    # ── Memory ────────────────────────────────────────────────────────────────
+
+    # totalmem() — total installed physical memory in bytes (Int64).
+    # e.g. 17179869184 for 16 GB.
+    export static fn totalmem(): Int64 {
+        return os_totalmem();
+    }
+
+    # freemem() — estimated free/available memory in bytes (Int64).
+    # On macOS this is free + inactive pages.
+    export static fn freemem(): Int64 {
+        return os_freemem();
+    }
+
+    # ── CPU ───────────────────────────────────────────────────────────────────
+
+    # cpuCount() — number of logical CPU cores (hardware threads).
+    export static fn cpuCount(): int {
+        return os_cpu_count();
+    }
+
+    # cpuModel() — human-readable CPU model string.
+    # e.g. "Apple M3 Pro", "Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz".
+    export static fn cpuModel(): string {
+        return os_cpu_model();
+    }
+
+    # cpuSpeed() — nominal CPU frequency in MHz (0 if unavailable).
+    # Note: Apple Silicon does not expose a fixed frequency via sysctl;
+    # returns 0 on M-series chips.
+    export static fn cpuSpeed(): int {
+        return os_cpu_speed();
+    }
+
+    # ── User ──────────────────────────────────────────────────────────────────
+
+    # username() — login name of the current OS user.
+    export static fn username(): string {
+        return os_username();
+    }
+
+    # uid() — POSIX numeric user ID. Returns -1 on Windows.
+    export static fn uid(): int {
+        return os_uid();
+    }
+
+    # gid() — POSIX numeric group ID. Returns -1 on Windows.
+    export static fn gid(): int {
+        return os_gid();
+    }
+
+    # ── GPU (best-effort) ─────────────────────────────────────────────────────
+
+    # gpuCount() — number of GPU devices detected.
+    # 0 if none detected or on unsupported platforms.
+    # On Apple Silicon this is always 1 (integrated GPU).
+    export static fn gpuCount(): int {
+        return os_gpu_count();
+    }
+
+    # gpuModel(i) — model string of GPU at index i (0-based).
+    # e.g. "Apple M3 Pro GPU", "GPU (nvidia)".
+    export static fn gpuModel(const i: int): string {
+        return os_gpu_model(i);
+    }
+
+    # ── NPU / Neural Engine ───────────────────────────────────────────────────
+
+    # hasNpu() — true if a neural processing unit is detected.
+    # Detected on: Apple M/A-series chips (ANE), Qualcomm Hexagon, Intel NPU.
+    export static fn hasNpu(): bool {
+        return os_has_npu() == 1;
+    }
+
+    # npuName() — name of the detected NPU.
+    # e.g. "Apple M3 Pro Neural Engine", "Qualcomm Hexagon NPU", "None".
+    export static fn npuName(): string {
+        return os_npu_name();
+    }
+}
+
+# ── GPU sub-namespace ─────────────────────────────────────────────────────────
+# Provides GPU introspection with an isAvailable() compile-time guard.
+#
+# Usage:
+#   if (GPU.isAvailable()) {
+#       print(GPU.model(0));
+#   }
+
+export type GPU = intrinsic("i8*");
+
+GPU extends {
+
+    # isAvailable() — compile-time: true if this target has a GPU.
+    # On macOS (Metal), Linux (assumed present), and Windows (DirectX/Vulkan)
+    # this returns true. Returns false on bare-metal or unknown targets.
+    export static const fn isAvailable(): bool {
+        return os_gpu_is_available() == 1;
+    }
+
+    # count() — number of GPU devices detected at runtime.
+    export static fn count(): int {
+        return os_gpu_count();
+    }
+
+    # model(i) — model string of GPU at index i (0-based).
+    # e.g. "Apple M3 Pro GPU", "GPU (nvidia)".
+    export static fn model(const i: int): string {
+        return os_gpu_model(i);
+    }
+}
+
+# ── NPU sub-namespace ─────────────────────────────────────────────────────────
+# Provides NPU / Neural Engine introspection with a compile-time guard.
+#
+# Usage:
+#   if (NPU.isAvailable()) {
+#       print(NPU.name());
+#   }
+
+export type NPU = intrinsic("i8*");
+
+NPU extends {
+
+    # isAvailable() — compile-time: true if this target has a Neural Engine.
+    # Currently detects: Apple Silicon (arm64 Darwin), more targets planned.
+    export static const fn isAvailable(): bool {
+        return os_npu_is_available() == 1;
+    }
+
+    # name() — name of the NPU detected at runtime.
+    # e.g. "Apple M3 Pro Neural Engine", "Qualcomm Hexagon NPU", "None".
+    export static fn name(): string {
+        return os_npu_name();
+    }
+}

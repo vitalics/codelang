@@ -1,0 +1,30 @@
+# typeof_basic.code
+# typeOf(varName) infers the type of an existing variable.
+#
+# Usage: const b: typeOf(a) = expr
+#   b gets the same LLVM type as a at compile time.
+
+type Point = {
+    x: int,
+    y: int,
+};
+
+fn main() {
+    const a: Point = Point { x: 1, y: 2 };
+
+    # b: typeOf(a) → same type as a, which is Point (%Point*)
+    const b: typeOf(a) = Point { x: 10, y: 20 };
+
+    print(b.x);   # 10
+    print(b.y);   # 20
+
+    # Works for primitives too
+    let n: int = 42;
+    const m: typeOf(n) = 99;
+    print(m);     # 99
+
+    # Works for strings
+    const s: string = "hello";
+    const t: typeOf(s) = "world";
+    print(t);     # world
+}

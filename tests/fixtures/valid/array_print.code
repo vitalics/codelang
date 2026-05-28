@@ -1,0 +1,25 @@
+import "../../../stdlib/array";
+
+fn main() {
+    # print() dispatches to intarray_print → "[v0, v1, ...]"
+    let a: IntArray = IntArray.new();
+    print(a);               # []
+
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    print(a);               # [1, 2, 3]
+
+    # toString via Displayable
+    let s: string = a.toString();
+    print(s);               # [1, 2, 3]
+
+    # join
+    let j: string = a.join(", ");
+    print(j);               # 1, 2, 3
+
+    let j2: string = a.join("-");
+    print(j2);              # 1-2-3
+
+    a.free();
+}

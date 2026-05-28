@@ -1,0 +1,9 @@
+const str = import "../../../stdlib/string";
+
+fn main() {
+  print(str.length("hello"));
+  print(str.charAt("hello", 1));
+  print(str.at("hello", 0 - 1));
+  print(str.charCodeAt("A", 0));
+  print(str.fromCharCode(65));
+}

@@ -1,0 +1,30 @@
+import "../../../stdlib/async";
+
+# async_context fixture — Context key-value propagation.
+#
+# Output (6 lines):
+#   [0] "req-1"
+#   [1] "alice"
+#   [2] ""            (missing key returns "")
+#   [3] "req-1"       (same value in spawned task)
+#   [4] "child-value" (child context value)
+#   [5] "req-1"       (parent key still visible in child)
+
+fn main(): void {
+    const ctx: Context = Context.background()
+        .withValue("requestId", "req-1")
+        .withValue("user", "alice");
+
+    print(ctx.get("requestId"));  # req-1
+    print(ctx.get("user"));       # alice
+    print(ctx.get("missing"));    # ""
+
+    const t: Task = Async.spawn(fn(): void {
+        print(ctx.get("requestId"));  # req-1
+    });
+    Async.wait(t);
+
+    const child: Context = ctx.withValue("role", "child-value");
+    print(child.get("role"));       # child-value
+    print(child.get("requestId"));  # req-1 (inherited from parent)
+}

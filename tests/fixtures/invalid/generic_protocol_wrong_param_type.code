@@ -1,0 +1,24 @@
+# Invalid: type extends a generic protocol with explicit type args <int, int>,
+# but the method parameter has the wrong type (string instead of int).
+#
+# Transformer<int, int> requires fn apply(x: int): int,
+# but Mapper declares fn apply(x: string): int.
+
+protocol Transformer<A, B> {
+    fn apply(x: A): B;
+}
+
+type Mapper {
+    offset: int
+}
+
+Mapper extends Transformer<int, int> {
+    export fn apply(x: string): int {
+        return self.offset;
+    }
+}
+
+fn main() {
+    let m = Mapper { offset: 5 };
+    print(m.apply(10));
+}

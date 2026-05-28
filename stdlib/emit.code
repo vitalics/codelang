@@ -1,0 +1,178 @@
+# stdlib/emit.code
+# ═══════════════════════════════════════════════════════════════════════════════
+# Compile-time code-generation API (Emitter and builder types).
+#
+# These types are available exclusively inside `const fn` decorators and
+# `const macro` bodies — they do not exist at runtime.
+#
+# ── Entry point ──────────────────────────────────────────────────────────────
+#
+#   CompileContext.emitter    — the root Emitter for the current compilation unit
+#
+# ── Emitter quick reference ───────────────────────────────────────────────────
+#
+#   emitter.createType(name)      → TypeBuilder
+#   emitter.createFn(name)        → FnBuilder
+#   emitter.createVar(name)       → VarBuilder
+#   emitter.createImport(path)    → ImportBuilder
+#   emitter.extend(typeName)      → ExtensionBuilder
+#
+# ── TypeBuilder  (fluent, terminal: .build() → TypeInfo) ─────────────────────
+#
+#   .field(name, type)            → TypeBuilder
+#   .method(name)                 → FnBuilder
+#   .extendsProtocol(name)        → TypeBuilder
+#   .build()                      → TypeInfo
+#
+# ── FnBuilder  (fluent, terminal: .build() → FnInfo) ─────────────────────────
+#
+#   .param(name, type)            → FnBuilder
+#   .returns(type)                → FnBuilder
+#   .capture(varName)             → FnBuilder    ← makes the fn a closure
+#   .body(sourceCode)             → FnBuilder    accepts string or Code
+#   .build()                      → FnInfo
+#
+# ── VarBuilder  (fluent, terminal: .build() → void) ──────────────────────────
+#
+#   .ofType(type)                 → VarBuilder
+#   .value(expr)                  → VarBuilder
+#   .asConst()                    → VarBuilder
+#   .build()                      → void
+#
+# ── ImportBuilder  (fluent, terminal: .build() → void) ───────────────────────
+#
+#   .as(bindingName)              → ImportBuilder
+#   .build()                      → void
+#
+# ── ExtensionBuilder  (fluent, terminal: .build() → void) ────────────────────
+#
+#   .method(name)                 → FnBuilder
+#   .build()                      → void
+#
+# ── Example usage (inside a const fn decorator) ───────────────────────────────
+#
+#   export const fn derive(protocolName: string): fn(CompileContext): Decorator {
+#       return fn(ctx: CompileContext): Decorator {
+#           if protocolName == "Displayable" {
+#               const ext = ctx.emitter.extend(ctx.name);
+#               # body() accepts a string literal —
+#               ext.method("toString")
+#                   .returns("string")
+#                   .body($"return \"[{ctx.name}]\";")
+#                   .build();
+#               # — or a Code value from a helper fn:
+#               const src: Code = $"return self.value.toString();";
+#               ext.method("display")
+#                   .returns("string")
+#                   .body(src)
+#                   .build();
+#               ext.build();
+#           }
+#       };
+#   }
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import "stdlib/reflection";
+
+# ── Intrinsic type stubs ──────────────────────────────────────────────────────
+# Each is backed by an opaque C struct; construction is compiler-managed only.
+
+export type Emitter          = intrinsic("%Emitter*");
+export type TypeBuilder      = intrinsic("%TypeBuilder*");
+export type FnBuilder        = intrinsic("%FnBuilder*");
+export type VarBuilder       = intrinsic("%VarBuilder*");
+export type ImportBuilder    = intrinsic("%ImportBuilder*");
+export type ExtensionBuilder = intrinsic("%ExtensionBuilder*");
+
+# ── C runtime bindings ────────────────────────────────────────────────────────
+
+export extern fn emitter_create_type(const e: Emitter, const name: string): TypeBuilder;
+export extern fn emitter_create_fn(const e: Emitter, const name: string): FnBuilder;
+export extern fn emitter_create_var(const e: Emitter, const name: string): VarBuilder;
+export extern fn emitter_create_import(const e: Emitter, const path: string): ImportBuilder;
+export extern fn emitter_extend(const e: Emitter, const typeName: string): ExtensionBuilder;
+
+export extern fn typebuilder_field(const b: TypeBuilder, const name: string, const typeName: string): TypeBuilder;
+export extern fn typebuilder_method(const b: TypeBuilder, const name: string): FnBuilder;
+export extern fn typebuilder_extends(const b: TypeBuilder, const protocolName: string): TypeBuilder;
+export extern fn typebuilder_build(const b: TypeBuilder): TypeInfo;
+
+export extern fn fnbuilder_param(const b: FnBuilder, const name: string, const typeName: string): FnBuilder;
+export extern fn fnbuilder_returns(const b: FnBuilder, const typeName: string): FnBuilder;
+export extern fn fnbuilder_capture(const b: FnBuilder, const varName: string): FnBuilder;
+export extern fn fnbuilder_body(const b: FnBuilder, const source: string): FnBuilder;
+export extern fn fnbuilder_build(const b: FnBuilder): FnInfo;
+
+export extern fn varbuilder_of_type(const b: VarBuilder, const typeName: string): VarBuilder;
+export extern fn varbuilder_value(const b: VarBuilder, const expr: string): VarBuilder;
+export extern fn varbuilder_as_const(const b: VarBuilder): VarBuilder;
+export extern fn varbuilder_build(const b: VarBuilder): void;
+
+export extern fn importbuilder_as(const b: ImportBuilder, const bindingName: string): ImportBuilder;
+export extern fn importbuilder_build(const b: ImportBuilder): void;
+
+export extern fn extensionbuilder_method(const b: ExtensionBuilder, const name: string): FnBuilder;
+export extern fn extensionbuilder_build(const b: ExtensionBuilder): void;
+
+# ── Emitter ───────────────────────────────────────────────────────────────────
+# Root code-generation handle. Obtained from CompileContext.emitter.
+Emitter extends {
+    # Emit a new top-level type declaration.
+    export fn createType(name: string): TypeBuilder      { return emitter_create_type(self, name); }
+    # Emit a new top-level function declaration.
+    export fn createFn(name: string): FnBuilder          { return emitter_create_fn(self, name); }
+    # Emit a new variable declaration in the current scope.
+    export fn createVar(name: string): VarBuilder        { return emitter_create_var(self, name); }
+    # Emit an import statement.
+    export fn createImport(path: string): ImportBuilder  { return emitter_create_import(self, path); }
+    # Start an extension block for an existing type.
+    export fn extend(typeName: string): ExtensionBuilder { return emitter_extend(self, typeName); }
+}
+
+# ── TypeBuilder ───────────────────────────────────────────────────────────────
+# Fluent builder for a new type declaration. Chain: .field().method().build()
+TypeBuilder extends {
+    export fn field(name: string, typeName: string): TypeBuilder { return typebuilder_field(self, name, typeName); }
+    export fn method(name: string): FnBuilder                    { return typebuilder_method(self, name); }
+    export fn extendsProtocol(name: string): TypeBuilder         { return typebuilder_extends(self, name); }
+    export fn build(): TypeInfo                                  { return typebuilder_build(self); }
+}
+
+# ── FnBuilder ─────────────────────────────────────────────────────────────────
+# Fluent builder for a function or closure.
+# Use .capture(varName) to close over an outer variable.
+FnBuilder extends {
+    export fn param(name: string, typeName: string): FnBuilder { return fnbuilder_param(self, name, typeName); }
+    export fn returns(typeName: string): FnBuilder             { return fnbuilder_returns(self, typeName); }
+    export fn capture(varName: string): FnBuilder              { return fnbuilder_capture(self, varName); }
+    # Accepts either a plain string or a Code value (both are i8* at the LLVM level).
+    # Prefer passing Code when the argument comes from the reflection/emit API,
+    # and string when building source text with a template literal directly.
+    export fn body(source: string | Code): FnBuilder            { return fnbuilder_body(self, source); }
+    export fn build(): FnInfo                                  { return fnbuilder_build(self); }
+}
+
+# ── VarBuilder ────────────────────────────────────────────────────────────────
+# Fluent builder for a const or let variable declaration.
+VarBuilder extends {
+    export fn ofType(typeName: string): VarBuilder { return varbuilder_of_type(self, typeName); }
+    export fn value(expr: string): VarBuilder      { return varbuilder_value(self, expr); }
+    export fn asConst(): VarBuilder                { return varbuilder_as_const(self); }
+    export fn build(): void                        { varbuilder_build(self); }
+}
+
+# ── ImportBuilder ─────────────────────────────────────────────────────────────
+# Fluent builder for an import statement.
+# .as("alias") produces:  const alias = import "path";
+ImportBuilder extends {
+    export fn as(bindingName: string): ImportBuilder { return importbuilder_as(self, bindingName); }
+    export fn build(): void                          { importbuilder_build(self); }
+}
+
+# ── ExtensionBuilder ──────────────────────────────────────────────────────────
+# Fluent builder for an extension block: TypeName extends Protocol { … }
+ExtensionBuilder extends {
+    export fn method(name: string): FnBuilder { return extensionbuilder_method(self, name); }
+    export fn build(): void                   { extensionbuilder_build(self); }
+}

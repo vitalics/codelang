@@ -1,0 +1,43 @@
+import "../../../stdlib/function";
+
+# switch subject is a closure call result
+fn make_adder(n: int): fn(int): int {
+    return fn(x: int): int { return x + n; };
+}
+
+fn main() {
+    const add5 = make_adder(5);
+    const add10 = make_adder(10);
+
+    # switch on a closure result
+    let r1 = switch add5(3) {
+        8 => "eight",
+        9 => "nine",
+        else => "other",
+    };
+    print(r1);   # eight  (5+3=8)
+
+    # switch inside apply — subject is the result of apply
+    let r2 = switch apply(add10, 5) {
+        15 => "fifteen",
+        else => "not fifteen",
+    };
+    print(r2);   # fifteen
+
+    # switch + compose
+    fn double(x: int): int { return x * 2; }
+    fn square(x: int): int { return x * x; }
+    const doubleThenSquare = compose(square, double);
+    let r3 = switch doubleThenSquare(3) {  # (3*2)^2 = 36
+        36 => "thirty-six",
+        else => "wrong",
+    };
+    print(r3);   # thirty-six
+
+    # switch on identity
+    let r4 = switch identity(42) {
+        42 => "identity works",
+        else => "broken",
+    };
+    print(r4);   # identity works
+}

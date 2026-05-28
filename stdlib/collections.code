@@ -1,0 +1,67 @@
+# stdlib/collections.code
+#
+# Unified collections module for CodeLang.
+#
+# Importing this single file gives you Arrays, Maps, Sets,
+# Option-safe accessors, and functional higher-order methods in one shot.
+#
+# ── What you get ─────────────────────────────────────────────────────────────
+#
+# Arrays (stdlib/array)
+#   IntArray, StringArray, BoolArray, NumberArray, AnyArray
+#   FloatArray, DoubleArray
+#   Generic alias: Array<T>
+#
+#   Core:     new / with / newWithCapacity
+#             push / pop / shift / unshift / get / set / at / first / last
+#             indexOf / lastIndexOf / includes / slice / sliceFrom / clone / concat
+#             fill / reverse / sort / join / toString / free
+#   Safe:     at(i)          → Option<T>   (negative indices supported)
+#             first/last/pop/shift → Option<T>
+#   HOF:      forEach / map / filter / every / some / reduce / find / findIndex
+#
+# Maps (stdlib/map)
+#   IntIntMap, IntStringMap, StringIntMap, StringStringMap
+#   IntPtrMap, StringPtrMap, PtrIntMap, PtrStringMap, PtrPtrMap
+#   Generic alias: Map<K, V>
+#
+#   Core:     new / put / get / getOr / contains / remove / size / toString / free
+#
+# Sets (stdlib/set)
+#   IntSet, StringSet, BoolSet, FloatSet, DoubleSet, NumberSet
+#   Generic alias: Set<T>
+#
+#   Core:     new / add / remove / contains / size / at / toString / free
+#   HOF:      forEach / every / some / filter / find
+#
+# ── Usage ────────────────────────────────────────────────────────────────────
+#
+#   import "stdlib/collections";
+#
+#   fn isPositive(x: int): bool { return x > 0; }
+#   fn double(x: int): int      { return x * 2; }
+#   fn sum(acc: int, x: int): int { return acc + x; }
+#
+#   fn main() {
+#       let a: IntArray = IntArray.new();
+#       a.push(1); a.push(2); a.push(3); a.push(-1);
+#
+#       let pos: IntArray = a.filter(isPositive);  # [1, 2, 3]
+#       let dbl: IntArray = pos.map(double);       # [2, 4, 6]
+#       let tot: int      = dbl.reduce(sum, 0);    # 12
+#
+#       print(tot);       # 12
+#       print(a.every(isPositive));   # false  (−1 fails)
+#       print(a.some(isPositive));    # true
+#       print(a.find(isPositive).unwrapOr(-1));   # 1
+#
+#       let s: IntSet = IntSet.new();
+#       s.add(10); s.add(20); s.add(5);
+#       s.forEach(fn(x: int): void { print(x); });  # 5, 10, 20 (sorted)
+#
+#       pos.free(); dbl.free(); a.free(); s.free();
+#   }
+
+import "./array";
+import "./map";
+import "./set";

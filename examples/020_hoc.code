@@ -1,0 +1,204 @@
+import "../stdlib/string";
+import "../stdlib/array";
+
+# ── Higher-order functions ────────────────────────────────────────────────────
+#
+# Function types are written as  fn(ParamType, ...): ReturnType
+#
+#   const f: fn(int): int = someNamedFn;           # named function reference
+#   const g: fn(int): int = fn(x: int): int {      # lambda expression
+#       return x * 2;
+#   };
+#
+# Functions are first-class values: they can be stored in variables, passed as
+# arguments, returned from other functions, and called through a variable.
+
+# ── Named functions used as values ────────────────────────────────────────────
+
+fn double(x: int): int {
+    return x * 2;
+}
+
+fn square(x: int): int {
+    return x * x;
+}
+
+fn isEven(x: int): bool {
+    return x % 2 == 0;
+}
+
+fn add(a: int, b: int): int {
+    return a + b;
+}
+
+fn mul(a: int, b: int): int {
+    return a * b;
+}
+
+# ── apply: call a function with one argument ──────────────────────────────────
+
+fn apply(f: fn(int): int, x: int): int {
+    return f(x);
+}
+
+# ── map: transform every element of an array ─────────────────────────────────
+
+fn map(arr: int[], f: fn(int): int): int[] {
+    const result: int[] = [];
+    let i: int = 0;
+    while i < arr.length() {
+        result.push(f(arr.at(i)));
+        i = i + 1;
+    }
+    return result;
+}
+
+# ── filter: keep only elements that satisfy a predicate ───────────────────────
+
+fn filter(arr: int[], pred: fn(int): bool): int[] {
+    const result: int[] = [];
+    let i: int = 0;
+    while i < arr.length() {
+        const val: int = arr.at(i);
+        if pred(val) {
+            result.push(val);
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+type AnyFn<R> = fn(): R;
+type F = fn(acc: int, val: int): int;
+
+type ReduceFn = fn(arr: int[], f: F, init: int): int;
+
+# ── reduce: fold an array to a single value ───────────────────────────────────
+
+fn reduce: ReduceFn(arr: int[], f: F, init: int) {
+    let acc: int = init;
+    let i: int = 0;
+    while i < arr.length() {
+        acc = f(acc, arr.at(i));
+        i = i + 1;
+    }
+    return acc;
+}
+
+# ── compose: build f∘g from two functions ────────────────────────────────────
+type ComposeFn = fn(f: fn(int): int, g: fn(int): int): fn(int): int;
+
+fn compose: ComposeFn(f, g) {
+    return fn(x: int): int {
+        return f(g(x));
+    };
+}
+
+# ── partial application: capture an argument in a closure ─────────────────────
+
+fn makeAdder(n: int): fn(int): int {
+    return fn(x: int): int {
+        return x + n;          # `n` is captured from the enclosing call frame
+    };
+}
+
+fn makeMultiplier(factor: int): fn(int): int {
+    return fn(x: int): int {
+        return x * factor;
+    };
+}
+
+# ── clamp: returns a closure that clamps a value to [lo, hi] ──────────────────
+
+fn clamp(lo: int, hi: int): fn(int): int {
+    return fn(x: int): int {
+        if x < lo {
+            return lo;
+        }
+        if x > hi {
+            return hi;
+        }
+        return x;
+    };
+}
+
+# ═════════════════════════════════════════════════════════════════════════════
+
+fn main() {
+    # ── 1. apply with named function references ────────────────────────────────
+    print(apply(double, 5));       # 10
+    print(apply(square, 5));       # 25
+
+    # ── 2. lambda as a first-class value ──────────────────────────────────────
+    const triple: fn(int): int = fn(x: int): int { return x * 3; };
+    print(apply(triple, 4));       # 12
+
+    # ── 3. store and call through a variable ──────────────────────────────────
+    const op: fn(int): int = double;
+    print(op(7));                  # 14
+
+    # ── 4. compose ────────────────────────────────────────────────────────────
+    const doubleThenSquare: fn(int): int = compose(square, double);
+    print(doubleThenSquare(3));    # square(double(3)) = square(6) = 36
+
+    const squareThenDouble: fn(int): int = compose(double, square);
+    print(squareThenDouble(3));    # double(square(3)) = double(9) = 18
+
+    # ── 5. map ────────────────────────────────────────────────────────────────
+    const nums: int[] = [1, 2, 3, 4, 5];
+
+    const doubled: int[] = map(nums, double);
+    print(doubled);                # [2, 4, 6, 8, 10]
+
+    const squared: int[] = map(nums, square);
+    print(squared);                # [1, 4, 9, 16, 25]
+
+    # map with an inline lambda
+    const incremented: int[] = map(nums, fn(x: int): int { return x + 1; });
+    print(incremented);            # [2, 3, 4, 5, 6]
+
+    # ── 6. filter ─────────────────────────────────────────────────────────────
+    const evens: int[] = filter(nums, isEven);
+    print(evens);                  # [2, 4]
+
+    const odds: int[] = filter(nums, fn(x: int): bool { return x % 2 != 0; });
+    print(odds);                   # [1, 3, 5]
+
+    # ── 7. reduce ─────────────────────────────────────────────────────────────
+    const sum: int = reduce(nums, add, 0);
+    print(sum);                    # 15
+
+    const product: int = reduce(nums, mul, 1);
+    print(product);                # 120
+
+    # ── 8. partial application ────────────────────────────────────────────────
+    const add5: fn(int): int = makeAdder(5);
+    print(add5(3));                # 8
+    print(add5(10));               # 15
+
+    const times3: fn(int): int = makeMultiplier(3);
+    print(times3(4));              # 12
+
+    # ── 9. closures capture different values independently ────────────────────
+    const add1: fn(int): int = makeAdder(1);
+    const add100: fn(int): int = makeAdder(100);
+    print(add1(0));                # 1
+    print(add100(0));              # 100
+
+    # ── 10. clamp — closure over two captured variables ────────────────────────
+    const clamp0to10: fn(int): int = clamp(0, 10);
+    print(clamp0to10(-5));         # 0
+    print(clamp0to10(5));          # 5
+    print(clamp0to10(99));         # 10
+
+    # ── 11. pipeline: filter → map → reduce ───────────────────────────────────
+    # Sum of squares of even numbers in [1..10]
+    const values: int[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const sumOfSquaredEvens: int =
+        reduce(
+            map(filter(values, isEven), square),
+            add,
+            0
+        );
+    print(sumOfSquaredEvens);      # 4+16+36+64+100 = 220
+}

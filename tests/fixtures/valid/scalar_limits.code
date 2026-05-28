@@ -1,0 +1,45 @@
+# scalar_limits.code
+# Tests static min() / max() for signed integer types.
+# Also verifies that Int32.min() < 0 and Int32.max() > 0 using native icmp.
+
+import "../../../stdlib/limits";
+
+fn main() {
+    const lo8: Int8 = Int8.min();
+    const hi8: Int8 = Int8.max();
+    const lo32: Int32 = Int32.min();
+    const hi32: Int32 = Int32.max();
+    const lo64: Int64 = Int64.min();
+    const hi64: Int64 = Int64.max();
+    const zero: Int32 = 0;
+    const zero64: Int64 = 0;
+
+    # Int8: min == -128, max == 127
+    print(lo8);   # -128
+    print(hi8);   # 127
+
+    # Int32: min < 0
+    if lo32 < zero {
+        print(1);
+    }
+
+    # Int32: max > 0
+    if hi32 > zero {
+        print(2);
+    }
+
+    # Int32.min() < Int32.max()
+    if lo32 < hi32 {
+        print(3);
+    }
+
+    # Int64: min < 0
+    if lo64 < zero64 {
+        print(4);
+    }
+
+    # Int64: max > 0
+    if hi64 > zero64 {
+        print(5);
+    }
+}

@@ -1,0 +1,18 @@
+node_modules/
+out/
+# compiled binaries, LLVM IR, and cache metadata
+*.ll
+*.codelang-cache
+simple
+examples/hello
+examples/types
+examples/constfn
+examples/variables
+# test fixture binaries (produced by runtime/module tests)
+tests/fixtures/valid/greetings_main
+tests/fixtures/valid/import_alias
+examples/documented
+# generated documentation
+docs/
+# macOS
+.DS_Store

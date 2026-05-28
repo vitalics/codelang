@@ -1,0 +1,10 @@
+import "../../../stdlib/string";
+
+fn main() {
+    let s: string = "hello";
+    # `using` auto-disposes b on every return path
+    using b: Buffer = s.toBuffer();
+    print(b.length());   # 5
+    print(b.get(0));     # 104  (ASCII 'h')
+    print(b.get(4));     # 111  (ASCII 'o')
+}

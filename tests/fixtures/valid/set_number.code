@@ -1,0 +1,30 @@
+import "../../../stdlib/set";
+
+fn main() {
+    # ── NumberSet ─────────────────────────────────────────────────────────────
+    let ns: NumberSet = NumberSet.new();
+    const a: Number = 30;
+    const b: Number = 10;
+    const c: Number = 20;
+    ns.add(a);
+    ns.add(b);
+    ns.add(c);
+    ns.add(b);              # duplicate — ignored
+    print(ns.size());       # 3
+    print(ns.contains(b));  # true
+    print(ns);              # {10, 20, 30}
+    ns.remove(c);
+    print(ns.size());       # 2
+    print(ns);              # {10, 30}
+    ns.free();
+
+    # ── Set<Number> generic alias → NumberSet ─────────────────────────────────
+    let gn: Set<Number> = NumberSet.new();
+    const x: Number = 5;
+    const y: Number = 15;
+    gn.add(x);
+    gn.add(y);
+    print(gn.size());       # 2
+    print(gn);              # {5, 15}
+    gn.free();
+}

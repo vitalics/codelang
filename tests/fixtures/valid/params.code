@@ -1,0 +1,9 @@
+# A function that accepts a parameter (call-sites not yet supported)
+# This test verifies that parameter declarations compile without error.
+fn greet(msg: string) {
+  print(msg);
+}
+
+fn main() {
+  print("params compile ok");
+}

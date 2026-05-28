@@ -1,0 +1,34 @@
+import "../../../stdlib/map";
+
+# ── User-defined types as both KEY and VALUE ──────────────────────────────────
+
+type Tag {
+    id: int
+}
+
+type Document {
+    title: string
+}
+
+fn main() {
+    let t1: Tag = Tag {id: 1};
+    let t2: Tag = Tag {id: 2};
+    let d1: Document = Document {title: "hello"};
+    let d2: Document = Document {title: "world"};
+
+    # ── Map<Tag, Document> → PtrPtrMap ────────────────────────────────────────
+    let m: Map<Tag, Document> = PtrPtrMap.new();
+    m.put(t1, d1);
+    m.put(t2, d2);
+    print(m.size());                    # 2
+    print(m.contains(t1));             # true
+    print(m.contains(t2));             # true
+    let got1: Document = m.get(t1);
+    print(got1.title);                  # hello
+    let got2: Document = m.get(t2);
+    print(got2.title);                  # world
+    m.remove(t1);
+    print(m.size());                    # 1
+    print(m.contains(t1));             # false
+    m.free();
+}

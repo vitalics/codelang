@@ -1,0 +1,54 @@
+# result_basic.code
+# Tests for stdlib/result.code — Result<T, E> enum with inline methods.
+
+import "stdlib/result";
+import "stdlib/errors";
+
+fn safe_div(a: int, b: int): Result<int, MathError> {
+    if b == 0 {
+        return Result::Err(MathError::DivisionByZero);
+    }
+    return Result::Ok(a / b);
+}
+
+fn find_user(id: int): Result<string, KeyError> {
+    if id == 1 {
+        return Result::Ok("Alice");
+    }
+    if id == 2 {
+        return Result::Ok("Bob");
+    }
+    return Result::Err(KeyError::NotFound);
+}
+
+fn main() {
+    # ── Construction ─────────────────────────────────────────────────────────
+    let ok_val:  Result<int, MathError> = Result::Ok(10);
+    let err_val: Result<int, MathError> = Result::Err(MathError::Overflow);
+
+    # ── isOk() / isErr() ──────────────────────────────────────────────────────
+    print(ok_val.isOk());       # true
+    print(err_val.isOk());      # false
+    print(ok_val.isErr());      # false
+    print(err_val.isErr());     # true
+
+    # ── unwrapOr() ────────────────────────────────────────────────────────────
+    print(ok_val.unwrapOr(-1)); # 10
+    print(err_val.unwrapOr(-1));# -1
+
+    # ── real fallible functions ───────────────────────────────────────────────
+    let r1: Result<int, MathError>    = safe_div(10, 2);
+    let r2: Result<int, MathError>    = safe_div(10, 0);
+    let r3: Result<string, KeyError>  = find_user(1);
+    let r4: Result<string, KeyError>  = find_user(99);
+
+    print(r1.isOk());           # true
+    print(r2.isErr());          # true
+    print(r1.unwrapOr(-1));     # 5
+    print(r2.unwrapOr(-1));     # -1
+
+    let u3: string = switch r3 { Result::Ok(v) => v, Result::Err(_) => "not found" };
+    let u4: string = switch r4 { Result::Ok(v) => v, Result::Err(_) => "not found" };
+    print(u3);                  # Alice
+    print(u4);                  # not found
+}

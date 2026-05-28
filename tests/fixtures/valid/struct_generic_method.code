@@ -1,0 +1,25 @@
+# struct_generic_method.code
+#
+# Tests a struct type with an inline method that uses `self.field`.
+# Also tests a generic method that dispatches via the extension table.
+#
+# This demonstrates the complete "type narrowing / protocol dispatch" pathway:
+#   1. Struct type `Container` has a `value: int` field
+#   2. Method `doubled()` accesses `self.value` via GEP + load
+#   3. Field access outside method body (just `c.value`)
+#   4. Chaining: `c.doubled()` returns i32
+
+type Container = {
+    value: int
+    fn doubled(): int {
+        return self.value + self.value;
+    }
+};
+
+fn main() {
+    let c: Container = Container_new(21);
+    let v: int = c.value;
+    let d: int = c.doubled();
+    print(v);
+    print(d);
+}
