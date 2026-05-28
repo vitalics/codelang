@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch so stale PRs don't pile up.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Build + test ───────────────────────────────────────────────────────────
+  test:
+    name: Test — ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false   # keep Linux running even if macOS fails (and vice-versa)
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+
+    steps:
+      # ── Source ──────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── Toolchain ───────────────────────────────────────────────────────────
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'          # pnpm 10.x (matches local lockfileVersion 9)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      # clang ships with Xcode CLT on macOS runners; install it on Ubuntu.
+      - name: Install clang (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends clang
+
+      # ── Dependencies ────────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Build (tsc)
+        run: pnpm build
+
+      # ── Tests ────────────────────────────────────────────────────────────────
+      # macOS: run the complete test suite (includes CoreML, NPU/Accelerate, SIMD).
+      - name: Test (full suite)
+        if: runner.os == 'macOS'
+        run: pnpm test
+
+      # Ubuntu: skip coreml.test.ts — it requires the macOS CoreML framework.
+      # Everything else (NPU scalar fallback, SIMD, stdlib, …) runs fine on Linux.
+      - name: Test (skip macOS-only tests)
+        if: runner.os == 'Linux'
+        run: pnpm vitest run --exclude "tests/coreml.test.ts"
