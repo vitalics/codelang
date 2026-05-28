@@ -1,0 +1,82 @@
+import "stdlib/fs";
+
+fn main(): void {
+    print("── stdlib/fs demo ────────────────────────────────────────────────");
+
+    # ── Path ─────────────────────────────────────────────────────────────────
+    print("── Path ──────────────────────────────────────────────────────────");
+    const joined: string = Path.join("/usr/local", "bin");
+    print(joined);                           # /usr/local/bin
+
+    print(Path.dirname("/usr/local/bin"));   # /usr/local
+    print(Path.basename("/usr/local/bin"));  # bin
+    print(Path.basename("file.tar.gz"));     # file.tar.gz
+    print(Path.stem("file.tar.gz"));         # file.tar
+    print(Path.extname("file.tar.gz"));      # .gz
+    print(Path.extname("Makefile"));         # (empty string)
+    print(Path.isAbsolute("/etc"));          # true
+    print(Path.isAbsolute("relative"));      # false
+    print(Path.sep());                       # /
+    print(Path.delimiter());                 # :
+
+    # ── Dir ──────────────────────────────────────────────────────────────────
+    print("── Dir ───────────────────────────────────────────────────────────");
+    const cwd: string = Dir.current();
+    print(cwd);                              # absolute path of cwd
+
+    const tmp: string = Dir.temp();
+    print(tmp);                              # /tmp (or $TMPDIR)
+
+    # mkdir -p a fresh temp subtree
+    const testDir: string = Path.join(tmp, "codelang_fs_demo");
+    Dir.removeAll(testDir);                  # clean up any leftover
+    const created: bool = Dir.createAll(testDir);
+    print(created);                          # true
+
+    print(Dir.isDir(testDir));              # true
+    print(Dir.exists(testDir));             # true
+
+    # ── File ─────────────────────────────────────────────────────────────────
+    print("── File ──────────────────────────────────────────────────────────");
+    const f: string = Path.join(testDir, "hello.txt");
+    const written: bool = File.write(f, "Hello, World!");
+    print(written);                          # true
+
+    const content: string = File.read(f);
+    print(content);                          # Hello, World!
+
+    const sz: Int64 = File.size(f);
+    print(sz);                               # 13
+
+    print(File.exists(f));                   # true
+    print(File.isFile(f));                   # true
+
+    # Append
+    File.append(f, "\nSecond line");
+    const full: string = File.read(f);
+    print(full);                             # Hello, World!\nSecond line
+
+    # Copy
+    const f2: string = Path.join(testDir, "copy.txt");
+    print(File.copy(f, f2));                 # true
+    print(File.read(f2));                    # same content
+
+    # Stat
+    const s: FileStat = File.stat(f);
+    print(s.isFile);                         # true
+    print(s.isDir);                          # false
+
+    # Touch (create new empty file + update mtime)
+    const touched: string = Path.join(testDir, "empty.txt");
+    print(File.touch(touched));              # true
+    print(File.size(touched));               # 0
+
+    # Delete
+    print(File.delete(f2));                  # true
+    print(File.exists(f2));                  # false
+
+    # Cleanup
+    Dir.removeAll(testDir);
+    print(Dir.exists(testDir));             # false
+    print("── done ──────────────────────────────────────────────────────────");
+}

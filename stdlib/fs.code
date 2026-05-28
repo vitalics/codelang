@@ -1,0 +1,456 @@
+# stdlib/fs.code
+#
+# Filesystem — File, Dir, and Path utilities.
+# Inspired by Node.js `fs` and `path` modules.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/fs";
+#
+#   fn main(): void {
+#       # File
+#       File.write("hello.txt", "Hello, World!\n");
+#       const text: string = File.read("hello.txt");
+#       print(text);
+#
+#       # Dir
+#       Dir.createAll("a/b/c");
+#       const entries: string[] = Dir.list(".");
+#
+#       # Path
+#       const p: string = Path.join("/usr/local", "bin");   # "/usr/local/bin"
+#       print(Path.extname("archive.tar.gz"));              # ".gz"
+#   }
+#
+# ── Types exported ────────────────────────────────────────────────────────────
+#
+#   FileStat   — snapshot of file metadata (size, timestamps, permissions)
+#   File       — static factory + class-style methods for file operations
+#   Dir        — static factory + class-style methods for directory operations
+#   Path       — pure string-manipulation helpers for path construction
+#
+# ── File ─────────────────────────────────────────────────────────────────────
+#
+#   File.read(path)              → string          read entire file as text
+#   File.write(path, content)    → bool            write / overwrite
+#   File.append(path, content)   → bool            append to end
+#   File.copy(src, dst)          → bool            byte-level copy
+#   File.rename(from, to)        → bool            rename or move
+#   File.delete(path)            → bool            remove the file
+#   File.exists(path)            → bool            path exists (file or dir)
+#   File.isFile(path)            → bool            true only for regular files
+#   File.size(path)              → Int64           size in bytes, -1 on error
+#   File.touch(path)             → bool            create empty / update mtime
+#   File.chmod(path, mode)       → bool            POSIX permission bits
+#   File.stat(path)              → FileStat        full metadata snapshot
+#
+# ── Dir ──────────────────────────────────────────────────────────────────────
+#
+#   Dir.list(path)               → string[]        entry names (not . / ..)
+#   Dir.listAll(path)            → string[]        recursive relative paths
+#   Dir.create(path)             → bool            mkdir (ok if exists)
+#   Dir.createAll(path)          → bool            mkdir -p
+#   Dir.remove(path)             → bool            rmdir (must be empty)
+#   Dir.removeAll(path)          → bool            rm -rf
+#   Dir.rename(from, to)         → bool            rename or move
+#   Dir.exists(path)             → bool            path exists
+#   Dir.isDir(path)              → bool            true only for directories
+#   Dir.current()                → string          current working directory
+#   Dir.change(path)             → bool            chdir
+#   Dir.temp()                   → string          system temp directory
+#   Dir.home()                   → string          home directory of current user
+#
+# ── Path ─────────────────────────────────────────────────────────────────────
+#
+#   Path.join(a, b)              → string          join two segments
+#   Path.resolve(p)              → string          make absolute (uses cwd)
+#   Path.dirname(p)              → string          directory component
+#   Path.basename(p)             → string          last segment (with ext)
+#   Path.stem(p)                 → string          last segment (no ext)
+#   Path.extname(p)              → string          extension incl. dot, or ""
+#   Path.isAbsolute(p)           → bool
+#   Path.normalize(p)            → string          collapse //, trailing /
+#   Path.relative(from, to)      → string          relative path from → to
+#   Path.sep()                   → string          "/" on POSIX, "\" on Windows
+#   Path.delimiter()             → string          ":" on POSIX, ";" on Windows
+#
+# ── FileStat ─────────────────────────────────────────────────────────────────
+#
+#   stat.size                    Int64             file size in bytes
+#   stat.mtime                   Int64             last-modified Unix timestamp
+#   stat.atime                   Int64             last-access Unix timestamp
+#   stat.ctime                   Int64             last-change Unix timestamp
+#   stat.mode                    int               POSIX permission bits
+#   stat.isFile                  bool              regular file?
+#   stat.isDir                   bool              directory?
+#   stat.isSymlink               bool              symbolic link?
+#
+# ── Platform notes ────────────────────────────────────────────────────────────
+#   macOS / Linux — full support.
+#   Windows       — partial (path ops work; Dir.removeAll not yet implemented).
+#
+# Link: no extra flags needed (pure POSIX + libc).
+
+import "./numbers";
+import "./array";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/fs.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── stat helpers ──────────────────────────────────────────────────────────────
+extern fn fs_stat_size(path: string): Int64;
+extern fn fs_stat_mtime(path: string): Int64;
+extern fn fs_stat_atime(path: string): Int64;
+extern fn fs_stat_ctime(path: string): Int64;
+extern fn fs_stat_mode(path: string): int;
+extern fn fs_stat_is_file(path: string): int;
+extern fn fs_stat_is_dir(path: string): int;
+extern fn fs_stat_is_symlink(path: string): int;
+
+# ── File ──────────────────────────────────────────────────────────────────────
+extern fn fs_file_read(path: string): string;
+extern fn fs_file_write(path: string, content: string): int;
+extern fn fs_file_append(path: string, content: string): int;
+extern fn fs_file_copy(src: string, dst: string): int;
+extern fn fs_rename(from: string, to: string): int;
+extern fn fs_file_delete(path: string): int;
+extern fn fs_path_exists(path: string): int;
+extern fn fs_file_size(path: string): Int64;
+extern fn fs_is_file(path: string): int;
+extern fn fs_file_touch(path: string): int;
+extern fn fs_file_chmod(path: string, mode: int): int;
+
+# ── Dir ───────────────────────────────────────────────────────────────────────
+extern fn fs_dir_list(path: string): string[];
+extern fn fs_dir_list_recursive(path: string): string[];
+extern fn fs_dir_create(path: string): int;
+extern fn fs_dir_create_all(path: string): int;
+extern fn fs_dir_remove(path: string): int;
+extern fn fs_dir_remove_all(path: string): int;
+extern fn fs_is_dir(path: string): int;
+extern fn fs_getcwd(): string;
+extern fn fs_chdir(path: string): int;
+extern fn fs_tmpdir(): string;
+extern fn fs_homedir(): string;
+
+# ── Path ──────────────────────────────────────────────────────────────────────
+extern fn fs_path_join(a: string, b: string): string;
+extern fn fs_path_resolve(path: string): string;
+extern fn fs_path_dirname(path: string): string;
+extern fn fs_path_basename(path: string): string;
+extern fn fs_path_stem(path: string): string;
+extern fn fs_path_extname(path: string): string;
+extern fn fs_path_is_absolute(path: string): int;
+extern fn fs_path_normalize(path: string): string;
+extern fn fs_path_relative(from: string, to: string): string;
+extern fn fs_path_sep(): string;
+extern fn fs_path_delimiter(): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FileStat — metadata snapshot for a single path
+# ─────────────────────────────────────────────────────────────────────────────
+
+# FileStat holds all metadata fields that a single stat(2) call can provide.
+# Constructed by File.stat(path); fields are set from individual C accessors.
+#
+#   const s: FileStat = File.stat("README.md");
+#   print(s.size);       # file size in bytes
+#   print(s.isFile);     # true
+export type FileStat {
+    size:      Int64   # file size in bytes (-1 on error)
+    mtime:     Int64   # last-modified Unix timestamp in seconds
+    atime:     Int64   # last-access Unix timestamp in seconds
+    ctime:     Int64   # inode-change Unix timestamp in seconds
+    mode:      int     # POSIX permission bits (e.g. 0o644 = 420)
+    isFile:    bool    # true for regular files
+    isDir:     bool    # true for directories
+    isSymlink: bool    # true for symbolic links
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# File — static file-operation helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+export type File = intrinsic("i8*");
+
+File extends {
+
+    # ── Read / Write ─────────────────────────────────────────────────────────
+
+    # Read the entire contents of `path` as a UTF-8 string.
+    # Returns "" if the file does not exist or cannot be read.
+    export static fn read(path: string): string {
+        return fs_file_read(path);
+    }
+
+    # Write `content` to `path`, creating or truncating the file.
+    # Returns true on success.
+    export static fn write(path: string, content: string): bool {
+        return fs_file_write(path, content) == 1;
+    }
+
+    # Append `content` to `path`.  Creates the file if it does not exist.
+    # Returns true on success.
+    export static fn append(path: string, content: string): bool {
+        return fs_file_append(path, content) == 1;
+    }
+
+    # ── File management ───────────────────────────────────────────────────────
+
+    # Copy `src` to `dst` byte-for-byte.
+    # Returns true on success.
+    export static fn copy(src: string, dst: string): bool {
+        return fs_file_copy(src, dst) == 1;
+    }
+
+    # Rename or move `from` to `to`.
+    # Returns true on success.
+    export static fn rename(from: string, to: string): bool {
+        return fs_rename(from, to) == 1;
+    }
+
+    # Delete the file at `path`.
+    # Returns true on success.
+    export static fn delete(path: string): bool {
+        return fs_file_delete(path) == 1;
+    }
+
+    # ── Queries ───────────────────────────────────────────────────────────────
+
+    # Return true if `path` exists (file or directory).
+    export static fn exists(path: string): bool {
+        return fs_path_exists(path) == 1;
+    }
+
+    # Return true if `path` is a regular file (not a directory or symlink).
+    export static fn isFile(path: string): bool {
+        return fs_is_file(path) == 1;
+    }
+
+    # Return the size of the file at `path` in bytes.
+    # Returns -1 on error (file not found, permission denied, etc.).
+    export static fn size(path: string): Int64 {
+        return fs_file_size(path);
+    }
+
+    # ── Metadata ──────────────────────────────────────────────────────────────
+
+    # Create an empty file at `path`, or update its modification time if it
+    # already exists (equivalent to POSIX touch(1)).
+    # Returns true on success.
+    export static fn touch(path: string): bool {
+        return fs_file_touch(path) == 1;
+    }
+
+    # Set the POSIX permission bits on `path`.
+    # `mode` uses numeric notation (e.g. 420 = 0o644 = rw-r--r--).
+    # No-op on Windows; returns false.
+    export static fn chmod(path: string, mode: int): bool {
+        return fs_file_chmod(path, mode) == 1;
+    }
+
+    # Return a FileStat snapshot for `path`.
+    # All fields will be -1 / false if the path does not exist.
+    export static fn stat(path: string): FileStat {
+        return FileStat {
+            size:      fs_stat_size(path),
+            mtime:     fs_stat_mtime(path),
+            atime:     fs_stat_atime(path),
+            ctime:     fs_stat_ctime(path),
+            mode:      fs_stat_mode(path),
+            isFile:    fs_stat_is_file(path) == 1,
+            isDir:     fs_stat_is_dir(path) == 1,
+            isSymlink: fs_stat_is_symlink(path) == 1,
+        };
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dir — static directory-operation helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+export type Dir = intrinsic("i8*");
+
+Dir extends {
+
+    # ── Listing ───────────────────────────────────────────────────────────────
+
+    # Return a string[] of entry names directly inside `path`.
+    # Excludes "." and "..".  Order is filesystem-defined.
+    export static fn list(path: string): string[] {
+        return fs_dir_list(path);
+    }
+
+    # Return a string[] of all relative paths inside `path`, recursively.
+    # e.g. for tree a/{b/c.txt, d.txt} → ["b", "b/c.txt", "d.txt"]
+    export static fn listAll(path: string): string[] {
+        return fs_dir_list_recursive(path);
+    }
+
+    # ── Creation ─────────────────────────────────────────────────────────────
+
+    # Create a directory at `path` with mode 0755.
+    # Returns true on success or if the directory already exists.
+    export static fn create(path: string): bool {
+        return fs_dir_create(path) == 1;
+    }
+
+    # Create `path` and all missing parent directories (like mkdir -p).
+    # Returns true on success.
+    export static fn createAll(path: string): bool {
+        return fs_dir_create_all(path) == 1;
+    }
+
+    # ── Removal ───────────────────────────────────────────────────────────────
+
+    # Remove an empty directory at `path`.
+    # Returns true on success.  Fails if the directory is not empty.
+    export static fn remove(path: string): bool {
+        return fs_dir_remove(path) == 1;
+    }
+
+    # Remove `path` and all its contents recursively (like rm -rf).
+    # Returns true on success.
+    # Warning: this operation is irreversible.
+    export static fn removeAll(path: string): bool {
+        return fs_dir_remove_all(path) == 1;
+    }
+
+    # ── Rename ────────────────────────────────────────────────────────────────
+
+    # Rename or move a directory from `from` to `to`.
+    # Returns true on success.
+    export static fn rename(from: string, to: string): bool {
+        return fs_rename(from, to) == 1;
+    }
+
+    # ── Queries ───────────────────────────────────────────────────────────────
+
+    # Return true if `path` exists (file or directory).
+    export static fn exists(path: string): bool {
+        return fs_path_exists(path) == 1;
+    }
+
+    # Return true if `path` is a directory.
+    export static fn isDir(path: string): bool {
+        return fs_is_dir(path) == 1;
+    }
+
+    # ── Navigation ────────────────────────────────────────────────────────────
+
+    # Return the current working directory as an absolute path.
+    export static fn current(): string {
+        return fs_getcwd();
+    }
+
+    # Change the current working directory to `path`.
+    # Returns true on success.
+    export static fn change(path: string): bool {
+        return fs_chdir(path) == 1;
+    }
+
+    # Return the system temporary directory (e.g. "/tmp" on POSIX).
+    export static fn temp(): string {
+        return fs_tmpdir();
+    }
+
+    # Return the home directory of the current user.
+    export static fn home(): string {
+        return fs_homedir();
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Path — pure string-manipulation helpers (no filesystem access)
+# ─────────────────────────────────────────────────────────────────────────────
+
+export type Path = intrinsic("i8*");
+
+Path extends {
+
+    # ── Composition ───────────────────────────────────────────────────────────
+
+    # Join two path segments, inserting a separator if needed.
+    # Chain calls to join more segments:
+    #   Path.join(Path.join("/usr", "local"), "bin")   # "/usr/local/bin"
+    export static fn join(a: string, b: string): string {
+        return fs_path_join(a, b);
+    }
+
+    # Resolve `path` to an absolute path using the current working directory.
+    # Equivalent to realpath(3) when the path exists; uses cwd + path otherwise.
+    export static fn resolve(path: string): string {
+        return fs_path_resolve(path);
+    }
+
+    # ── Decomposition ─────────────────────────────────────────────────────────
+
+    # Return the directory component of `path` (all but the last segment).
+    # "/usr/local/bin" → "/usr/local"
+    # "file.txt"       → "."
+    export static fn dirname(path: string): string {
+        return fs_path_dirname(path);
+    }
+
+    # Return the last path segment including its extension.
+    # "/usr/local/bin" → "bin"
+    # "/home/user/file.txt" → "file.txt"
+    export static fn basename(path: string): string {
+        return fs_path_basename(path);
+    }
+
+    # Return the last path segment WITHOUT its extension.
+    # "file.txt"      → "file"
+    # "archive.tar.gz" → "archive.tar"
+    # "Makefile"      → "Makefile"
+    export static fn stem(path: string): string {
+        return fs_path_stem(path);
+    }
+
+    # Return the extension of the last path segment, including the dot.
+    # "file.txt"       → ".txt"
+    # "archive.tar.gz" → ".gz"
+    # "Makefile"       → ""
+    export static fn extname(path: string): string {
+        return fs_path_extname(path);
+    }
+
+    # ── Predicates ────────────────────────────────────────────────────────────
+
+    # Return true if `path` is an absolute path.
+    # "/usr/bin"  → true
+    # "relative"  → false
+    export static fn isAbsolute(path: string): bool {
+        return fs_path_is_absolute(path) == 1;
+    }
+
+    # ── Normalization ─────────────────────────────────────────────────────────
+
+    # Normalize `path`: collapse duplicate separators, remove trailing slashes.
+    # Does NOT resolve ".." or symlinks — no filesystem access.
+    # "//usr//local/"  → "/usr/local"
+    # "./foo/./bar"    → "foo/bar"
+    export static fn normalize(path: string): string {
+        return fs_path_normalize(path);
+    }
+
+    # Compute the relative path from `from` to `to`.
+    # Both are treated as directory paths.
+    # ("/a/b", "/a/c/d") → "../c/d"
+    export static fn relative(from: string, to: string): string {
+        return fs_path_relative(from, to);
+    }
+
+    # ── Constants ─────────────────────────────────────────────────────────────
+
+    # Path component separator ("/" on POSIX, "\" on Windows).
+    export static fn sep(): string {
+        return fs_path_sep();
+    }
+
+    # PATH environment variable delimiter (":" on POSIX, ";" on Windows).
+    export static fn delimiter(): string {
+        return fs_path_delimiter();
+    }
+}

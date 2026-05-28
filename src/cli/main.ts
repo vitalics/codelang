@@ -57,6 +57,7 @@ export interface CompileOptions {
     run?:         boolean;
     ir?:          boolean;   // emit IR only, skip clang
     noCache?:     boolean;   // force full rebuild
+    cpath?:       string;    // explicit path to the clang binary
 }
 
 export async function compileAction(fileName: string, opts: CompileOptions): Promise<void> {
@@ -112,7 +113,17 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
     if (opts.ir) return;
 
     // ── 2. Compile with clang ────────────────────────────────────────────────
-    const clang = resolveClang();
+    let clang: string;
+    if (opts.cpath) {
+        if (!fs.existsSync(opts.cpath)) {
+            console.error(chalk.red(`✗  --cpath: file not found: ${opts.cpath}`));
+            process.exit(1);
+        }
+        clang = opts.cpath;
+        console.log(chalk.dim(`  clang →  ${clang}`));
+    } else {
+        clang = resolveClang();
+    }
 
     // Number runtime — always linked so %Number* references resolve.
     const runtimeC = path.resolve(__dirname, '..', '..', 'runtime', 'number.c');
@@ -129,10 +140,19 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
     const runtimeSimdC        = path.resolve(__dirname, '..', '..', 'runtime', 'simd.c');
     const runtimeNpuC         = path.resolve(__dirname, '..', '..', 'runtime', 'npu.c');
     const runtimeNpuCoremlC   = path.resolve(__dirname, '..', '..', 'runtime', 'npu_coreml.c');
+    const runtimeFsC          = path.resolve(__dirname, '..', '..', 'runtime', 'fs.c');
     const runtimeOsC          = path.resolve(__dirname, '..', '..', 'runtime', 'os.c');
     const runtimeTuiC         = path.resolve(__dirname, '..', '..', 'runtime', 'tui.c');
     const runtimeAsyncC       = path.resolve(__dirname, '..', '..', 'runtime', 'async.c');
-    const clangArgs = [llFile, runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC, runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC, runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC, runtimeOsC, runtimeTuiC, runtimeAsyncC, '-o', exeFile];
+    const runtimeStreamC      = path.resolve(__dirname, '..', '..', 'runtime', 'stream.c');
+    const runtimeNetTcpC      = path.resolve(__dirname, '..', '..', 'runtime', 'net_tcp.c');
+    const runtimeNetDnsC      = path.resolve(__dirname, '..', '..', 'runtime', 'net_dns.c');
+    const runtimeNetUdpC      = path.resolve(__dirname, '..', '..', 'runtime', 'net_udp.c');
+    const runtimeNetHttpC     = path.resolve(__dirname, '..', '..', 'runtime', 'net_http.c');
+    const runtimeNetWsC       = path.resolve(__dirname, '..', '..', 'runtime', 'net_ws.c');
+    const runtimeNetHttp2C    = path.resolve(__dirname, '..', '..', 'runtime', 'net_http2.c');
+    const runtimeNetHttp3C    = path.resolve(__dirname, '..', '..', 'runtime', 'net_http3.c');
+    const clangArgs = [llFile, runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC, runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC, runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC, runtimeFsC, runtimeOsC, runtimeTuiC, runtimeAsyncC, runtimeStreamC, runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC, runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, '-o', exeFile];
     // macOS: pass the active SDK path so Xcode CLT headers resolve correctly.
     // xcrun is not available on Linux or Windows — guard it explicitly.
     if (process.platform === 'darwin') {
@@ -286,9 +306,10 @@ export default function main(): void {
         .command('compile <file>')
         .description('Compile a .code file to a native binary')
         .option('-d, --destination <dir>', 'output directory (default: same as source)')
-        .option('--ir',       'emit LLVM IR only, skip clang compilation')
-        .option('--no-cache', 'force full rebuild even if source is unchanged')
-        .action((file: string, opts: { destination?: string; ir?: boolean; cache?: boolean }) =>
+        .option('--ir',            'emit LLVM IR only, skip clang compilation')
+        .option('--no-cache',      'force full rebuild even if source is unchanged')
+        .option('--cpath <path>',  'path to the clang binary (overrides auto-detection)')
+        .action((file: string, opts: { destination?: string; ir?: boolean; cache?: boolean; cpath?: string }) =>
             compileAction(file, { ...opts, noCache: opts.cache === false })
         );
 
@@ -296,8 +317,9 @@ export default function main(): void {
         .command('run <file>')
         .description('Compile and immediately run a .code file')
         .option('-d, --destination <dir>', 'output directory for build artefacts')
-        .option('--no-cache', 'force full rebuild even if source is unchanged')
-        .action((file: string, opts: { destination?: string; cache?: boolean }) =>
+        .option('--no-cache',      'force full rebuild even if source is unchanged')
+        .option('--cpath <path>',  'path to the clang binary (overrides auto-detection)')
+        .action((file: string, opts: { destination?: string; cache?: boolean; cpath?: string }) =>
             compileAction(file, { ...opts, run: true, noCache: opts.cache === false })
         );
 

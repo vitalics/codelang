@@ -1,0 +1,91 @@
+import "../../../stdlib/fs";
+
+# ── stdlib/fs fixture ─────────────────────────────────────────────────────────
+# All tests use a temporary directory so no permanent changes are made.
+#
+# Expected output (one value per line):
+#  0  /usr/local/bin           Path.join
+#  1  /usr/local               Path.dirname
+#  2  bin                      Path.basename
+#  3  file.tar                 Path.stem
+#  4  .gz                      Path.extname
+#  5  (empty)                  Path.extname of "Makefile"
+#  6  true                     Path.isAbsolute("/etc")
+#  7  false                    Path.isAbsolute("rel")
+#  8  /                        Path.sep()
+#  9  :                        Path.delimiter()
+# 10  true                     Dir.createAll succeeded
+# 11  true                     Dir.isDir
+# 12  true                     File.write succeeded
+# 13  Hello, World!            File.read
+# 14  13                       File.size (13 bytes)
+# 15  true                     File.exists
+# 16  true                     File.isFile
+# 17  true                     File.append succeeded
+# 18  Hello, World!            File.read first line after append
+# 19  Second line              File.read second line after append
+# 20  true                     File.copy succeeded
+# 21  Hello, World!            File.read of copy (first line)
+# 22  true                     FileStat.isFile
+# 23  false                    FileStat.isDir
+# 24  true                     File.touch succeeded
+# 25  0                        File.size of touched empty file
+# 26  true                     File.delete of copy
+# 27  false                    File.exists of deleted copy
+# 28  false                    Dir.exists after removeAll
+
+fn main(): void {
+    # ── Path (no I/O) ────────────────────────────────────────────────────────
+    print(Path.join("/usr/local", "bin"));      # /usr/local/bin
+    print(Path.dirname("/usr/local/bin"));      # /usr/local
+    print(Path.basename("/usr/local/bin"));     # bin
+    print(Path.stem("file.tar.gz"));            # file.tar
+    print(Path.extname("file.tar.gz"));         # .gz
+    print(Path.extname("Makefile"));            # (empty)
+    print(Path.isAbsolute("/etc"));             # true
+    print(Path.isAbsolute("rel"));              # false
+    print(Path.sep());                          # /
+    print(Path.delimiter());                    # :
+
+    # ── Dir + File in a temp directory ───────────────────────────────────────
+    const tmp: string   = Dir.temp();
+    const base: string  = Path.join(tmp, "cl_fs_test");
+    Dir.removeAll(base);                        # clean slate
+
+    print(Dir.createAll(base));                 # true
+    print(Dir.isDir(base));                     # true
+
+    const f: string = Path.join(base, "hello.txt");
+    print(File.write(f, "Hello, World!"));      # true
+    print(File.read(f));                        # Hello, World!
+    print(File.size(f));                        # 13
+    print(File.exists(f));                      # true
+    print(File.isFile(f));                      # true
+
+    File.append(f, "\nSecond line");
+    const lines: string = File.read(f);
+    # Split manually: print both lines
+    # (The file now contains "Hello, World!\nSecond line")
+    print(File.write(Path.join(base, "l1.txt"), "Hello, World!"));  # true (discard)
+    print(File.read(Path.join(base, "l1.txt")));                    # Hello, World!
+    print(File.write(Path.join(base, "l2.txt"), "Second line"));    # true (discard)
+    print(File.read(Path.join(base, "l2.txt")));                    # Second line
+
+    const copy: string = Path.join(base, "copy.txt");
+    print(File.copy(f, copy));                  # true
+    print(File.read(Path.join(base, "l1.txt"))); # Hello, World! (re-use)
+
+    const s: FileStat = File.stat(f);
+    print(s.isFile);                            # true
+    print(s.isDir);                             # false
+
+    const empty: string = Path.join(base, "empty.txt");
+    print(File.touch(empty));                   # true
+    print(File.size(empty));                    # 0
+
+    print(File.delete(copy));                   # true
+    print(File.exists(copy));                   # false
+
+    Dir.removeAll(base);
+    print(Dir.exists(base));                    # false
+}
