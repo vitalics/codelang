@@ -1,6 +1,7 @@
-name         = "CodeLang"
-grammar      = "codelang"
-path_suffixes = ["code"]
+name             = "CodeLang"
+grammar          = "codelang"
+path_suffixes    = ["code"]
+language_servers = ["codelang-lsp"]
 
 line_comment  = "// "
 block_comment = ["/*", "*/"]

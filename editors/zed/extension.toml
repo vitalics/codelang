@@ -1,13 +1,22 @@
-id          = "codelang"
-name        = "CodeLang"
-version     = "0.1.0"
+id             = "codelang"
+name           = "CodeLang"
+version        = "0.1.0"
 schema_version = 1
-authors     = ["Vitali Haradkou <vitali.haradkou@b2broker.com>"]
-description = "Syntax highlighting for the CodeLang programming language (.code files)"
-repository  = "https://github.com/vitalics/codelang"
+authors        = ["Vitali Haradkou <vitali.haradkou@b2broker.com>"]
+description    = "Syntax highlighting, LSP and debugging support for the CodeLang programming language (.code files)"
+repository     = "https://github.com/vitalics/codelang"
 
 [grammars.codelang]
 repository = "file:///Users/vitaliharadkou/Documents/git/chore/codelang/tree-sitter-codelang"
-rev        = "13b2da6b2c29e759202b09151ec46474d97562f3"
+rev        = "3e32b6ba698c239a12e9891b3ec5ff7e4cfaf458"
+
+[language_servers.codelang-lsp]
+name = "CodeLang LSP"
 
 languages = ["languages/codelang"]
+
+# ── Debug Adapter ─────────────────────────────────────────────────────────────
+# codelang-debug: a DAP proxy adapter that compiles .code files with DWARF
+# debug info (--debug), then delegates to lldb-dap or gdb --interpreter=dap.
+[debug_adapters.codelang-debug]
+name = "CodeLang Debug"
