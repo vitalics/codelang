@@ -159,15 +159,49 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
     const runtimeDateC        = path.resolve(__dirname, '..', '..', 'runtime', 'date.c');
     const runtimeNetUriC      = path.resolve(__dirname, '..', '..', 'runtime', 'net_uri.c');
     const runtimeNetServerC   = path.resolve(__dirname, '..', '..', 'runtime', 'net_server.c');
-    const clangArgs = [llFile, runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC, runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC, runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC, runtimeFsC, runtimeOsC, runtimeTuiC, runtimeAsyncC, runtimeStreamC, runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC, runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, runtimeDateC, runtimeNetUriC, runtimeNetServerC, '-o', exeFile];
-    if (opts.debug) clangArgs.push('-g');
-    // macOS: pass the active SDK path so Xcode CLT headers resolve correctly.
-    // xcrun is not available on Linux or Windows — guard it explicitly.
+    // Resolve SDK path once (macOS only) — used for both compile and link steps.
+    let sdkPath: string | undefined;
     if (process.platform === 'darwin') {
         const sdkResult = spawnSync('xcrun', ['--show-sdk-path'], { encoding: 'utf-8' });
         if (sdkResult.status === 0 && sdkResult.stdout.trim()) {
-            clangArgs.push('-isysroot', sdkResult.stdout.trim());
+            sdkPath = sdkResult.stdout.trim();
         }
+    }
+
+    // ── 2a. macOS debug: pre-compile .ll → .o so dsymutil can find it ────────
+    // On macOS, clang uses a "debug map" format: debug info lives in .o files
+    // referenced by the final binary. If we let clang do everything in one pass,
+    // those .o files end up in /var/folders/… and are deleted before dsymutil
+    // runs. Compiling to a persistent .o in outDir fixes this.
+    let userObjFile: string | undefined;
+    if (opts.debug && process.platform === 'darwin') {
+        userObjFile = path.join(outDir, baseName + '.o');
+        const compileArgs = ['-c', '-g', llFile, '-o', userObjFile];
+        if (sdkPath) compileArgs.push('-isysroot', sdkPath);
+        const compileResult = spawnSync(clang, compileArgs, { stdio: 'pipe' });
+        if (compileResult.status !== 0) {
+            const msg = (compileResult.stderr?.toString() ?? '') + (compileResult.stdout?.toString() ?? '');
+            console.error(chalk.red(`✗  clang -c failed:\n${msg.trim()}`));
+            process.exit(1);
+        }
+    }
+
+    // ── 2b. Link ─────────────────────────────────────────────────────────────
+    // When we pre-compiled the user code to a .o, use that instead of the .ll.
+    const clangArgs = [
+        userObjFile ?? llFile,
+        runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC,
+        runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC,
+        runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC,
+        runtimeFsC, runtimeOsC, runtimeTuiC, runtimeAsyncC, runtimeStreamC,
+        runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC,
+        runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, runtimeDateC,
+        runtimeNetUriC, runtimeNetServerC,
+        '-o', exeFile,
+    ];
+    if (opts.debug) clangArgs.push('-g');
+    if (sdkPath) {
+        clangArgs.push('-isysroot', sdkPath);
         // Link Accelerate framework for hardware-accelerated matrix ops (AMX / ANE).
         clangArgs.push('-framework', 'Accelerate');
         // Link CoreML + Foundation for stdlib/npu/apple_coreml.code.
@@ -185,6 +219,18 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
         process.exit(1);
     }
     console.log(chalk.green(`  bin →  ${exeFile}`));
+
+    // ── 2c. Bundle DWARF into a .dSYM (macOS debug builds) ───────────────────
+    // Now that the .o file is in outDir and still present, dsymutil can read it.
+    if (opts.debug && process.platform === 'darwin') {
+        const dsymResult = spawnSync('dsymutil', [exeFile], { stdio: 'pipe' });
+        const dsymStderr = dsymResult.stderr?.toString() ?? '';
+        if (dsymResult.status !== 0 || dsymStderr.includes('error:')) {
+            console.error(chalk.yellow(`  warn: dsymutil failed — breakpoints may not resolve\n${dsymStderr.trim()}`));
+        } else {
+            console.log(chalk.dim(`  dbg →  ${exeFile}.dSYM`));
+        }
+    }
 
     // ── 3. Save cache ────────────────────────────────────────────────────────
     save(exeFile, hashFile(absFile), pkgVersion);

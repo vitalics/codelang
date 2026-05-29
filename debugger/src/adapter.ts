@@ -65,7 +65,12 @@ export class CodeLangDapAdapter {
     private async onEditorMessage(msg: DapMessage): Promise<void> {
         if (msg.type === 'request') {
             const req = msg as DapRequest;
-            if (req.command === 'launch') {
+            if (req.command === 'initialize') {
+                // Start the native debugger eagerly so it can respond to `initialize`
+                // before VS Code sends `launch`. Without this, VS Code waits for
+                // initializeResponse forever (deadlock).
+                this.startNativeDebugger();
+            } else if (req.command === 'launch') {
                 await this.handleLaunch(req);
                 return;
             }
@@ -225,5 +230,8 @@ export class CodeLangDapAdapter {
             try { rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ }
         }
         this.tmpDirs = [];
+        // Exit the adapter process — VS Code / Zed will also kill us, but being
+        // explicit lets the adapter clean up predictably when run standalone.
+        process.exit(0);
     }
 }

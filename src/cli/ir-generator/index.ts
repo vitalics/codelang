@@ -6492,8 +6492,9 @@ class GeneratorContext {
         let terminated = false;
         for (const stmt of stmts) {
             if (terminated) break;
+            const stmtStart = lines.length;   // snapshot before this statement
             terminated = this.emitStatement(lines, stmt, varCtx);
-            this.attachDbgToLast(lines, stmt);
+            this.attachDbgToLast(lines, stmt, stmtStart);
         }
 
         this.blockLocalFnNames = savedBlockLocalFnNames;
@@ -6501,25 +6502,33 @@ class GeneratorContext {
     }
 
     /**
-     * Attach `!dbg !N` to the last emitted instruction for a statement.
+     * Attach `!dbg !N` to ALL instructions emitted for this statement.
      * Called after each `emitStatement` when debug mode is active.
-     * Skips blank lines, comments, labels, and lines already annotated.
+     *
+     * LLVM requires *every* `call` instruction inside a subprogram with debug info
+     * to carry a `!dbg` location — missing even one causes clang/opt to silently
+     * discard all debug info for the whole module.  Tagging only the last
+     * instruction was insufficient for compound expressions like `print(fibo(10))`,
+     * which expand to multiple `call`s in the IR.
+     *
+     * We receive `stmtStart` — the index of the first line added by this statement
+     * (captured before the emit call).  We scan forward from there and tag every
+     * line that doesn't already carry `!dbg`.  Lines that were tagged by inner
+     * `emitStatements` calls (e.g. inside an `if` body) keep their own location.
      */
-    private attachDbgToLast(lines: string[], stmt: Statement): void {
+    private attachDbgToLast(lines: string[], stmt: Statement, stmtStart: number): void {
         if (!this.debugInfo || this.currentDbgScope === null) return;
         const line   = (stmt.$cstNode?.range.start.line ?? 0) + 1;
         const col    = (stmt.$cstNode?.range.start.character ?? 0) + 1;
         const locIdx = this.debugInfo.location(line, col, this.currentDbgScope);
-        // Walk back to find the last real instruction line
-        for (let i = lines.length - 1; i >= 0; i--) {
+        for (let i = stmtStart; i < lines.length; i++) {
             const l = lines[i].trim();
-            // Skip blank lines, comments, labels, and brace-only lines
+            // Skip structural / decorative lines — they never need !dbg
             if (!l || l.startsWith(';') || l.endsWith(':') || l === '{' || l === '}') continue;
-            // Don't double-annotate
-            if (!l.includes('!dbg')) {
-                lines[i] += `, !dbg !${locIdx}`;
-            }
-            break;
+            // Skip lines already annotated by an inner emitStatements call
+            if (l.includes('!dbg')) continue;
+            // Tag this instruction with the current statement's source location
+            lines[i] += `, !dbg !${locIdx}`;
         }
     }
 

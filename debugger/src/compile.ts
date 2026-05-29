@@ -12,10 +12,10 @@ import * as path      from 'node:path';
 import * as fs        from 'node:fs';
 import * as os        from 'node:os';
 
-// The codelang CLI entry point relative to this adapter's location.
-// When installed, both sit inside the same npm package root.
-const PKG_ROOT  = path.resolve(new URL('.', import.meta.url).pathname, '..', '..'); // debugger/
-const CODELANG  = path.join(PKG_ROOT, '..', 'bin', 'codelang.js');
+// debugger/out/compile.js → go up one level to reach debugger/, then one more to reach project root.
+// File hierarchy: <project>/debugger/out/compile.js
+const DEBUGGER_DIR = path.resolve(new URL('.', import.meta.url).pathname, '..'); // debugger/out → debugger/
+const CODELANG     = path.resolve(DEBUGGER_DIR, '..', 'bin', 'codelang.js');    // debugger/ → project root
 
 export interface CompileResult {
     /** Absolute path to the compiled binary ready to be debugged. */
