@@ -1,12 +1,19 @@
 {
   "name": "codelang",
+  "displayName": "CodeLang",
+  "description": "CodeLang — a compiled programming language with an integrated VS Code extension",
   "version": "0.1.0",
-  "description": "CodeLang — a new compiled programming language",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vitalics/codelang"
+  },
+  "publisher": "vitalics",
   "scripts": {
     "langium:generate": "langium generate && node scripts/merge-syntax.mjs",
     "langium:watch": "langium generate --watch",
-    "build": "tsc -b tsconfig.json",
+    "build": "tsc -b tsconfig.json && tsc -p tsconfig.extension.json && npm run build:debugger",
+    "build:debugger": "cd debugger && npm install && npm run build",
     "build:watch": "tsc -b tsconfig.json --watch",
     "dev": "pnpm langium:generate && pnpm build",
     "codelang": "node ./bin/codelang.js",
@@ -18,25 +25,161 @@
     "doc:hello": "node ./bin/codelang.js doc ./examples/documented.code --out ./docs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "vsce:package": "vsce package --no-dependencies --out codelang.vsix"
   },
   "bin": {
-    "codelang": "./bin/codelang.js"
+    "codelang":     "./bin/codelang.js",
+    "codelang-lsp": "./out/language-server/main.js",
+    "codelang-dap": "./debugger/out/index.js"
+  },
+  "main": "./out/extension.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "vscode": "^1.73.0"
+  },
+  "activationEvents": [
+    "onLanguage:codelang",
+    "onDebugResolve:codelang",
+    "onDebugDynamicConfigurations:codelang"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "codelang",
+        "aliases": [
+          "CodeLang",
+          "codelang"
+        ],
+        "extensions": [
+          ".code"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./editors/vscode/icon.png",
+          "dark": "./editors/vscode/icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "codelang",
+        "scopeName": "source.codelang",
+        "path": "./syntaxes/codelang.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CodeLang",
+      "properties": {
+        "codelang.trace.server": {
+          "type": "string",
+          "scope": "window",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the CodeLang language server."
+        }
+      }
+    },
+    "debuggers": [
+      {
+        "type": "codelang",
+        "label": "CodeLang Debug",
+        "program": "./debugger/out/index.js",
+        "runtime": "node",
+        "languages": ["codelang"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["sourceFile"],
+            "properties": {
+              "sourceFile": {
+                "type": "string",
+                "description": "Absolute path to the .code entry-point file to compile and debug.",
+                "default": "${file}"
+              },
+              "args": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Command-line arguments passed to the program.",
+                "default": []
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Extra environment variables for the program.",
+                "default": {}
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Pause execution on the first line of main().",
+                "default": false
+              },
+              "debuggerPath": {
+                "type": "string",
+                "description": "Override path to lldb-dap or gdb (auto-detected by default).",
+                "default": ""
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "codelang",
+            "request": "launch",
+            "name": "Debug CodeLang Program",
+            "sourceFile": "${file}",
+            "stopOnEntry": false
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "CodeLang: Debug current file",
+            "description": "Compile and debug the currently open .code file.",
+            "body": {
+              "type": "codelang",
+              "request": "launch",
+              "name": "Debug ${1:main.code}",
+              "sourceFile": "^\"\\${workspaceFolder}/${1:main.code}\"",
+              "stopOnEntry": false
+            }
+          },
+          {
+            "label": "CodeLang: Debug and stop on entry",
+            "description": "Compile, debug and pause on the first line of main().",
+            "body": {
+              "type": "codelang",
+              "request": "launch",
+              "name": "Debug ${1:main.code} (stop on entry)",
+              "sourceFile": "^\"\\${workspaceFolder}/${1:main.code}\"",
+              "stopOnEntry": true
+            }
+          }
+        ]
+      }
+    ],
+    "breakpoints": [
+      { "language": "codelang" }
+    ]
   },
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
-    "langium": "~4.0.0"
+    "langium": "~4.0.0",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "~9.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/vscode": "^1.73.0",
     "@vitest/ui": "2.1.9",
+    "@vscode/vsce": "^3.0.0",
     "langium-cli": "~4.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.1.9",
     "vscode-languageserver-types": "^3.17.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }

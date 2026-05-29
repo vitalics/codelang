@@ -8,18 +8,17 @@
     "strict": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
-    "noImplicitOverride": true,
     "moduleResolution": "Node16",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "vscode"]
   },
   "include": [
-    "src/**/*.ts"
+    "src/extension.ts"
   ],
   "exclude": [
     "out",
-    "node_modules",
-    "src/extension.ts"
+    "node_modules"
   ]
 }
