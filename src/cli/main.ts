@@ -5,6 +5,7 @@ import * as url from 'node:url';
 import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createCodeLangServices } from '../language/codelang-module.js';
 import { generateLLVMIR } from './ir-generator/index.js';
@@ -59,6 +60,7 @@ export interface CompileOptions {
     noCache?:     boolean;   // force full rebuild
     cpath?:       string;    // explicit path to the clang binary
     debug?:       boolean;   // emit DWARF debug info (-g)
+    extraC?:      string[];  // additional C files appended to the clang invocation
 }
 
 export async function compileAction(fileName: string, opts: CompileOptions): Promise<void> {
@@ -197,9 +199,20 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
         runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC,
         runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, runtimeDateC,
         runtimeNetUriC, runtimeNetServerC,
+        ...(opts.extraC ?? []),
         '-o', exeFile,
     ];
-    if (opts.debug) clangArgs.push('-g');
+    if (opts.debug) {
+        clangArgs.push('-g');
+        // Debug builds stay at -O0 so variables are not optimised away and
+        // source locations remain accurate in the debugger.
+    } else {
+        // Release builds: -O2 gives Rust/Go-level performance.
+        // The generated LLVM IR uses alloca + load/store patterns (mem-to-reg
+        // form) that LLVM's -O2 pipeline (mem2reg, instcombine, GVN, loop opts,
+        // inlining) fully optimises — bringing CodeLang to parity with Rust.
+        clangArgs.push('-O2');
+    }
     if (sdkPath) {
         clangArgs.push('-isysroot', sdkPath);
         // Link Accelerate framework for hardware-accelerated matrix ops (AMX / ANE).
@@ -241,6 +254,62 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
         const result = spawnSync(exeFile, [], { stdio: 'inherit' });
         process.exit(result.status ?? 0);
     }
+}
+
+// ── Build action ─────────────────────────────────────────────────────────────
+
+export interface BuildOptions {
+    script?:   string;   // path to build.code  (default: ./build.code)
+    optimize?: string;   // Debug | ReleaseSafe | ReleaseFast | ReleaseSmall
+    prefix?:   string;   // install prefix (default: build)
+    list?:     boolean;  // list available steps instead of executing
+}
+
+export async function buildAction(stepName: string | undefined, opts: BuildOptions): Promise<void> {
+    const script = opts.script ?? 'build.code';
+    if (!fs.existsSync(script)) {
+        console.error(chalk.red(`✗  build script not found: ${script}`));
+        console.error(chalk.dim('  Create a build.code in your project root.'));
+        process.exit(1);
+    }
+
+    // ── 1. Compile build.code → native binary ─────────────────────────────
+    const tmpDir = path.join(os.tmpdir(), `codelang-build-${Date.now()}`);
+    fs.mkdirSync(tmpDir, { recursive: true });
+
+    const runtimeBuildC = path.resolve(__dirname, '..', '..', 'runtime', 'build.c');
+
+    console.log(chalk.cyan(`  build  →  compiling ${script} …`));
+    await compileAction(script, {
+        destination: tmpDir,
+        noCache:     true,
+        extraC:      [runtimeBuildC],
+    });
+
+    // ── 2. Run the build binary ────────────────────────────────────────────
+    const baseName = path.basename(script, '.code');
+    const exeExt   = process.platform === 'win32' ? '.exe' : '';
+    const buildBin = path.join(tmpDir, baseName + exeExt);
+
+    const codelangBin  = path.resolve(__dirname, '..', '..', 'bin', 'codelang.js');
+    const codelangNode = process.execPath;  // the node binary running this script
+
+    const runArgs: string[] = [];
+    if (stepName)    runArgs.push(stepName);
+    if (opts.list)   runArgs.push('--list');
+    if (opts.optimize) runArgs.push('--optimize', opts.optimize);
+    if (opts.prefix)   runArgs.push('--prefix',   opts.prefix);
+
+    const result = spawnSync(buildBin, runArgs, {
+        stdio: 'inherit',
+        env:   {
+            ...process.env,
+            CODELANG_BIN:  codelangBin,
+            CODELANG_NODE: codelangNode,
+        },
+    });
+
+    process.exit(result.status ?? 0);
 }
 
 // ── Doc action ────────────────────────────────────────────────────────────────
@@ -384,6 +453,17 @@ export default function main(): void {
         .option('--out <dir>', 'output directory (default: ./docs)')
         .action((file: string, opts: { out?: string }) =>
             docAction(file, opts)
+        );
+
+    program
+        .command('build [step]')
+        .description('Run a build.code build script (Zig-style)')
+        .option('--script <file>',    'path to the build script (default: build.code)')
+        .option('--optimize <mode>',  'optimize mode: Debug | ReleaseSafe | ReleaseFast | ReleaseSmall')
+        .option('--prefix <dir>',     'installation prefix (default: build)')
+        .option('--list',             'list all available steps and exit')
+        .action((step: string | undefined, opts: { script?: string; optimize?: string; prefix?: string; list?: boolean }) =>
+            buildAction(step, opts)
         );
 
     program.parse(process.argv);

@@ -1,0 +1,19 @@
+# build.code — CodeLang project build script
+#
+# Run with:
+#   codelang build             # compile + install all executables → build/bin/
+#   codelang build run         # compile + run examples/hello
+#   codelang build --list      # list all available steps
+#   codelang build --optimize ReleaseFast   # optimised build
+
+import "stdlib/build";
+
+export fn build(b: Build): void {
+    # ── hello example ─────────────────────────────────────────────────────────
+    const hello = b.exe("hello", "./examples/hello.code");
+    hello.setOptimize(b.optimize());
+    b.install(hello);
+
+    const runHello = b.run(hello);
+    b.step("run", "Build and run examples/hello.code").dependsOn(runHello.asStep());
+}

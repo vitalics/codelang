@@ -1,0 +1,162 @@
+# stdlib/build.code
+#
+# Zig-inspired build system API for CodeLang.
+#
+# Create a build.code in your project root, declare a `build` function,
+# and run `codelang build` to execute the default (install) step, or
+# `codelang build <step>` to run a named step.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/build";
+#
+#   export fn build(b: Build): void {
+#       const hello = b.exe("hello", "./src/main.code");
+#       hello.setOptimize(b.optimize());
+#       b.install(hello);
+#
+#       const run = b.run(hello);
+#       b.step("run", "Build and run the project").dependsOn(run.asStep());
+#   }
+#
+# Note: the function MUST be `export fn build` (not just `fn build`) so the
+# linker can see the symbol from runtime/build.c.
+#
+# ── CLI ───────────────────────────────────────────────────────────────────────
+#
+#   codelang build                        # build and install everything
+#   codelang build run                    # run the "run" step
+#   codelang build --list                 # list all available steps
+#   codelang build --optimize ReleaseFast # release build
+#   codelang build --prefix ./out         # custom install prefix
+
+# ── Optimize mode ─────────────────────────────────────────────────────────────
+
+export enum OptimizeMode {
+    Debug,
+    ReleaseSafe,
+    ReleaseFast,
+    ReleaseSmall,
+}
+
+# ── Opaque handle types ────────────────────────────────────────────────────────
+# Each maps to a pointer to a C struct in runtime/build.c.
+
+export type Build      = intrinsic("%Build*");
+export type Executable = intrinsic("%Executable*");
+export type RunStep    = intrinsic("%RunStep*");
+export type Step       = intrinsic("%Step*");
+
+# ── Raw C bindings ─────────────────────────────────────────────────────────────
+# These are implemented in runtime/build.c.
+# b / exe / run / s are the opaque handles; the extension methods below pass
+# the implicit `self` for each.
+
+# Build
+export extern fn build_exe(b: Build, name: string, source: string): Executable;
+export extern fn build_install(b: Build, exe: Executable);
+export extern fn build_run(b: Build, exe: Executable): RunStep;
+export extern fn build_step_new(b: Build, name: string, desc: string): Step;
+export extern fn build_optimize_tag(b: Build): int;
+export extern fn build_prefix(b: Build): string;
+
+# Executable
+export extern fn exe_set_optimize(exe: Executable, tag: int);
+export extern fn exe_set_destination(exe: Executable, dir: string);
+
+# RunStep
+export extern fn runstep_as_step(run: RunStep): Step;
+export extern fn runstep_add_arg(run: RunStep, arg: string);
+
+# Step
+export extern fn step_depends_on(s: Step, dep: Step);
+
+# ── Build extensions ───────────────────────────────────────────────────────────
+
+Build extends {
+
+    # Create a new executable artifact.
+    #   name   — binary name (no extension)
+    #   source — path to the .code entry file
+    export fn exe(name: string, source: string): Executable {
+        return build_exe(self, name, source);
+    }
+
+    # Mark an executable to be built and installed during the default step.
+    export fn install(artifact: Executable): void {
+        build_install(self, artifact);
+    }
+
+    # Create a run step that builds then executes an executable.
+    export fn run(artifact: Executable): RunStep {
+        return build_run(self, artifact);
+    }
+
+    # Register a named step visible in --list output.
+    export fn step(name: string, desc: string): Step {
+        return build_step_new(self, name, desc);
+    }
+
+    # Return the optimize mode requested via --optimize (default: Debug).
+    export fn optimize(): OptimizeMode {
+        const tag: int = build_optimize_tag(self);
+        return switch tag {
+            1 => OptimizeMode::ReleaseSafe,
+            2 => OptimizeMode::ReleaseFast,
+            3 => OptimizeMode::ReleaseSmall,
+            else => OptimizeMode::Debug,
+        };
+    }
+
+    # Return the install prefix directory (default: "build").
+    export fn prefix(): string {
+        return build_prefix(self);
+    }
+}
+
+# ── Executable extensions ──────────────────────────────────────────────────────
+
+Executable extends {
+
+    # Set the optimization level for this executable.
+    export fn setOptimize(mode: OptimizeMode): void {
+        const tag: int = switch mode {
+            OptimizeMode::Debug        => 0,
+            OptimizeMode::ReleaseSafe  => 1,
+            OptimizeMode::ReleaseFast  => 2,
+            OptimizeMode::ReleaseSmall => 3,
+        };
+        exe_set_optimize(self, tag);
+    }
+
+    # Override the output directory (default: Build.prefix + "/bin").
+    export fn setDestination(dir: string): void {
+        exe_set_destination(self, dir);
+    }
+}
+
+# ── RunStep extensions ─────────────────────────────────────────────────────────
+
+RunStep extends {
+
+    # Expose this run step as a generic Step for use in dependsOn().
+    export fn asStep(): Step {
+        return runstep_as_step(self);
+    }
+
+    # Append a command-line argument passed to the program on each run.
+    export fn addArg(arg: string): void {
+        runstep_add_arg(self, arg);
+    }
+}
+
+# ── Step extensions ────────────────────────────────────────────────────────────
+
+Step extends {
+
+    # Declare that this step must not run until `dep` has completed.
+    # Returns self so calls can be chained.
+    export fn dependsOn(dep: Step): void {
+        step_depends_on(self, dep);
+    }
+}

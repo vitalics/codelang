@@ -1,0 +1,29 @@
+# examples/build.code
+#
+# Example build script — demonstrates the CodeLang build system.
+#
+# Usage (from the project root):
+#
+#   codelang build --script examples/build.code           # compile + install hello
+#   codelang build --script examples/build.code run       # compile + run hello
+#   codelang build --script examples/build.code --list    # show available steps
+#   codelang build --script examples/build.code --optimize ReleaseFast
+#
+# The binary is placed in build/bin/ by default.
+
+import "stdlib/build";
+
+export fn build(b: Build): void {
+    # ── Executables ───────────────────────────────────────────────────────────
+    const hello = b.exe("hello", "./examples/hello.code");
+    hello.setOptimize(b.optimize());
+
+    # Install hello into build/bin/ (or --prefix/bin/)
+    b.install(hello);
+
+    # ── Named steps ───────────────────────────────────────────────────────────
+
+    # "run" step: build hello, then execute it
+    const runHello = b.run(hello);
+    b.step("run", "Build and run examples/hello.code").dependsOn(runHello.asStep());
+}
