@@ -1,0 +1,468 @@
+# stdlib/stream.code
+#
+# Streams — byte-level and text-level data flow.
+#
+# Builds on the Readable / Writable / Disposable protocols from stdlib/io
+# and adds binary (byte-level) counterparts plus two concrete stream types:
+#
+#   MemoryStream  — in-memory growable byte buffer; implements both text
+#                   and binary read/write protocols.  Ideal for building
+#                   strings/buffers incrementally, capturing output in tests,
+#                   or piping data between components without touching the disk.
+#
+#   StringReader  — a read-only cursor over a string; implements Readable
+#                   and ByteReadable.  Useful for treating a literal string
+#                   (or a parsed payload) as a stream input.
+#
+# File extensions — stdlib/stream extends File (from stdlib/io) with byte-level
+#                   read/write so that File also satisfies ByteReadable and
+#                   ByteWritable.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/stream";
+#
+#   # ── MemoryStream: build a response in memory ───────────────────────────────
+#   const ms: MemoryStream = MemoryStream.new();
+#   ms.writeln("HTTP/1.0 200 OK");
+#   ms.writeln("Content-Type: text/plain");
+#   ms.writeln("");
+#   ms.write("Hello, world!");
+#   const response: Buffer = ms.toBuffer();
+#   ms.free();
+#
+#   # ── MemoryStream: write then read back ────────────────────────────────────
+#   const ms2: MemoryStream = MemoryStream.new();
+#   ms2.write("line one\nline two\nline three\n");
+#   const first: string  = ms2.readLine();    # "line one"
+#   const rest:  string  = ms2.readAll();     # "line two\nline three\n"
+#   ms2.free();
+#
+#   # ── MemoryStream: byte-level ──────────────────────────────────────────────
+#   const ms3: MemoryStream = MemoryStream.new();
+#   ms3.writeByte(72);   # 'H'
+#   ms3.writeByte(105);  # 'i'
+#   const b: Buffer = ms3.read(2);  # Buffer [72, 105]
+#   b.free();
+#   ms3.free();
+#
+#   # ── StringReader: parse a string as a stream ──────────────────────────────
+#   const r: StringReader = StringReader.from("foo\nbar\nbaz");
+#   const l1: string = r.readLine();   # "foo"
+#   const l2: string = r.readLine();   # "bar"
+#   const l3: string = r.readLine();   # "baz"
+#   r.free();
+#
+#   # ── File: byte-level read ─────────────────────────────────────────────────
+#   import "stdlib/io";
+#   using f = File.open("data.bin", "rb");
+#   const chunk: Buffer = f.read(1024);  # read up to 1 KiB
+#   # ... process chunk ...
+#   chunk.free();
+#
+# ── Protocols defined here ────────────────────────────────────────────────────
+#
+#   ByteReadable   read(n): Buffer; readByte(): int    — binary/chunk reads
+#   ByteWritable   writeBytes(buf); writeByte(b)       — binary/chunk writes
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#
+#   MemoryStream   — in-memory buffer; Readable + Writable + ByteReadable +
+#                    ByteWritable + Disposable
+#   StringReader   — string-backed reader; Readable + ByteReadable + Disposable
+#
+# ── File extensions ───────────────────────────────────────────────────────────
+#
+#   File extends ByteReadable    read(n): Buffer; readByte(): int
+#   File extends ByteWritable    writeBytes(buf); writeByte(b)
+
+import "./io";
+import "./buffer";
+import "./string";
+import "./c-interop";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Protocols
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ByteReadable — anything that supports chunk-based binary reading.
+# read(n) returns a Buffer of at most n bytes; an empty Buffer signals EOF.
+# readByte() returns an unsigned byte value (0–255) or -1 at EOF.
+export protocol ByteReadable {
+    fn read(n: int): Buffer;
+    fn readByte(): int;
+}
+
+# ByteWritable — anything that supports chunk-based binary writing.
+export protocol ByteWritable {
+    fn writeBytes(buf: Buffer);
+    fn writeByte(b: int);
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/stream.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── MemoryStream ──────────────────────────────────────────────────────────────
+export type MemoryStream = intrinsic("%MemoryStream*");
+
+extern fn memstream_new(): MemoryStream;
+extern fn memstream_from_string(s: string): MemoryStream;
+extern fn memstream_from_buffer(buf: Buffer): MemoryStream;
+extern fn memstream_write_str(s: MemoryStream, text: string);
+extern fn memstream_write_bytes(s: MemoryStream, buf: Buffer);
+extern fn memstream_write_byte(s: MemoryStream, b: int);
+extern fn memstream_read(s: MemoryStream, n: int): Buffer;
+extern fn memstream_read_byte(s: MemoryStream): int;
+extern fn memstream_read_line(s: MemoryStream): string;
+extern fn memstream_read_all(s: MemoryStream): string;
+extern fn memstream_length(s: MemoryStream): int;
+extern fn memstream_position(s: MemoryStream): int;
+extern fn memstream_seek(s: MemoryStream, pos: int);
+extern fn memstream_reset(s: MemoryStream);
+extern fn memstream_flush(s: MemoryStream);
+extern fn memstream_to_buffer(s: MemoryStream): Buffer;
+extern fn memstream_from_file(path: string): MemoryStream;
+extern fn memstream_to_file(s: MemoryStream, path: string): int;
+extern fn memstream_append_to_file(s: MemoryStream, path: string): int;
+extern fn memstream_free(s: MemoryStream);
+
+# ── StringReader ──────────────────────────────────────────────────────────────
+export type StringReader = intrinsic("%StringReader*");
+
+extern fn string_reader_new(s: string): StringReader;
+extern fn string_reader_read_line(r: StringReader): string;
+extern fn string_reader_read_all(r: StringReader): string;
+extern fn string_reader_read_byte(r: StringReader): int;
+extern fn string_reader_read(r: StringReader, n: int): Buffer;
+extern fn string_reader_length(r: StringReader): int;
+extern fn string_reader_position(r: StringReader): int;
+extern fn string_reader_seek(r: StringReader, pos: int);
+extern fn string_reader_reset(r: StringReader);
+extern fn string_reader_free(r: StringReader);
+
+# ── File byte-level helpers ───────────────────────────────────────────────────
+extern fn stream_file_read(fp: C_VoidPtr, n: int): Buffer;
+extern fn stream_file_read_byte(fp: C_VoidPtr): int;
+extern fn stream_file_write_bytes(fp: C_VoidPtr, buf: Buffer);
+extern fn stream_file_write_byte(fp: C_VoidPtr, b: int);
+
+# ── Stdout / Stdin byte-level helpers ────────────────────────────────────────
+extern fn stdout_write_byte(b: int);
+extern fn stdout_write_bytes(buf: Buffer);
+extern fn stdin_read_byte(): int;
+extern fn stdin_read(n: int): Buffer;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MemoryStream extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+MemoryStream extends {
+
+    # Create a new, empty MemoryStream.
+    export static fn new(): MemoryStream {
+        return memstream_new();
+    }
+
+    # Create a MemoryStream pre-loaded with the bytes of `s`.
+    # The read head starts at position 0 so you can read back what you loaded.
+    export static fn from(s: string): MemoryStream {
+        return memstream_from_string(s);
+    }
+
+    # Create a MemoryStream pre-loaded with the contents of a Buffer.
+    # The read head starts at position 0.
+    export static fn fromBuffer(buf: Buffer): MemoryStream {
+        return memstream_from_buffer(buf);
+    }
+
+    # Create a MemoryStream pre-loaded with the full contents of `path`.
+    # Reads the file in binary mode; the read head starts at position 0.
+    # Returns an empty stream if the file cannot be opened.
+    export static fn fromFile(path: string): MemoryStream {
+        return memstream_from_file(path);
+    }
+
+    # Total bytes written (= write head position).
+    export fn length(): int {
+        return memstream_length(self);
+    }
+
+    # Current read head position.
+    export fn position(): int {
+        return memstream_position(self);
+    }
+
+    # Set the read head to `pos` (clamped to [0, length()]).
+    export fn seek(pos: int) {
+        memstream_seek(self, pos);
+    }
+
+    # Reset the read head to the beginning (position 0).
+    export fn reset() {
+        memstream_reset(self);
+    }
+
+    # Return a snapshot Buffer of all written bytes.
+    # The returned Buffer is an independent copy; freeing the stream does not
+    # invalidate it.
+    export fn toBuffer(): Buffer {
+        return memstream_to_buffer(self);
+    }
+
+    # Write all buffered bytes to `path`, creating or truncating the file.
+    # Returns true on success.
+    export fn toFile(path: string): bool {
+        return memstream_to_file(self, path) == 1;
+    }
+
+    # Append all buffered bytes to `path`.  Creates the file if it doesn't exist.
+    # Returns true on success.
+    export fn appendToFile(path: string): bool {
+        return memstream_append_to_file(self, path) == 1;
+    }
+
+    # Release the MemoryStream and its internal buffer.
+    # Call only once; subsequent calls abort the process (double-free guard).
+    export fn free() {
+        memstream_free(self);
+    }
+}
+
+# ── Writable conformance ──────────────────────────────────────────────────────
+
+MemoryStream extends Writable {
+
+    # Append `text` to the stream without a trailing newline.
+    export fn write(text: string) {
+        memstream_write_str(self, text);
+    }
+
+    # Append `text` followed by a newline character.
+    export fn writeln(text: string) {
+        memstream_write_str(self, text);
+        memstream_write_byte(self, 10);   # '\n'
+    }
+
+    # No-op — MemoryStream writes are always immediately committed.
+    export fn flush() {
+        memstream_flush(self);
+    }
+}
+
+# ── ByteWritable conformance ──────────────────────────────────────────────────
+
+MemoryStream extends ByteWritable {
+
+    # Append all bytes of `buf` to the stream.
+    export fn writeBytes(buf: Buffer) {
+        memstream_write_bytes(self, buf);
+    }
+
+    # Append a single byte (0–255).
+    export fn writeByte(b: int) {
+        memstream_write_byte(self, b);
+    }
+}
+
+# ── Readable conformance ──────────────────────────────────────────────────────
+
+MemoryStream extends Readable {
+
+    # Read bytes from the current read position up to the next newline.
+    # Strips the trailing '\n' (and '\r\n' on Windows).
+    # Returns "" when the read head is at or past the end of the stream.
+    export fn readLine(): string {
+        return memstream_read_line(self);
+    }
+
+    # Read all remaining bytes from the read position to the end.
+    # Returns "" when the read head is at or past the end of the stream.
+    export fn readAll(): string {
+        return memstream_read_all(self);
+    }
+}
+
+# ── ByteReadable conformance ──────────────────────────────────────────────────
+
+MemoryStream extends ByteReadable {
+
+    # Read up to `n` bytes from the read position.
+    # Returns a Buffer of the bytes read; its length is 0 at EOF.
+    export fn read(n: int): Buffer {
+        return memstream_read(self, n);
+    }
+
+    # Read one byte.  Returns the byte value (0–255) or -1 at EOF.
+    export fn readByte(): int {
+        return memstream_read_byte(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+MemoryStream extends Disposable {
+    export fn dispose() {
+        memstream_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# StringReader extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+StringReader extends {
+
+    # Create a StringReader over a copy of `s`.
+    # The read head starts at position 0.
+    export static fn from(s: string): StringReader {
+        return string_reader_new(s);
+    }
+
+    # Total byte length of the underlying string.
+    export fn length(): int {
+        return string_reader_length(self);
+    }
+
+    # Current read head position.
+    export fn position(): int {
+        return string_reader_position(self);
+    }
+
+    # Set the read head to `pos` (clamped to [0, length()]).
+    export fn seek(pos: int) {
+        string_reader_seek(self, pos);
+    }
+
+    # Reset the read head to the beginning.
+    export fn reset() {
+        string_reader_reset(self);
+    }
+
+    # Release the StringReader and its internal string copy.
+    export fn free() {
+        string_reader_free(self);
+    }
+}
+
+# ── Readable conformance ──────────────────────────────────────────────────────
+
+StringReader extends Readable {
+
+    # Read up to the next newline.  Returns "" at EOF.
+    export fn readLine(): string {
+        return string_reader_read_line(self);
+    }
+
+    # Read all remaining bytes as a string.  Returns "" at EOF.
+    export fn readAll(): string {
+        return string_reader_read_all(self);
+    }
+}
+
+# ── ByteReadable conformance ──────────────────────────────────────────────────
+
+StringReader extends ByteReadable {
+
+    # Read up to `n` bytes.  Returns an empty Buffer at EOF.
+    export fn read(n: int): Buffer {
+        return string_reader_read(self, n);
+    }
+
+    # Read one byte.  Returns the byte value (0–255) or -1 at EOF.
+    export fn readByte(): int {
+        return string_reader_read_byte(self);
+    }
+}
+
+# ── Disposable conformance ────────────────────────────────────────────────────
+
+StringReader extends Disposable {
+    export fn dispose() {
+        string_reader_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# File extensions — ByteReadable + ByteWritable
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Extends File (defined in stdlib/io) with byte-level I/O.
+# Open files in binary mode ("rb" / "wb" / "r+b") for correct behaviour on
+# platforms that distinguish text and binary modes (e.g. Windows).
+
+File extends ByteReadable {
+
+    # Read up to `n` bytes from the current file position.
+    # Returns a Buffer whose length equals the number of bytes actually read;
+    # its length is 0 at EOF or on error.
+    export fn read(n: int): Buffer {
+        return stream_file_read(self.fp, n);
+    }
+
+    # Read one byte from the file.
+    # Returns the byte value (0–255) or -1 at EOF / on error.
+    export fn readByte(): int {
+        return stream_file_read_byte(self.fp);
+    }
+}
+
+File extends ByteWritable {
+
+    # Write all bytes of `buf` to the file.
+    export fn writeBytes(buf: Buffer) {
+        stream_file_write_bytes(self.fp, buf);
+    }
+
+    # Write a single byte (0–255) to the file.
+    export fn writeByte(b: int) {
+        stream_file_write_byte(self.fp, b);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stdout / Stdin — byte-level protocol conformance
+#
+# With these extensions, a Stdout instance satisfies ByteWritable and a Stdin
+# instance satisfies ByteReadable, making them interchangeable with any stream
+# type that implements the same protocols (e.g. MemoryStream, File).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Stdout byte-level output — write individual bytes or Buffer chunks to stdout.
+#
+#   const out: Stdout = Stdout {};
+#   out.writeByte(72);    # 'H'
+#   out.writeBytes(buf);  # raw bytes
+Stdout extends ByteWritable {
+
+    # Write all bytes of `buf` to stdout.
+    export fn writeBytes(buf: Buffer) {
+        stdout_write_bytes(buf);
+    }
+
+    # Write a single byte (0–255) to stdout.
+    export fn writeByte(b: int) {
+        stdout_write_byte(b);
+    }
+}
+
+# Stdin byte-level input — read individual bytes or Buffer chunks from stdin.
+#
+#   const inp: Stdin = Stdin {};
+#   const b: int = inp.readByte();    # one byte (0–255) or -1 at EOF
+#   const chunk: Buffer = inp.read(4); # up to 4 bytes
+Stdin extends ByteReadable {
+
+    # Read up to `n` bytes from stdin.
+    # Returns a Buffer whose length equals the number of bytes actually read;
+    # its length is 0 at EOF.
+    export fn read(n: int): Buffer {
+        return stdin_read(n);
+    }
+
+    # Read one byte from stdin.
+    # Returns the byte value (0–255) or -1 at EOF.
+    export fn readByte(): int {
+        return stdin_read_byte();
+    }
+}

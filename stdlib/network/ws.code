@@ -1,0 +1,91 @@
+# stdlib/network/ws.code
+#
+# WebSocket client — RFC 6455, ws:// only (no TLS).
+#
+# Performs the HTTP Upgrade handshake, then sends/receives WebSocket frames.
+# Text frames are sent by send(); binary frames by sendBinary().
+# recv() blocks until the next message arrives.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/ws";
+#
+#   fn main(): void {
+#       using ws: WebSocket = WebSocket.connect("ws://echo.websocket.org/");
+#       ws.send("hello");
+#       const msg: string = ws.recv();
+#       print(msg);    # "hello"
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   WebSocket — WebSocket client connection
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# WebSocket is an opaque pointer to the C-managed struct { int fd; int open; ... }.
+export type WebSocket = intrinsic("%WebSocket*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_ws.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+extern fn ws_connect(url: string): WebSocket;
+extern fn ws_send(ws: WebSocket, msg: string);
+extern fn ws_send_binary(ws: WebSocket, data: string);
+extern fn ws_recv(ws: WebSocket): string;
+extern fn ws_close(ws: WebSocket);
+extern fn ws_is_open(ws: WebSocket): int;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WebSocket extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+WebSocket extends {
+
+    # Connect to a WebSocket server at url (must start with ws://).
+    # Performs the RFC 6455 HTTP Upgrade handshake synchronously.
+    # On failure the returned socket has isOpen() == false; call close() to free it.
+    export static fn connect(url: string): WebSocket {
+        return ws_connect(url);
+    }
+
+    # Send msg as a UTF-8 text frame.
+    # Blocks until the frame is fully written to the OS socket buffer.
+    export fn send(msg: string) {
+        ws_send(self, msg);
+    }
+
+    # Send data as a binary frame.
+    # The data string is treated as a raw byte sequence.
+    export fn sendBinary(data: string) {
+        ws_send_binary(self, data);
+    }
+
+    # Receive the next complete message, blocking until one arrives.
+    # Returns the payload as a string.  Returns "" on close or error.
+    export fn recv(): string {
+        return ws_recv(self);
+    }
+
+    # Send a WebSocket close frame and shut down the connection.
+    # Frees the WebSocket.
+    export fn close() {
+        ws_close(self);
+    }
+
+    # Returns true if the WebSocket connection is still open.
+    export fn isOpen(): bool {
+        return ws_is_open(self) == 1;
+    }
+}
+
+WebSocket extends Disposable {
+    # Send a close frame and shut down the connection.
+    # Called automatically at end of a `using` block.
+    export fn dispose() {
+        ws_close(self);
+    }
+}

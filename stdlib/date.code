@@ -1,0 +1,701 @@
+# stdlib/date.code
+#
+# Date / time primitives — Temporal-style API with Intl formatting support.
+#
+# Inspired by the TC39 Temporal proposal and the Node.js Intl API.
+# All types are immutable value objects; mutation methods return new instances.
+# Timezone support uses IANA timezone identifiers (e.g. "America/New_York").
+# Locale formatting uses POSIX strftime with setlocale (runtime/date.c).
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/date";
+#
+#   fn main(): void {
+#       # Current moment
+#       const now:  Instant      = Now.instant();
+#       const ms:   Int64        = now.epochMilliseconds();
+#       print(now.toString());             # "2026-05-28T20:00:00.000Z"
+#
+#       # Plain calendar date
+#       const d: PlainDate = PlainDate.from(2026, 5, 28);
+#       print(d.toString());               # "2026-05-28"
+#       print(d.dayOfWeek());             # 4  (Thursday)
+#
+#       # Zoned date-time
+#       const zdt: ZonedDateTime = Now.zonedDateTimeISO("Europe/Berlin");
+#       print(zdt.toString());
+#
+#       # Duration arithmetic
+#       const dur:  Duration  = Duration.from(0, 1, 10, 0, 0, 0);  # 1 month 10 days
+#       const next: PlainDate = d.add(dur);
+#       print(next.toString());            # "2026-07-07"
+#
+#       # Intl formatting
+#       const fmt: DateTimeFormat = DateTimeFormat.new("fr-FR")
+#           .dateStyle("full")
+#           .timeStyle("short")
+#           .timeZone("Europe/Paris");
+#       print(fmt.format(zdt));            # "mercredi 27 mai 2026, 22:00"
+#       fmt.free();
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Now            — static namespace: current instant / date-time helpers
+#   Instant        — exact point in time (epoch nanoseconds)
+#   PlainDate      — calendar date without time or timezone
+#   PlainTime      — wall-clock time without date or timezone
+#   PlainDateTime  — date + time, no timezone
+#   ZonedDateTime  — date + time + IANA timezone (the "full" type)
+#   Duration       — a span of time (years/months/days/hours/minutes/seconds/ms)
+#   DateTimeFormat — Intl locale-aware formatter (wraps strftime + setlocale)
+#
+# ── Temporal comparison convention ───────────────────────────────────────────
+#   .compare(other)  →  -1 if self < other, 0 if equal, 1 if self > other
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Instant — wraps int64_t epoch_ns (nanoseconds since 1970-01-01T00:00:00Z).
+export type Instant = intrinsic("%Instant*");
+
+# PlainDate — wraps { int year, month, day }.
+export type PlainDate = intrinsic("%PlainDate*");
+
+# PlainTime — wraps { int hour, minute, second, millisecond }.
+export type PlainTime = intrinsic("%PlainTime*");
+
+# PlainDateTime — wraps { int y,mo,d, int h,mi,s, int ms }.
+export type PlainDateTime = intrinsic("%PlainDateTime*");
+
+# ZonedDateTime — wraps { int64_t epoch_ns, char *tz_id }.
+export type ZonedDateTime = intrinsic("%ZonedDateTime*");
+
+# Duration — wraps { int32_t years,months,days,hours,minutes,seconds,milliseconds }.
+export type Duration = intrinsic("%Duration*");
+
+# DateTimeFormat — Intl locale + style options for formatting.
+export type DateTimeFormat = intrinsic("%DateTimeFormat*");
+
+# Now is a static-only namespace type; never instantiated.
+export type Now = intrinsic("%Now*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/date.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Now
+extern fn date_now_instant(): Instant;
+extern fn date_now_plain_date_time_iso(): PlainDateTime;
+extern fn date_now_zoned_date_time_iso(tz_id: string): ZonedDateTime;
+extern fn date_now_timezone_id(): string;
+
+# Instant
+extern fn instant_from_epoch_ms(ms: Int64): Instant;
+extern fn instant_from_epoch_s(s: Int64): Instant;
+extern fn instant_from_iso(iso: string): Instant;
+extern fn instant_epoch_ms(inst: Instant): Int64;
+extern fn instant_epoch_s(inst: Instant): Int64;
+extern fn instant_epoch_ns(inst: Instant): Int64;
+extern fn instant_to_string(inst: Instant): string;
+extern fn instant_to_zoned_date_time_iso(inst: Instant, tz_id: string): ZonedDateTime;
+extern fn instant_add(inst: Instant, dur: Duration): Instant;
+extern fn instant_subtract(inst: Instant, dur: Duration): Instant;
+extern fn instant_until(inst: Instant, other: Instant): Duration;
+extern fn instant_compare(inst: Instant, other: Instant): int;
+extern fn instant_free(inst: Instant);
+
+# PlainDate
+extern fn plain_date_from(year: int, month: int, day: int): PlainDate;
+extern fn plain_date_from_iso(iso: string): PlainDate;
+extern fn plain_date_year(d: PlainDate): int;
+extern fn plain_date_month(d: PlainDate): int;
+extern fn plain_date_day(d: PlainDate): int;
+extern fn plain_date_day_of_week(d: PlainDate): int;
+extern fn plain_date_day_of_year(d: PlainDate): int;
+extern fn plain_date_days_in_month(d: PlainDate): int;
+extern fn plain_date_days_in_year(d: PlainDate): int;
+extern fn plain_date_in_leap_year(d: PlainDate): int;
+extern fn plain_date_to_string(d: PlainDate): string;
+extern fn plain_date_add(d: PlainDate, dur: Duration): PlainDate;
+extern fn plain_date_subtract(d: PlainDate, dur: Duration): PlainDate;
+extern fn plain_date_until(d: PlainDate, other: PlainDate): Duration;
+extern fn plain_date_compare(d: PlainDate, other: PlainDate): int;
+extern fn plain_date_free(d: PlainDate);
+
+# PlainTime
+extern fn plain_time_from(hour: int, minute: int, second: int, ms: int): PlainTime;
+extern fn plain_time_from_iso(iso: string): PlainTime;
+extern fn plain_time_hour(t: PlainTime): int;
+extern fn plain_time_minute(t: PlainTime): int;
+extern fn plain_time_second(t: PlainTime): int;
+extern fn plain_time_millisecond(t: PlainTime): int;
+extern fn plain_time_to_string(t: PlainTime): string;
+extern fn plain_time_compare(t: PlainTime, other: PlainTime): int;
+extern fn plain_time_free(t: PlainTime);
+
+# PlainDateTime
+extern fn plain_date_time_from(year: int, month: int, day: int, hour: int, minute: int, second: int, ms: int): PlainDateTime;
+extern fn plain_date_time_from_iso(iso: string): PlainDateTime;
+extern fn plain_date_time_year(dt: PlainDateTime): int;
+extern fn plain_date_time_month(dt: PlainDateTime): int;
+extern fn plain_date_time_day(dt: PlainDateTime): int;
+extern fn plain_date_time_hour(dt: PlainDateTime): int;
+extern fn plain_date_time_minute(dt: PlainDateTime): int;
+extern fn plain_date_time_second(dt: PlainDateTime): int;
+extern fn plain_date_time_millisecond(dt: PlainDateTime): int;
+extern fn plain_date_time_to_date(dt: PlainDateTime): PlainDate;
+extern fn plain_date_time_to_time(dt: PlainDateTime): PlainTime;
+extern fn plain_date_time_to_string(dt: PlainDateTime): string;
+extern fn plain_date_time_to_zoned(dt: PlainDateTime, tz_id: string): ZonedDateTime;
+extern fn plain_date_time_add(dt: PlainDateTime, dur: Duration): PlainDateTime;
+extern fn plain_date_time_subtract(dt: PlainDateTime, dur: Duration): PlainDateTime;
+extern fn plain_date_time_compare(dt: PlainDateTime, other: PlainDateTime): int;
+extern fn plain_date_time_free(dt: PlainDateTime);
+
+# ZonedDateTime
+extern fn zoned_date_time_from(inst: Instant, tz_id: string): ZonedDateTime;
+extern fn zoned_date_time_from_iso(iso: string): ZonedDateTime;
+extern fn zoned_date_time_year(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_month(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_day(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_hour(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_minute(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_second(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_millisecond(zdt: ZonedDateTime): int;
+extern fn zoned_date_time_timezone_id(zdt: ZonedDateTime): string;
+extern fn zoned_date_time_epoch_ms(zdt: ZonedDateTime): Int64;
+extern fn zoned_date_time_to_instant(zdt: ZonedDateTime): Instant;
+extern fn zoned_date_time_to_plain_date(zdt: ZonedDateTime): PlainDate;
+extern fn zoned_date_time_to_plain_time(zdt: ZonedDateTime): PlainTime;
+extern fn zoned_date_time_to_plain_date_time(zdt: ZonedDateTime): PlainDateTime;
+extern fn zoned_date_time_with_timezone(zdt: ZonedDateTime, tz_id: string): ZonedDateTime;
+extern fn zoned_date_time_to_string(zdt: ZonedDateTime): string;
+extern fn zoned_date_time_add(zdt: ZonedDateTime, dur: Duration): ZonedDateTime;
+extern fn zoned_date_time_subtract(zdt: ZonedDateTime, dur: Duration): ZonedDateTime;
+extern fn zoned_date_time_compare(zdt: ZonedDateTime, other: ZonedDateTime): int;
+extern fn zoned_date_time_free(zdt: ZonedDateTime);
+
+# Duration
+extern fn duration_from(years: int, months: int, days: int, hours: int, minutes: int, seconds: int, ms: int): Duration;
+extern fn duration_from_iso(iso: string): Duration;
+extern fn duration_years(dur: Duration): int;
+extern fn duration_months(dur: Duration): int;
+extern fn duration_days(dur: Duration): int;
+extern fn duration_hours(dur: Duration): int;
+extern fn duration_minutes(dur: Duration): int;
+extern fn duration_seconds(dur: Duration): int;
+extern fn duration_milliseconds(dur: Duration): int;
+extern fn duration_total_ms(dur: Duration): Int64;
+extern fn duration_to_string(dur: Duration): string;
+extern fn duration_negate(dur: Duration): Duration;
+extern fn duration_abs(dur: Duration): Duration;
+extern fn duration_free(dur: Duration);
+
+# DateTimeFormat (Intl)
+extern fn dtf_new(locale: string): DateTimeFormat;
+extern fn dtf_date_style(fmt: DateTimeFormat, style: string): DateTimeFormat;
+extern fn dtf_time_style(fmt: DateTimeFormat, style: string): DateTimeFormat;
+extern fn dtf_timezone(fmt: DateTimeFormat, tz_id: string): DateTimeFormat;
+extern fn dtf_format_zdt(fmt: DateTimeFormat, zdt: ZonedDateTime): string;
+extern fn dtf_format_instant(fmt: DateTimeFormat, inst: Instant): string;
+extern fn dtf_format_plain_date(fmt: DateTimeFormat, d: PlainDate): string;
+extern fn dtf_format_plain_date_time(fmt: DateTimeFormat, dt: PlainDateTime): string;
+extern fn dtf_free(fmt: DateTimeFormat);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Now — static helpers for the current moment
+# ─────────────────────────────────────────────────────────────────────────────
+
+Now extends {
+
+    # Returns the current moment as an Instant (nanosecond precision).
+    export static fn instant(): Instant {
+        return date_now_instant();
+    }
+
+    # Returns the current local date-time as a PlainDateTime (no timezone).
+    export static fn plainDateTimeISO(): PlainDateTime {
+        return date_now_plain_date_time_iso();
+    }
+
+    # Returns the current date-time in the given IANA timezone.
+    # Example: Now.zonedDateTimeISO("America/New_York")
+    export static fn zonedDateTimeISO(tz_id: string): ZonedDateTime {
+        return date_now_zoned_date_time_iso(tz_id);
+    }
+
+    # Returns the system's local IANA timezone identifier (e.g. "Europe/Berlin").
+    # Falls back to "UTC" when the timezone cannot be determined.
+    export static fn timeZoneId(): string {
+        return date_now_timezone_id();
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Instant — exact point in time
+# ─────────────────────────────────────────────────────────────────────────────
+
+Instant extends {
+
+    # Create an Instant from milliseconds since the Unix epoch (1970-01-01T00:00:00Z).
+    export static fn fromEpochMilliseconds(ms: Int64): Instant {
+        return instant_from_epoch_ms(ms);
+    }
+
+    # Create an Instant from whole seconds since the Unix epoch.
+    export static fn fromEpochSeconds(s: Int64): Instant {
+        return instant_from_epoch_s(s);
+    }
+
+    # Parse an ISO 8601 string (e.g. "2026-05-28T20:00:00Z") into an Instant.
+    # Returns epoch 0 on parse failure.
+    export static fn fromISO(iso: string): Instant {
+        return instant_from_iso(iso);
+    }
+
+    # Milliseconds since the Unix epoch (truncated from nanoseconds).
+    export fn epochMilliseconds(): Int64 {
+        return instant_epoch_ms(self);
+    }
+
+    # Whole seconds since the Unix epoch.
+    export fn epochSeconds(): Int64 {
+        return instant_epoch_s(self);
+    }
+
+    # Nanoseconds since the Unix epoch (full precision).
+    export fn epochNanoseconds(): Int64 {
+        return instant_epoch_ns(self);
+    }
+
+    # ISO 8601 representation: "2026-05-28T20:00:00.000000000Z".
+    export fn toString(): string {
+        return instant_to_string(self);
+    }
+
+    # Convert to a ZonedDateTime in the given IANA timezone.
+    export fn toZonedDateTimeISO(tz_id: string): ZonedDateTime {
+        return instant_to_zoned_date_time_iso(self, tz_id);
+    }
+
+    # Return a new Instant advanced by dur.
+    # Only the hours/minutes/seconds/milliseconds components of dur are used
+    # (months/years are calendar-relative and require a timezone).
+    export fn add(dur: Duration): Instant {
+        return instant_add(self, dur);
+    }
+
+    # Return a new Instant moved back by dur.
+    export fn subtract(dur: Duration): Instant {
+        return instant_subtract(self, dur);
+    }
+
+    # Duration between self and other (other − self).
+    # Positive if other is in the future; negative if other is in the past.
+    export fn until(other: Instant): Duration {
+        return instant_until(self, other);
+    }
+
+    # -1 if self < other, 0 if equal, 1 if self > other.
+    export fn compare(other: Instant): int {
+        return instant_compare(self, other);
+    }
+
+    # Free this Instant.
+    export fn free() {
+        instant_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PlainDate — calendar date (no time, no timezone)
+# ─────────────────────────────────────────────────────────────────────────────
+
+PlainDate extends {
+
+    # Create a PlainDate from year, month (1–12), day (1–31).
+    export static fn from(year: int, month: int, day: int): PlainDate {
+        return plain_date_from(year, month, day);
+    }
+
+    # Parse an ISO 8601 date string "YYYY-MM-DD".
+    # Returns 0000-01-01 on failure.
+    export static fn fromISO(iso: string): PlainDate {
+        return plain_date_from_iso(iso);
+    }
+
+    # Four-digit year.
+    export fn year(): int {
+        return plain_date_year(self);
+    }
+
+    # Month of the year (1 = January … 12 = December).
+    export fn month(): int {
+        return plain_date_month(self);
+    }
+
+    # Day of the month (1–31).
+    export fn day(): int {
+        return plain_date_day(self);
+    }
+
+    # Day of the week: 1 = Monday … 7 = Sunday (ISO 8601 convention).
+    export fn dayOfWeek(): int {
+        return plain_date_day_of_week(self);
+    }
+
+    # Ordinal day of the year (1–366).
+    export fn dayOfYear(): int {
+        return plain_date_day_of_year(self);
+    }
+
+    # Number of days in this date's month (28–31).
+    export fn daysInMonth(): int {
+        return plain_date_days_in_month(self);
+    }
+
+    # Number of days in this date's year (365 or 366).
+    export fn daysInYear(): int {
+        return plain_date_days_in_year(self);
+    }
+
+    # True if this date falls in a leap year.
+    export fn inLeapYear(): bool {
+        return plain_date_in_leap_year(self) == 1;
+    }
+
+    # ISO 8601 string: "YYYY-MM-DD".
+    export fn toString(): string {
+        return plain_date_to_string(self);
+    }
+
+    # Return a new PlainDate advanced by dur (years/months/days components used).
+    export fn add(dur: Duration): PlainDate {
+        return plain_date_add(self, dur);
+    }
+
+    # Return a new PlainDate moved back by dur.
+    export fn subtract(dur: Duration): PlainDate {
+        return plain_date_subtract(self, dur);
+    }
+
+    # Duration from self to other (days only).
+    export fn until(other: PlainDate): Duration {
+        return plain_date_until(self, other);
+    }
+
+    # -1 / 0 / 1 comparison.
+    export fn compare(other: PlainDate): int {
+        return plain_date_compare(self, other);
+    }
+
+    # Free this PlainDate.
+    export fn free() {
+        plain_date_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PlainTime — wall-clock time (no date, no timezone)
+# ─────────────────────────────────────────────────────────────────────────────
+
+PlainTime extends {
+
+    # Create a PlainTime from hour (0–23), minute (0–59), second (0–59),
+    # and millisecond (0–999).
+    export static fn from(hour: int, minute: int, second: int, ms: int): PlainTime {
+        return plain_time_from(hour, minute, second, ms);
+    }
+
+    # Parse an ISO 8601 time string "HH:MM:SS" or "HH:MM:SS.mmm".
+    export static fn fromISO(iso: string): PlainTime {
+        return plain_time_from_iso(iso);
+    }
+
+    # Hour of the day (0–23).
+    export fn hour(): int { return plain_time_hour(self); }
+
+    # Minute of the hour (0–59).
+    export fn minute(): int { return plain_time_minute(self); }
+
+    # Second of the minute (0–59).
+    export fn second(): int { return plain_time_second(self); }
+
+    # Millisecond of the second (0–999).
+    export fn millisecond(): int { return plain_time_millisecond(self); }
+
+    # ISO 8601 string: "HH:MM:SS.mmm".
+    export fn toString(): string { return plain_time_to_string(self); }
+
+    # -1 / 0 / 1 comparison (by total milliseconds within the day).
+    export fn compare(other: PlainTime): int {
+        return plain_time_compare(self, other);
+    }
+
+    # Free this PlainTime.
+    export fn free() { plain_time_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PlainDateTime — date + time (no timezone)
+# ─────────────────────────────────────────────────────────────────────────────
+
+PlainDateTime extends {
+
+    # Create a PlainDateTime from individual components.
+    export static fn from(year: int, month: int, day: int, hour: int, minute: int, second: int, ms: int): PlainDateTime {
+        return plain_date_time_from(year, month, day, hour, minute, second, ms);
+    }
+
+    # Parse an ISO 8601 string "YYYY-MM-DDTHH:MM:SS" (with or without milliseconds).
+    export static fn fromISO(iso: string): PlainDateTime {
+        return plain_date_time_from_iso(iso);
+    }
+
+    export fn year(): int         { return plain_date_time_year(self); }
+    export fn month(): int        { return plain_date_time_month(self); }
+    export fn day(): int          { return plain_date_time_day(self); }
+    export fn hour(): int         { return plain_date_time_hour(self); }
+    export fn minute(): int       { return plain_date_time_minute(self); }
+    export fn second(): int       { return plain_date_time_second(self); }
+    export fn millisecond(): int  { return plain_date_time_millisecond(self); }
+
+    # Extract the date part as a PlainDate (caller must free).
+    export fn toPlainDate(): PlainDate {
+        return plain_date_time_to_date(self);
+    }
+
+    # Extract the time part as a PlainTime (caller must free).
+    export fn toPlainTime(): PlainTime {
+        return plain_date_time_to_time(self);
+    }
+
+    # ISO 8601 string: "YYYY-MM-DDTHH:MM:SS.mmm".
+    export fn toString(): string {
+        return plain_date_time_to_string(self);
+    }
+
+    # Attach a timezone to produce a ZonedDateTime.
+    # The date-time components are interpreted as wall-clock time in tz_id.
+    export fn toZonedDateTime(tz_id: string): ZonedDateTime {
+        return plain_date_time_to_zoned(self, tz_id);
+    }
+
+    # Return a new PlainDateTime advanced by dur.
+    export fn add(dur: Duration): PlainDateTime {
+        return plain_date_time_add(self, dur);
+    }
+
+    # Return a new PlainDateTime moved back by dur.
+    export fn subtract(dur: Duration): PlainDateTime {
+        return plain_date_time_subtract(self, dur);
+    }
+
+    # -1 / 0 / 1 comparison.
+    export fn compare(other: PlainDateTime): int {
+        return plain_date_time_compare(self, other);
+    }
+
+    # Free this PlainDateTime.
+    export fn free() { plain_date_time_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ZonedDateTime — the full date+time+timezone type
+# ─────────────────────────────────────────────────────────────────────────────
+
+ZonedDateTime extends {
+
+    # Combine an Instant with a timezone.
+    export static fn from(inst: Instant, tz_id: string): ZonedDateTime {
+        return zoned_date_time_from(inst, tz_id);
+    }
+
+    # Parse an ISO 8601 zoned string (e.g. "2026-05-28T22:00:00+02:00[Europe/Berlin]").
+    export static fn fromISO(iso: string): ZonedDateTime {
+        return zoned_date_time_from_iso(iso);
+    }
+
+    export fn year(): int         { return zoned_date_time_year(self); }
+    export fn month(): int        { return zoned_date_time_month(self); }
+    export fn day(): int          { return zoned_date_time_day(self); }
+    export fn hour(): int         { return zoned_date_time_hour(self); }
+    export fn minute(): int       { return zoned_date_time_minute(self); }
+    export fn second(): int       { return zoned_date_time_second(self); }
+    export fn millisecond(): int  { return zoned_date_time_millisecond(self); }
+
+    # The IANA timezone identifier (e.g. "UTC", "America/New_York").
+    export fn timeZoneId(): string {
+        return zoned_date_time_timezone_id(self);
+    }
+
+    # Milliseconds since the Unix epoch (precision: ms).
+    export fn epochMilliseconds(): Int64 {
+        return zoned_date_time_epoch_ms(self);
+    }
+
+    # Convert to a timezone-free Instant.
+    export fn toInstant(): Instant {
+        return zoned_date_time_to_instant(self);
+    }
+
+    # Extract the date part (caller must free).
+    export fn toPlainDate(): PlainDate {
+        return zoned_date_time_to_plain_date(self);
+    }
+
+    # Extract the time part (caller must free).
+    export fn toPlainTime(): PlainTime {
+        return zoned_date_time_to_plain_time(self);
+    }
+
+    # Extract date + time without timezone (caller must free).
+    export fn toPlainDateTime(): PlainDateTime {
+        return zoned_date_time_to_plain_date_time(self);
+    }
+
+    # Return a new ZonedDateTime with the same instant but a different timezone.
+    export fn withTimeZone(tz_id: string): ZonedDateTime {
+        return zoned_date_time_with_timezone(self, tz_id);
+    }
+
+    # ISO 8601 extended format with timezone offset and IANA id:
+    # "2026-05-28T22:00:00.000+02:00[Europe/Berlin]"
+    export fn toString(): string {
+        return zoned_date_time_to_string(self);
+    }
+
+    # Return a new ZonedDateTime advanced by dur.
+    export fn add(dur: Duration): ZonedDateTime {
+        return zoned_date_time_add(self, dur);
+    }
+
+    # Return a new ZonedDateTime moved back by dur.
+    export fn subtract(dur: Duration): ZonedDateTime {
+        return zoned_date_time_subtract(self, dur);
+    }
+
+    # -1 / 0 / 1 comparison (by instant, i.e. UTC epoch).
+    export fn compare(other: ZonedDateTime): int {
+        return zoned_date_time_compare(self, other);
+    }
+
+    # Free this ZonedDateTime.
+    export fn free() { zoned_date_time_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Duration — a span of time
+# ─────────────────────────────────────────────────────────────────────────────
+
+Duration extends {
+
+    # Create a Duration from individual components (any can be 0).
+    # All fields are signed; negative values produce a negative duration.
+    export static fn from(years: int, months: int, days: int, hours: int, minutes: int, seconds: int, ms: int): Duration {
+        return duration_from(years, months, days, hours, minutes, seconds, ms);
+    }
+
+    # Parse an ISO 8601 duration string (e.g. "P1Y2M10DT4H30M0S").
+    # Fractional seconds ("PT1.5S") are rounded to the nearest millisecond.
+    export static fn fromISO(iso: string): Duration {
+        return duration_from_iso(iso);
+    }
+
+    export fn years(): int        { return duration_years(self); }
+    export fn months(): int       { return duration_months(self); }
+    export fn days(): int         { return duration_days(self); }
+    export fn hours(): int        { return duration_hours(self); }
+    export fn minutes(): int      { return duration_minutes(self); }
+    export fn seconds(): int      { return duration_seconds(self); }
+    export fn milliseconds(): int { return duration_milliseconds(self); }
+
+    # Total duration expressed in whole milliseconds.
+    # Note: years/months are approximated (1 year ≈ 365 days, 1 month ≈ 30 days).
+    export fn totalMilliseconds(): Int64 {
+        return duration_total_ms(self);
+    }
+
+    # ISO 8601 duration string (e.g. "P1Y2M10DT4H30M0S").
+    export fn toString(): string {
+        return duration_to_string(self);
+    }
+
+    # Return a Duration with all components negated.
+    export fn negate(): Duration {
+        return duration_negate(self);
+    }
+
+    # Return a Duration with all components set to their absolute value.
+    export fn abs(): Duration {
+        return duration_abs(self);
+    }
+
+    # Free this Duration.
+    export fn free() { duration_free(self); }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DateTimeFormat — Intl locale-aware formatter
+# ─────────────────────────────────────────────────────────────────────────────
+
+DateTimeFormat extends {
+
+    # Create a formatter for the given locale (e.g. "en-US", "fr-FR", "de-DE").
+    # Defaults: no date style, no time style, UTC timezone.
+    export static fn new(locale: string): DateTimeFormat {
+        return dtf_new(locale);
+    }
+
+    # Set the date formatting style.
+    # Accepted values: "full", "long", "medium", "short", "" (no date).
+    #   full   → "Thursday, May 28, 2026"     (locale-dependent)
+    #   long   → "May 28, 2026"
+    #   medium → "May 28, 2026" (shorter month names)
+    #   short  → "5/28/26"
+    # Returns self for method chaining.
+    export fn dateStyle(style: string): DateTimeFormat {
+        return dtf_date_style(self, style);
+    }
+
+    # Set the time formatting style.
+    # Accepted values: "full", "long", "medium", "short", "" (no time).
+    #   full   → "10:30:00 PM Eastern Daylight Time"
+    #   long   → "10:30:00 PM EDT"
+    #   medium → "10:30:00 PM"
+    #   short  → "10:30 PM"
+    # Returns self for method chaining.
+    export fn timeStyle(style: string): DateTimeFormat {
+        return dtf_time_style(self, style);
+    }
+
+    # Override the timezone used for display (default: formatter's timezone or UTC).
+    # Returns self for method chaining.
+    export fn timeZone(tz_id: string): DateTimeFormat {
+        return dtf_timezone(self, tz_id);
+    }
+
+    # Format a ZonedDateTime.
+    export fn format(zdt: ZonedDateTime): string {
+        return dtf_format_zdt(self, zdt);
+    }
+
+    # Format an Instant (displayed in the formatter's timezone).
+    export fn formatInstant(inst: Instant): string {
+        return dtf_format_instant(self, inst);
+    }
+
+    # Format a PlainDate (no time output, regardless of timeStyle setting).
+    export fn formatPlainDate(d: PlainDate): string {
+        return dtf_format_plain_date(self, d);
+    }
+
+    # Format a PlainDateTime (interpreted as-is, no timezone conversion).
+    export fn formatPlainDateTime(dt: PlainDateTime): string {
+        return dtf_format_plain_date_time(self, dt);
+    }
+
+    # Free this formatter.
+    export fn free() { dtf_free(self); }
+}

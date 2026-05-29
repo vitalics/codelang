@@ -1,0 +1,145 @@
+# stdlib/network/net.code
+#
+# TCP base layer — blocking, POSIX sockets.
+#
+# Provides TcpStream (connected socket) and TcpListener (server socket).
+# All operations are synchronous; combine with stdlib/async for concurrent I/O.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/net";
+#
+#   fn main(): void {
+#       # Server side — auto-close via `using`
+#       using listener: TcpListener = TcpListener.bind("0.0.0.0", 8080);
+#       using conn: TcpStream = listener.accept();
+#       const msg: string = conn.read();
+#       conn.write("pong");
+#
+#       # Client side — explicit close
+#       const stream: TcpStream = TcpStream.connect("127.0.0.1", 8080);
+#       stream.write("ping");
+#       const reply: string = stream.read();
+#       print(reply);
+#       stream.close();
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   TcpStream    — connected TCP socket (client or accepted connection)
+#   TcpListener  — bound, listening TCP socket (server)
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# TcpStream is an opaque pointer to the C-managed struct { int fd; ... }.
+export type TcpStream = intrinsic("%TcpStream*");
+
+# TcpListener is an opaque pointer to the C-managed struct { int fd; ... }.
+export type TcpListener = intrinsic("%TcpListener*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_tcp.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# TcpStream
+extern fn tcp_stream_connect(host: string, port: int): TcpStream;
+extern fn tcp_stream_read(s: TcpStream): string;
+extern fn tcp_stream_write(s: TcpStream, data: string);
+extern fn tcp_stream_close(s: TcpStream);
+extern fn tcp_stream_local_addr(s: TcpStream): string;
+extern fn tcp_stream_peer_addr(s: TcpStream): string;
+
+# TcpListener
+extern fn tcp_listener_bind(host: string, port: int): TcpListener;
+extern fn tcp_listener_accept(l: TcpListener): TcpStream;
+extern fn tcp_listener_close(l: TcpListener);
+extern fn tcp_listener_addr(l: TcpListener): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TcpStream extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+TcpStream extends {
+
+    # Connect to host:port and return a TcpStream.
+    # Blocks until the connection is established or the OS reports an error.
+    # On failure the returned stream is in an invalid state; call close() to free it.
+    export static fn connect(host: string, port: int): TcpStream {
+        return tcp_stream_connect(host, port);
+    }
+
+    # Read available bytes from the socket, blocking until at least one byte arrives.
+    # Returns the received data as a string.  Returns "" on EOF or error.
+    export fn read(): string {
+        return tcp_stream_read(self);
+    }
+
+    # Write data to the socket.  Blocks until all bytes are sent or an error occurs.
+    export fn write(data: string) {
+        tcp_stream_write(self, data);
+    }
+
+    # Close the socket and free the TcpStream.
+    # Any subsequent read/write calls on this stream are undefined.
+    export fn close() {
+        tcp_stream_close(self);
+    }
+
+    # Return the local address of this socket as "host:port".
+    # Returns "" if the socket is not connected.
+    export fn localAddr(): string {
+        return tcp_stream_local_addr(self);
+    }
+
+    # Return the remote peer address as "host:port".
+    # Returns "" if the socket is not connected.
+    export fn peerAddr(): string {
+        return tcp_stream_peer_addr(self);
+    }
+}
+
+TcpStream extends Disposable {
+    # Close the socket.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        tcp_stream_close(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TcpListener extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+TcpListener extends {
+
+    # Bind to host:port and start listening.
+    # Blocks until the bind succeeds or the OS reports an error.
+    # On failure the returned listener is in an invalid state; call close() to free it.
+    export static fn bind(host: string, port: int): TcpListener {
+        return tcp_listener_bind(host, port);
+    }
+
+    # Accept the next incoming connection, blocking until one arrives.
+    # Returns a TcpStream for the accepted connection.
+    export fn accept(): TcpStream {
+        return tcp_listener_accept(self);
+    }
+
+    # Close the listening socket and free the TcpListener.
+    export fn close() {
+        tcp_listener_close(self);
+    }
+
+    # Return the local bound address as "host:port".
+    export fn addr(): string {
+        return tcp_listener_addr(self);
+    }
+}
+
+TcpListener extends Disposable {
+    # Close the listening socket.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        tcp_listener_close(self);
+    }
+}

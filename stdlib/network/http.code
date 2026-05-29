@@ -1,0 +1,253 @@
+# stdlib/network/http.code
+#
+# HTTP/1.1 client — plain TCP, no TLS.
+#
+# Provides HttpClient, HttpRequest, HttpResponse, and HttpHeaders.
+# All I/O is synchronous.  HTTPS URLs are not supported; use http:// only.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/http";
+#
+#   fn main(): void {
+#       using client: HttpClient   = HttpClient.new();
+#       using resp:   HttpResponse = client.get("http://example.com/");
+#       print(resp.status().toString());
+#       print(resp.body());
+#
+#       # POST with headers
+#       const req: HttpRequest = HttpRequest.new("POST", "http://api.example.com/data")
+#           .setHeader("Content-Type", "application/json")
+#           .setBody("{\"key\":\"value\"}");
+#       const r: HttpResponse = client.send(req);
+#       req.free();
+#       r.free();
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   HttpMethod   — GET / POST / PUT / DELETE / PATCH / HEAD / OPTIONS enum
+#   HttpHeaders  — mutable name/value header map
+#   HttpRequest  — method + URL + headers + body
+#   HttpResponse — status code + body + response headers
+#   HttpClient   — sends requests; configurable timeout
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpMethod enum
+# ─────────────────────────────────────────────────────────────────────────────
+
+# HTTP request method.  Pass .toString() when a string method name is required.
+export enum HttpMethod {
+    Get     = 0,
+    Post    = 1,
+    Put     = 2,
+    Delete  = 3,
+    Patch   = 4,
+    Head    = 5,
+    Options = 6,
+
+    # Returns the method name as an uppercase string (e.g. "GET").
+    export fn toString(): string {
+        return switch self {
+            HttpMethod::Get     => "GET",
+            HttpMethod::Post    => "POST",
+            HttpMethod::Put     => "PUT",
+            HttpMethod::Delete  => "DELETE",
+            HttpMethod::Patch   => "PATCH",
+            HttpMethod::Head    => "HEAD",
+            HttpMethod::Options => "OPTIONS",
+        };
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# HttpHeaders is an opaque pointer to a linked list of name/value pairs.
+export type HttpHeaders = intrinsic("%HttpHeaders*");
+
+# HttpRequest is an opaque pointer to struct { method, url, headers, body }.
+export type HttpRequest = intrinsic("%HttpRequest*");
+
+# HttpResponse is an opaque pointer to struct { status, body, headers }.
+export type HttpResponse = intrinsic("%HttpResponse*");
+
+# HttpClient is an opaque pointer to struct { timeout_ms }.
+export type HttpClient = intrinsic("%HttpClient*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_http.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# HttpHeaders
+extern fn http_headers_new(): HttpHeaders;
+extern fn http_headers_set(h: HttpHeaders, name: string, value: string);
+extern fn http_headers_get(h: HttpHeaders, name: string): string;
+extern fn http_headers_free(h: HttpHeaders);
+
+# HttpRequest
+extern fn http_request_new(method: string, url: string): HttpRequest;
+extern fn http_request_set_header(req: HttpRequest, name: string, value: string): HttpRequest;
+extern fn http_request_set_body(req: HttpRequest, body: string): HttpRequest;
+extern fn http_request_free(req: HttpRequest);
+
+# HttpResponse
+extern fn http_response_status(resp: HttpResponse): int;
+extern fn http_response_body(resp: HttpResponse): string;
+extern fn http_response_header(resp: HttpResponse, name: string): string;
+extern fn http_response_free(resp: HttpResponse);
+
+# HttpClient
+extern fn http_client_new(): HttpClient;
+extern fn http_client_get(client: HttpClient, url: string): HttpResponse;
+extern fn http_client_post(client: HttpClient, url: string, body: string): HttpResponse;
+extern fn http_client_send(client: HttpClient, req: HttpRequest): HttpResponse;
+extern fn http_client_set_timeout(client: HttpClient, ms: int);
+extern fn http_client_free(client: HttpClient);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpHeaders extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+HttpHeaders extends {
+
+    # Allocate a new empty headers map.
+    export static fn new(): HttpHeaders {
+        return http_headers_new();
+    }
+
+    # Set header name to value, overwriting any existing entry with the same name.
+    export fn set(name: string, value: string) {
+        http_headers_set(self, name, value);
+    }
+
+    # Get the value for header name.  Returns "" if the header is not present.
+    export fn get(name: string): string {
+        return http_headers_get(self, name);
+    }
+
+    # Free the headers map and all stored strings.
+    export fn free() {
+        http_headers_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpRequest extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+HttpRequest extends {
+
+    # Create a new request with method (e.g. "GET") and url.
+    export static fn new(method: string, url: string): HttpRequest {
+        return http_request_new(method, url);
+    }
+
+    # Add or overwrite a request header.  Returns self for chaining.
+    export fn setHeader(name: string, value: string): HttpRequest {
+        return http_request_set_header(self, name, value);
+    }
+
+    # Set the request body.  Returns self for chaining.
+    export fn setBody(body: string): HttpRequest {
+        return http_request_set_body(self, body);
+    }
+
+    # Free the request and all its associated strings.
+    export fn free() {
+        http_request_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpResponse extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+HttpResponse extends {
+
+    # Return the HTTP status code (e.g. 200, 404).
+    export fn status(): int {
+        return http_response_status(self);
+    }
+
+    # Return the full response body as a string.
+    export fn body(): string {
+        return http_response_body(self);
+    }
+
+    # Return the value of response header name, or "" if not present.
+    export fn header(name: string): string {
+        return http_response_header(self, name);
+    }
+
+    # Free the response and all its associated strings.
+    export fn free() {
+        http_response_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpClient extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+HttpClient extends {
+
+    # Allocate a new HttpClient with default timeout (30 000 ms).
+    export static fn new(): HttpClient {
+        return http_client_new();
+    }
+
+    # Send a GET request to url and return the response.
+    # The caller must call resp.free() when done.
+    export fn get(url: string): HttpResponse {
+        return http_client_get(self, url);
+    }
+
+    # Send a POST request to url with the given body and return the response.
+    # The caller must call resp.free() when done.
+    export fn post(url: string, body: string): HttpResponse {
+        return http_client_post(self, url, body);
+    }
+
+    # Send an arbitrary HttpRequest and return the response.
+    # The caller owns req and resp and must free both when done.
+    export fn send(req: HttpRequest): HttpResponse {
+        return http_client_send(self, req);
+    }
+
+    # Set the connect+read timeout in milliseconds.
+    # Pass 0 to disable the timeout (wait forever).
+    export fn setTimeout(ms: int) {
+        http_client_set_timeout(self, ms);
+    }
+
+    # Free the client.
+    export fn free() {
+        http_client_free(self);
+    }
+}
+
+HttpHeaders extends Disposable {
+    export fn dispose() {
+        http_headers_free(self);
+    }
+}
+
+HttpRequest extends Disposable {
+    export fn dispose() {
+        http_request_free(self);
+    }
+}
+
+HttpResponse extends Disposable {
+    export fn dispose() {
+        http_response_free(self);
+    }
+}
+
+HttpClient extends Disposable {
+    export fn dispose() {
+        http_client_free(self);
+    }
+}

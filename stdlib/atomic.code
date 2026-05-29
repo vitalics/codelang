@@ -1,0 +1,60 @@
+# stdlib/atomic.code
+#
+# Atomic<T> — heap-allocated, thread-safe atomic variable.
+#
+# Supports int, float, double, and bool.  All operations use seq_cst ordering
+# (the strongest memory ordering), so reads and writes are always visible across
+# threads without additional fences.
+#
+# ── Quick start ────────────────────────────────────────────────────────────────
+#
+#   import "stdlib/atomic";
+#
+#   # Create and use an atomic integer counter
+#   const counter: Atomic<int> = Atomic.new(0);
+#   counter.add(1);
+#   print(counter.load());   # 1
+#   counter.free();
+#
+#   # Cross-thread mutation (works because load/store/add are atomic)
+#   import "stdlib/async";
+#   const shared: Atomic<int> = Atomic.new(0);
+#   const t: Task = Async.spawn(fn(): void {
+#       shared.add(1);
+#   });
+#   Async.wait(t);
+#   print(shared.load());    # 1
+#   shared.free();
+#
+# ── API ────────────────────────────────────────────────────────────────────────
+#
+#   Atomic.new(val: T): Atomic<T>           — allocate and initialize
+#   a.load(): T                             — atomic read (seq_cst)
+#   a.store(val: T)                         — atomic write (seq_cst)
+#   a.add(delta: int): int                  — fetch-then-add  [int only]
+#   a.sub(delta: int): int                  — fetch-then-sub  [int only]
+#   a.cas(expected: T, desired: T): bool    — compare-and-swap
+#   a.free()                                — release memory
+#
+# ── Thread safety ──────────────────────────────────────────────────────────────
+#
+#   All operations are atomic at the hardware level.  For counters shared among
+#   multiple threads, use add()/sub() rather than load()+store() to avoid races.
+#
+#   Single-writer + single-reader patterns are safe with load()/store():
+#     Thread A: a.store(42);         Thread B: print(a.load());
+#
+#   Multiple writers on the same counter must use add()/sub() or cas():
+#     Thread 1: a.add(1);            Thread 2: a.add(1);   # both safe
+#
+# ── Implementation note ────────────────────────────────────────────────────────
+#
+#   Atomic<T> is a compiler intrinsic.  The operations are lowered directly to
+#   LLVM atomic instructions (load atomic, store atomic, atomicrmw, cmpxchg)
+#   without any C runtime calls.  Only Atomic.new() and a.free() touch malloc/free.
+#
+#   Supported type parameters:  int, float, double, bool.
+#   Unsupported types (e.g. string, struct) will produce a compiler warning and
+#   behave as no-ops.
+
+export type Atomic<T> = intrinsic("%Atomic");

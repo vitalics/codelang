@@ -1,0 +1,245 @@
+# stdlib/network/status.code
+#
+# HTTP status codes as a typed enum — no more magic integers.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/network/status";
+#
+#   fn handler(req: ServerRequest): ServerResponse {
+#       return ServerResponse.error(StatusCode::NotFound.toInt(), "Not Found");
+#   }
+#
+#   # Or use the helper on ServerResponse directly (requires server import):
+#   return ServerResponse.new()
+#       .statusCode(StatusCode::Created)
+#       .withBody("{\"id\":42}");
+#
+# ── API ───────────────────────────────────────────────────────────────────────
+#
+#   code.toInt()          → int     numeric status code (e.g. 404)
+#   code.toString()       → string  reason phrase       (e.g. "Not Found")
+#   code.isSuccess()      → bool    true for 2xx codes
+#   code.isRedirect()     → bool    true for 3xx codes
+#   code.isClientError()  → bool    true for 4xx codes
+#   code.isServerError()  → bool    true for 5xx codes
+#   code.isError()        → bool    true for 4xx or 5xx codes
+
+# ── StatusCode enum ───────────────────────────────────────────────────────────
+
+export enum StatusCode {
+
+    # ── 1xx Informational ─────────────────────────────────────────────────────
+    Continue           = 100,
+    SwitchingProtocols = 101,
+    Processing         = 102,
+
+    # ── 2xx Success ───────────────────────────────────────────────────────────
+    Ok                 = 200,
+    Created            = 201,
+    Accepted           = 202,
+    NonAuthoritativeInfo = 203,
+    NoContent          = 204,
+    ResetContent       = 205,
+    PartialContent     = 206,
+
+    # ── 3xx Redirection ───────────────────────────────────────────────────────
+    MultipleChoices    = 300,
+    MovedPermanently   = 301,
+    Found              = 302,
+    SeeOther           = 303,
+    NotModified        = 304,
+    TemporaryRedirect  = 307,
+    PermanentRedirect  = 308,
+
+    # ── 4xx Client Error ──────────────────────────────────────────────────────
+    BadRequest         = 400,
+    Unauthorized       = 401,
+    PaymentRequired    = 402,
+    Forbidden          = 403,
+    NotFound           = 404,
+    MethodNotAllowed   = 405,
+    NotAcceptable      = 406,
+    RequestTimeout     = 408,
+    Conflict           = 409,
+    Gone               = 410,
+    LengthRequired     = 411,
+    PayloadTooLarge    = 413,
+    UriTooLong         = 414,
+    UnsupportedMediaType = 415,
+    RangeNotSatisfiable  = 416,
+    UnprocessableEntity  = 422,
+    Locked             = 423,
+    TooManyRequests    = 429,
+    RequestHeaderFieldsTooLarge = 431,
+    UnavailableForLegalReasons  = 451,
+
+    # ── 5xx Server Error ──────────────────────────────────────────────────────
+    InternalServerError = 500,
+    NotImplemented      = 501,
+    BadGateway          = 502,
+    ServiceUnavailable  = 503,
+    GatewayTimeout      = 504,
+    HttpVersionNotSupported = 505,
+    InsufficientStorage = 507,
+    LoopDetected        = 508,
+    NetworkAuthenticationRequired = 511,
+
+    # ── Numeric code ──────────────────────────────────────────────────────────
+
+    # Return the numeric HTTP status code (e.g. StatusCode::NotFound.toInt() == 404).
+    export fn toInt(): int {
+        return switch self {
+            StatusCode::Continue           => 100,
+            StatusCode::SwitchingProtocols => 101,
+            StatusCode::Processing         => 102,
+
+            StatusCode::Ok                 => 200,
+            StatusCode::Created            => 201,
+            StatusCode::Accepted           => 202,
+            StatusCode::NonAuthoritativeInfo => 203,
+            StatusCode::NoContent          => 204,
+            StatusCode::ResetContent       => 205,
+            StatusCode::PartialContent     => 206,
+
+            StatusCode::MultipleChoices    => 300,
+            StatusCode::MovedPermanently   => 301,
+            StatusCode::Found              => 302,
+            StatusCode::SeeOther           => 303,
+            StatusCode::NotModified        => 304,
+            StatusCode::TemporaryRedirect  => 307,
+            StatusCode::PermanentRedirect  => 308,
+
+            StatusCode::BadRequest         => 400,
+            StatusCode::Unauthorized       => 401,
+            StatusCode::PaymentRequired    => 402,
+            StatusCode::Forbidden          => 403,
+            StatusCode::NotFound           => 404,
+            StatusCode::MethodNotAllowed   => 405,
+            StatusCode::NotAcceptable      => 406,
+            StatusCode::RequestTimeout     => 408,
+            StatusCode::Conflict           => 409,
+            StatusCode::Gone               => 410,
+            StatusCode::LengthRequired     => 411,
+            StatusCode::PayloadTooLarge    => 413,
+            StatusCode::UriTooLong         => 414,
+            StatusCode::UnsupportedMediaType => 415,
+            StatusCode::RangeNotSatisfiable  => 416,
+            StatusCode::UnprocessableEntity  => 422,
+            StatusCode::Locked             => 423,
+            StatusCode::TooManyRequests    => 429,
+            StatusCode::RequestHeaderFieldsTooLarge => 431,
+            StatusCode::UnavailableForLegalReasons  => 451,
+
+            StatusCode::InternalServerError => 500,
+            StatusCode::NotImplemented      => 501,
+            StatusCode::BadGateway          => 502,
+            StatusCode::ServiceUnavailable  => 503,
+            StatusCode::GatewayTimeout      => 504,
+            StatusCode::HttpVersionNotSupported => 505,
+            StatusCode::InsufficientStorage => 507,
+            StatusCode::LoopDetected        => 508,
+            StatusCode::NetworkAuthenticationRequired => 511,
+        };
+    }
+
+    # Return the standard reason phrase for the status code.
+    # e.g. StatusCode::NotFound.toString() == "Not Found"
+    export fn toString(): string {
+        return switch self {
+            StatusCode::Continue           => "Continue",
+            StatusCode::SwitchingProtocols => "Switching Protocols",
+            StatusCode::Processing         => "Processing",
+
+            StatusCode::Ok                 => "OK",
+            StatusCode::Created            => "Created",
+            StatusCode::Accepted           => "Accepted",
+            StatusCode::NonAuthoritativeInfo => "Non-Authoritative Information",
+            StatusCode::NoContent          => "No Content",
+            StatusCode::ResetContent       => "Reset Content",
+            StatusCode::PartialContent     => "Partial Content",
+
+            StatusCode::MultipleChoices    => "Multiple Choices",
+            StatusCode::MovedPermanently   => "Moved Permanently",
+            StatusCode::Found              => "Found",
+            StatusCode::SeeOther           => "See Other",
+            StatusCode::NotModified        => "Not Modified",
+            StatusCode::TemporaryRedirect  => "Temporary Redirect",
+            StatusCode::PermanentRedirect  => "Permanent Redirect",
+
+            StatusCode::BadRequest         => "Bad Request",
+            StatusCode::Unauthorized       => "Unauthorized",
+            StatusCode::PaymentRequired    => "Payment Required",
+            StatusCode::Forbidden          => "Forbidden",
+            StatusCode::NotFound           => "Not Found",
+            StatusCode::MethodNotAllowed   => "Method Not Allowed",
+            StatusCode::NotAcceptable      => "Not Acceptable",
+            StatusCode::RequestTimeout     => "Request Timeout",
+            StatusCode::Conflict           => "Conflict",
+            StatusCode::Gone               => "Gone",
+            StatusCode::LengthRequired     => "Length Required",
+            StatusCode::PayloadTooLarge    => "Payload Too Large",
+            StatusCode::UriTooLong         => "URI Too Long",
+            StatusCode::UnsupportedMediaType => "Unsupported Media Type",
+            StatusCode::RangeNotSatisfiable  => "Range Not Satisfiable",
+            StatusCode::UnprocessableEntity  => "Unprocessable Entity",
+            StatusCode::Locked             => "Locked",
+            StatusCode::TooManyRequests    => "Too Many Requests",
+            StatusCode::RequestHeaderFieldsTooLarge => "Request Header Fields Too Large",
+            StatusCode::UnavailableForLegalReasons  => "Unavailable For Legal Reasons",
+
+            StatusCode::InternalServerError => "Internal Server Error",
+            StatusCode::NotImplemented      => "Not Implemented",
+            StatusCode::BadGateway          => "Bad Gateway",
+            StatusCode::ServiceUnavailable  => "Service Unavailable",
+            StatusCode::GatewayTimeout      => "Gateway Timeout",
+            StatusCode::HttpVersionNotSupported => "HTTP Version Not Supported",
+            StatusCode::InsufficientStorage => "Insufficient Storage",
+            StatusCode::LoopDetected        => "Loop Detected",
+            StatusCode::NetworkAuthenticationRequired => "Network Authentication Required",
+        };
+    }
+
+    # ── Category helpers ──────────────────────────────────────────────────────
+
+    # True for 1xx codes (informational).
+    export fn isInformational(): bool {
+        const code: int = self.toInt();
+        if code >= 100 && code < 200 { return true; }
+        return false;
+    }
+
+    # True for 2xx codes (request succeeded).
+    export fn isSuccess(): bool {
+        const code: int = self.toInt();
+        if code >= 200 && code < 300 { return true; }
+        return false;
+    }
+
+    # True for 3xx codes (redirect required).
+    export fn isRedirect(): bool {
+        const code: int = self.toInt();
+        if code >= 300 && code < 400 { return true; }
+        return false;
+    }
+
+    # True for 4xx codes (client made an error).
+    export fn isClientError(): bool {
+        const code: int = self.toInt();
+        if code >= 400 && code < 500 { return true; }
+        return false;
+    }
+
+    # True for 5xx codes (server failed).
+    export fn isServerError(): bool {
+        const code: int = self.toInt();
+        if code >= 500 && code < 600 { return true; }
+        return false;
+    }
+
+    # True for 4xx or 5xx codes.
+    export fn isError(): bool {
+        if self.isClientError() { return true; }
+        return self.isServerError();
+    }
+}

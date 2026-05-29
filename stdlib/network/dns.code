@@ -1,0 +1,62 @@
+# stdlib/network/dns.code
+#
+# DNS resolution — forward and reverse lookups via getaddrinfo / getnameinfo.
+#
+# All methods are static on the Dns namespace type; no instance is required.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/dns";
+#
+#   fn main(): void {
+#       const ip: string     = Dns.lookup("example.com");
+#       print(ip);                              # e.g. "93.184.216.34"
+#
+#       const all: string    = Dns.lookupAll("example.com");
+#       print(all);                             # "93.184.216.34,2606:2800:220:1:248:1893:25c8:1946"
+#
+#       const name: string   = Dns.reverse("93.184.216.34");
+#       print(name);                            # e.g. "93.184.216.34.in-addr.arpa"
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Dns — static namespace; never instantiated directly
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Dns is an opaque pointer used purely as a static namespace holder.
+export type Dns = intrinsic("%Dns*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_dns.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+extern fn dns_lookup(host: string): string;
+extern fn dns_lookup_all(host: string): string;
+extern fn dns_reverse(ip: string): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dns extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Dns extends {
+
+    # Resolve host to its first A or AAAA record.
+    # Returns the IP address string (e.g. "93.184.216.34") or "" on failure.
+    export static fn lookup(host: string): string {
+        return dns_lookup(host);
+    }
+
+    # Resolve host to all A/AAAA records, returned as a comma-separated string.
+    # Returns "" on failure or when no records exist.
+    export static fn lookupAll(host: string): string {
+        return dns_lookup_all(host);
+    }
+
+    # Reverse-lookup an IP address to its canonical hostname.
+    # Returns the hostname string or "" on failure.
+    export static fn reverse(ip: string): string {
+        return dns_reverse(ip);
+    }
+}

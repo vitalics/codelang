@@ -1,0 +1,93 @@
+# stdlib/network/datagram.code
+#
+# UDP sockets — connectionless datagrams over POSIX sockets.
+#
+# Provides UdpSocket for sending and receiving UDP datagrams.
+# recv() and recvFrom() block until a datagram arrives.
+# Broadcast must be explicitly enabled via setBroadcast(true).
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/datagram";
+#
+#   fn main(): void {
+#       using sock: UdpSocket = UdpSocket.bind("0.0.0.0", 9000);
+#       sock.send("hello", "127.0.0.1", 9001);
+#       const pkt: string = sock.recv();  # "sender_host:sender_port|data"
+#       print(pkt);
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   UdpSocket — bound UDP socket
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# UdpSocket is an opaque pointer to the C-managed struct { int fd; ... }.
+export type UdpSocket = intrinsic("%UdpSocket*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_udp.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+extern fn udp_socket_bind(host: string, port: int): UdpSocket;
+extern fn udp_socket_send(sock: UdpSocket, data: string, host: string, port: int);
+extern fn udp_socket_recv(sock: UdpSocket): string;
+extern fn udp_socket_set_broadcast(sock: UdpSocket, enabled: int);
+extern fn udp_socket_close(sock: UdpSocket);
+extern fn udp_socket_addr(sock: UdpSocket): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UdpSocket extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+UdpSocket extends {
+
+    # Bind to host:port and return a UdpSocket.
+    # On failure the returned socket is in an invalid state; call close() to free it.
+    export static fn bind(host: string, port: int): UdpSocket {
+        return udp_socket_bind(host, port);
+    }
+
+    # Send a datagram containing data to host:port.
+    # Non-blocking if the OS send buffer has space; blocks when the buffer is full.
+    export fn send(data: string, host: string, port: int) {
+        udp_socket_send(self, data, host, port);
+    }
+
+    # Receive the next datagram, blocking until one arrives.
+    # Returns a string in the format "sender_host:sender_port|data".
+    export fn recv(): string {
+        return udp_socket_recv(self);
+    }
+
+    # Alias for recv() — receive next datagram including sender address.
+    export fn recvFrom(): string {
+        return udp_socket_recv(self);
+    }
+
+    # Enable or disable broadcast mode for this socket.
+    # Must be set to true before sending to a broadcast address.
+    export fn setBroadcast(enabled: bool) {
+        udp_socket_set_broadcast(self, if enabled { 1 } else { 0 });
+    }
+
+    # Close the socket and free the UdpSocket.
+    export fn close() {
+        udp_socket_close(self);
+    }
+
+    # Return the local bound address as "host:port".
+    export fn addr(): string {
+        return udp_socket_addr(self);
+    }
+}
+
+UdpSocket extends Disposable {
+    # Close the socket.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        udp_socket_close(self);
+    }
+}

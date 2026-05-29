@@ -1,0 +1,122 @@
+# stdlib/network/http2.code
+#
+# HTTP/2 client — requires nghttp2 at link time.
+#
+# NOTE: This module is currently a compile-safe stub.  All methods return
+# empty/zero values and print "http2: not implemented" to stderr.
+# A full implementation requires linking against nghttp2 (-lnghttp2).
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/http2";
+#
+#   fn main(): void {
+#       using client: Http2Client   = Http2Client.connect("example.com", 443);
+#       using resp:   Http2Response = client.get("/", "");
+#       print(resp.status().toString());
+#       print(resp.body());
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Http2Client   — HTTP/2 connection to a single origin
+#   Http2Response — status code, body, and response headers
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Http2Client is an opaque pointer to struct { int fd; ... } (nghttp2 session).
+export type Http2Client = intrinsic("%Http2Client*");
+
+# Http2Response is an opaque pointer to struct { int status; char *body; ... }.
+export type Http2Response = intrinsic("%Http2Response*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_http2.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Http2Client
+extern fn http2_client_connect(host: string, port: int): Http2Client;
+extern fn http2_client_get(client: Http2Client, path: string, headers: string): Http2Response;
+extern fn http2_client_post(client: Http2Client, path: string, headers: string, body: string): Http2Response;
+extern fn http2_client_close(client: Http2Client);
+
+# Http2Response
+extern fn http2_response_status(resp: Http2Response): int;
+extern fn http2_response_body(resp: Http2Response): string;
+extern fn http2_response_header(resp: Http2Response, name: string): string;
+extern fn http2_response_free(resp: Http2Response);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Http2Client extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Http2Client extends {
+
+    # Open an HTTP/2 connection to host:port.
+    # Returns a client handle; check the response status of subsequent requests
+    # to detect connection failures.
+    export static fn connect(host: string, port: int): Http2Client {
+        return http2_client_connect(host, port);
+    }
+
+    # Send a GET request for path, with optional extra headers as a raw string
+    # (name: value pairs separated by newlines).
+    # Returns the response; caller must call resp.free() when done.
+    export fn get(path: string, headers: string): Http2Response {
+        return http2_client_get(self, path, headers);
+    }
+
+    # Send a POST request for path, with optional extra headers and a body.
+    # Returns the response; caller must call resp.free() when done.
+    export fn post(path: string, headers: string, body: string): Http2Response {
+        return http2_client_post(self, path, headers, body);
+    }
+
+    # Close the HTTP/2 connection and free the client.
+    export fn close() {
+        http2_client_close(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Http2Response extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Http2Response extends {
+
+    # Return the HTTP status code (e.g. 200).  Returns 0 on connection failure.
+    export fn status(): int {
+        return http2_response_status(self);
+    }
+
+    # Return the response body as a string.  Returns "" on failure.
+    export fn body(): string {
+        return http2_response_body(self);
+    }
+
+    # Return the value of response header name, or "" if not present.
+    export fn header(name: string): string {
+        return http2_response_header(self, name);
+    }
+
+    # Free the response and all its associated strings.
+    export fn free() {
+        http2_response_free(self);
+    }
+}
+
+Http2Client extends Disposable {
+    # Close the HTTP/2 connection.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        http2_client_close(self);
+    }
+}
+
+Http2Response extends Disposable {
+    # Free the response.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        http2_response_free(self);
+    }
+}

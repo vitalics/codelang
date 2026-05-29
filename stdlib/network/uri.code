@@ -1,0 +1,382 @@
+# stdlib/network/uri.code
+#
+# URI / URL parsing and construction — RFC 3986 compliant.
+#
+# Mirrors the Node.js WHATWG URL API:
+#   https://nodejs.org/api/url.html#the-whatwg-url-api
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#   import "stdlib/network/uri";
+#
+#   fn main(): void {
+#       # Parse from a string
+#       const u: Uri = Uri.parse("https://user:pass@api.example.com:8080/v1/items?page=2&limit=10#results");
+#       print(u.scheme());       # "https"
+#       print(u.username());     # "user"
+#       print(u.password());     # "pass"
+#       print(u.hostname());     # "api.example.com"
+#       print(u.port());         # 8080
+#       print(u.pathname());     # "/v1/items"
+#       print(u.search());       # "?page=2&limit=10"
+#       print(u.hash());         # "#results"
+#       print(u.origin());       # "https://api.example.com:8080"
+#       print(u.toString());     # the full URL string
+#
+#       # SearchParams
+#       const params: UriSearchParams = u.searchParams();
+#       print(params.get("page"));    # "2"
+#       print(params.has("limit"));   # true
+#       params.set("page", "3");
+#       params.append("sort", "asc");
+#       print(params.toString());     # "page=3&limit=10&sort=asc"
+#
+#       # Builder: change parts non-destructively
+#       const next: Uri = u.withPathname("/v1/orders").withPort(443);
+#       print(next.toString());
+#
+#       # Callable shorthand — same as Uri.parse(...)
+#       const repo: Uri = Uri("https://github.com/org/repo");
+#       print(repo.hostname());   # "github.com"
+#
+#       # Percent-encoding — static helpers on Uri
+#       const enc: string = Uri.encode("hello world & more");  # "hello%20world%20%26%20more"
+#       const dec: string = Uri.decode(enc);                   # "hello world & more"
+#
+#       params.free();
+#       u.free();
+#       next.free();
+#       repo.free();
+#   }
+#
+# ── Types ─────────────────────────────────────────────────────────────────────
+#   Uri              — parsed / constructed URI (scheme://user:pass@host:port/path?q#frag)
+#   UriSearchParams  — mutable query-string parameter map (key=val&key2=val2)
+#
+# ── Static helpers on Uri ─────────────────────────────────────────────────────
+#   Uri.parse(s)    — parse a URI string (also callable as Uri(s))
+#   Uri.encode(s)   — percent-encode a string (application/x-www-form-urlencoded)
+#   Uri.decode(s)   — decode a percent-encoded string
+
+import "../io";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Uri is an opaque pointer to the C-managed struct {
+#   char *scheme, *username, *password, *hostname, int port,
+#        *pathname, *query, *fragment
+# }.
+export type Uri = intrinsic("%Uri*");
+
+# UriSearchParams is an opaque pointer to a mutable linked list of key=value pairs.
+export type UriSearchParams = intrinsic("%UriSearchParams*");
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_uri.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Uri
+extern fn uri_parse(s: string): Uri;
+extern fn uri_new(scheme: string, username: string, password: string,
+                  hostname: string, port: int,
+                  pathname: string, query: string, fragment: string): Uri;
+extern fn uri_scheme(u: Uri): string;
+extern fn uri_username(u: Uri): string;
+extern fn uri_password(u: Uri): string;
+extern fn uri_host(u: Uri): string;
+extern fn uri_hostname(u: Uri): string;
+extern fn uri_port(u: Uri): int;
+extern fn uri_pathname(u: Uri): string;
+extern fn uri_search(u: Uri): string;
+extern fn uri_search_params(u: Uri): UriSearchParams;
+extern fn uri_hash(u: Uri): string;
+extern fn uri_origin(u: Uri): string;
+extern fn uri_href(u: Uri): string;
+extern fn uri_with_scheme(u: Uri, scheme: string): Uri;
+extern fn uri_with_username(u: Uri, username: string): Uri;
+extern fn uri_with_password(u: Uri, password: string): Uri;
+extern fn uri_with_hostname(u: Uri, hostname: string): Uri;
+extern fn uri_with_port(u: Uri, port: int): Uri;
+extern fn uri_with_pathname(u: Uri, pathname: string): Uri;
+extern fn uri_with_search(u: Uri, query: string): Uri;
+extern fn uri_with_hash(u: Uri, fragment: string): Uri;
+extern fn uri_is_absolute(u: Uri): int;
+extern fn uri_resolve(base: Uri, reference: Uri): Uri;
+extern fn uri_to_string(u: Uri): string;
+extern fn uri_free(u: Uri);
+
+# UriSearchParams
+extern fn uri_params_parse(query: string): UriSearchParams;
+extern fn uri_params_get(p: UriSearchParams, key: string): string;
+extern fn uri_params_get_all(p: UriSearchParams, key: string): string;
+extern fn uri_params_has(p: UriSearchParams, key: string): int;
+extern fn uri_params_set(p: UriSearchParams, key: string, value: string);
+extern fn uri_params_append(p: UriSearchParams, key: string, value: string);
+extern fn uri_params_delete(p: UriSearchParams, key: string);
+extern fn uri_params_to_string(p: UriSearchParams): string;
+extern fn uri_params_free(p: UriSearchParams);
+
+# String encoding
+extern fn uri_encode_component(s: string): string;
+extern fn uri_decode_component(s: string): string;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Uri extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+Uri extends {
+
+    # Parse a URI string and return a Uri.
+    # Accepts any RFC 3986 URI: absolute (https://…), relative (/path?q), opaque, etc.
+    # Returns an empty Uri on malformed input.
+    export static fn parse(s: string): Uri {
+        return uri_parse(s);
+    }
+
+    # Callable shorthand — Uri("https://…") is identical to Uri.parse("https://…").
+    # Implements the Callable protocol so Uri can be used as a constructor function.
+    export static fn call(s: string): Uri {
+        return uri_parse(s);
+    }
+
+    # Construct a Uri from individual components.
+    # Pass "" for optional parts (username, password, query, fragment).
+    # Pass 0 for port when no port should be encoded.
+    export static fn new(scheme: string, username: string, password: string,
+                         hostname: string, port: int,
+                         pathname: string, query: string, fragment: string): Uri {
+        return uri_new(scheme, username, password, hostname, port, pathname, query, fragment);
+    }
+
+    # The URI scheme, without the colon (e.g. "https", "ws", "ftp").
+    # Returns "" for relative references.
+    export fn scheme(): string {
+        return uri_scheme(self);
+    }
+
+    # The username component of the authority (before the colon in "user:pass@…").
+    # Returns "" when no userinfo is present.
+    export fn username(): string {
+        return uri_username(self);
+    }
+
+    # The password component of the authority.
+    # Returns "" when no userinfo or no password is present.
+    export fn password(): string {
+        return uri_password(self);
+    }
+
+    # Host including port if non-default (e.g. "example.com:8080").
+    # Returns just the hostname when no port is encoded.
+    export fn host(): string {
+        return uri_host(self);
+    }
+
+    # Hostname only, without port (e.g. "example.com").
+    export fn hostname(): string {
+        return uri_hostname(self);
+    }
+
+    # Numeric port, or 0 when no port is encoded in the URI.
+    # Default ports (80 for http, 443 for https, etc.) are NOT inferred.
+    export fn port(): int {
+        return uri_port(self);
+    }
+
+    # The path component (e.g. "/v1/items").
+    # Returns "/" when the path is empty or absent.
+    export fn pathname(): string {
+        return uri_pathname(self);
+    }
+
+    # The query string, including the leading "?" (e.g. "?page=2&limit=10").
+    # Returns "" when there is no query component.
+    export fn search(): string {
+        return uri_search(self);
+    }
+
+    # Return the query string parsed into a mutable UriSearchParams.
+    # Caller must call .free() on the result.
+    export fn searchParams(): UriSearchParams {
+        return uri_search_params(self);
+    }
+
+    # The fragment, including the leading "#" (e.g. "#results").
+    # Returns "" when there is no fragment component.
+    export fn hash(): string {
+        return uri_hash(self);
+    }
+
+    # The origin: scheme + "://" + host (e.g. "https://example.com:8080").
+    # Returns "" for relative references or URIs without an authority.
+    export fn origin(): string {
+        return uri_origin(self);
+    }
+
+    # The full serialized URI string (equivalent to toString()).
+    export fn href(): string {
+        return uri_href(self);
+    }
+
+    # ── Non-destructive setters (return new Uri) ──────────────────────────────
+
+    # Return a new Uri with the scheme replaced.
+    export fn withScheme(scheme: string): Uri {
+        return uri_with_scheme(self, scheme);
+    }
+
+    # Return a new Uri with the username replaced.
+    export fn withUsername(username: string): Uri {
+        return uri_with_username(self, username);
+    }
+
+    # Return a new Uri with the password replaced.
+    export fn withPassword(password: string): Uri {
+        return uri_with_password(self, password);
+    }
+
+    # Return a new Uri with the hostname replaced (port is preserved).
+    export fn withHostname(hostname: string): Uri {
+        return uri_with_hostname(self, hostname);
+    }
+
+    # Return a new Uri with the port replaced.
+    # Pass 0 to remove the port from the serialized form.
+    export fn withPort(port: int): Uri {
+        return uri_with_port(self, port);
+    }
+
+    # Return a new Uri with the pathname replaced.
+    export fn withPathname(pathname: string): Uri {
+        return uri_with_pathname(self, pathname);
+    }
+
+    # Return a new Uri with the query string replaced.
+    # Pass the raw query without a leading "?" (e.g. "page=2&limit=10").
+    # Pass "" to remove the query component.
+    export fn withSearch(query: string): Uri {
+        return uri_with_search(self, query);
+    }
+
+    # Return a new Uri with the fragment replaced.
+    # Pass the fragment without a leading "#".
+    # Pass "" to remove the fragment component.
+    export fn withHash(fragment: string): Uri {
+        return uri_with_hash(self, fragment);
+    }
+
+    # ── Predicates ────────────────────────────────────────────────────────────
+
+    # True if the URI has a scheme (i.e. is an absolute URI or absolute IRI).
+    export fn isAbsolute(): bool {
+        return uri_is_absolute(self) == 1;
+    }
+
+    # True if the URI has no scheme (relative reference).
+    export fn isRelative(): bool {
+        return uri_is_absolute(self) == 0;
+    }
+
+    # ── Resolution ────────────────────────────────────────────────────────────
+
+    # Resolve self (which may be relative) against base using RFC 3986 §5.2.
+    # Example: Uri.parse("/new/path").resolve(base) → absolute Uri
+    export fn resolve(base: Uri): Uri {
+        return uri_resolve(base, self);
+    }
+
+    # Serialize the Uri back to a string.
+    export fn toString(): string {
+        return uri_to_string(self);
+    }
+
+    # ── Percent-encoding helpers ──────────────────────────────────────────────
+
+    # Percent-encode a string (application/x-www-form-urlencoded style).
+    # Spaces become "%20"; all non-unreserved characters are escaped.
+    # Example: Uri.encode("hello world & more") → "hello%20world%20%26%20more"
+    export static fn encode(s: string): string {
+        return uri_encode_component(s);
+    }
+
+    # Decode a percent-encoded string.
+    # Example: Uri.decode("hello%20world") → "hello world"
+    export static fn decode(s: string): string {
+        return uri_decode_component(s);
+    }
+
+    # Free this Uri.
+    export fn free() {
+        uri_free(self);
+    }
+}
+
+Uri extends Disposable {
+    # Free this Uri.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        uri_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UriSearchParams extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+UriSearchParams extends {
+
+    # Parse a query string (without leading "?") into a UriSearchParams.
+    # Duplicate keys are preserved; values are percent-decoded.
+    export static fn parse(query: string): UriSearchParams {
+        return uri_params_parse(query);
+    }
+
+    # Return the first value for key, or "" if the key is not present.
+    export fn get(key: string): string {
+        return uri_params_get(self, key);
+    }
+
+    # Return all values for key as a comma-separated string, or "" if absent.
+    export fn getAll(key: string): string {
+        return uri_params_get_all(self, key);
+    }
+
+    # True if at least one entry has the given key.
+    export fn has(key: string): bool {
+        return uri_params_has(self, key) == 1;
+    }
+
+    # Set key to value, replacing all existing entries for that key.
+    export fn set(key: string, value: string) {
+        uri_params_set(self, key, value);
+    }
+
+    # Append a new key=value entry without replacing existing ones.
+    export fn append(key: string, value: string) {
+        uri_params_append(self, key, value);
+    }
+
+    # Remove all entries with the given key.
+    export fn delete(key: string) {
+        uri_params_delete(self, key);
+    }
+
+    # Serialize to a percent-encoded query string (without leading "?").
+    # Example: "page=3&limit=10&sort=asc"
+    export fn toString(): string {
+        return uri_params_to_string(self);
+    }
+
+    # Free this UriSearchParams.
+    export fn free() {
+        uri_params_free(self);
+    }
+}
+
+UriSearchParams extends Disposable {
+    # Free this UriSearchParams.  Called automatically at end of a `using` block.
+    export fn dispose() {
+        uri_params_free(self);
+    }
+}
+

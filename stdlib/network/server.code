@@ -1,0 +1,346 @@
+# stdlib/network/server.code
+#
+# Express/Elysia-style HTTP/1.1 server — plain TCP, no TLS.
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+#   import "stdlib/network/server";
+#
+#   fn main(): void {
+#       const app: HttpServer = HttpServer.new();
+#
+#       app.get("/", fn(req: ServerRequest): ServerResponse {
+#           return ServerResponse("Hello, World!");   # callable shorthand for .ok()
+#       });
+#
+#       app.get("/greet/:name", fn(req: ServerRequest): ServerResponse {
+#           return ServerResponse("Hello, " + req.param("name") + "!");
+#       });
+#
+#       app.post("/echo", fn(req: ServerRequest): ServerResponse {
+#           return ServerResponse.json("{\"body\": \"" + req.body() + "\"}");
+#       });
+#
+#       app.listen(3000);   # blocks until Ctrl+C or server.stop()
+#   }
+#
+# ── Types exported ────────────────────────────────────────────────────────────
+#
+#   ServerRequest   — incoming HTTP request (method, path, params, query, headers, body)
+#   ServerResponse  — response built by a route handler
+#   HttpServer      — server with route registration and lifecycle control
+#
+# ── ServerRequest ─────────────────────────────────────────────────────────────
+#
+#   req.method()            → string    "GET", "POST", etc.
+#   req.path()              → string    URL path (without query string)
+#   req.param(name)         → string    route :param capture, e.g. req.param("id")
+#   req.query(name)         → string    ?key=value query param, e.g. req.query("page")
+#   req.header(name)        → string    request header (lowercase key)
+#   req.body()              → string    raw request body
+#
+# ── ServerResponse ────────────────────────────────────────────────────────────
+#
+#   ServerResponse(body)              → ServerResponse   200, text body  [Callable shorthand]
+#   ServerResponse.new()              → ServerResponse   200, empty body
+#   ServerResponse.ok(body)           → ServerResponse   200, text body
+#   ServerResponse.json(body)         → ServerResponse   200, JSON body + Content-Type
+#   ServerResponse.error(code, body)  → ServerResponse   custom status + body
+#   resp.status(code)                 → ServerResponse   set integer status code, returns self
+#   resp.statusCode(code)             → ServerResponse   set StatusCode enum value, returns self
+#   resp.setHeader(name, value)       → ServerResponse   add response header, returns self
+#   resp.withBody(text)               → ServerResponse   set body, returns self
+#
+# ── HttpServer ────────────────────────────────────────────────────────────────
+#
+#   HttpServer.new()                    → HttpServer
+#   server.get(pattern, handler)                      register GET route
+#   server.post(pattern, handler)                     register POST route
+#   server.put(pattern, handler)                      register PUT route
+#   server.delete(pattern, handler)                   register DELETE route
+#   server.patch(pattern, handler)                    register PATCH route
+#   server.listen(port)                               blocking — run until stop()
+#   server.listenAsync(port)                          non-blocking — spawns a thread
+#   server.stop()                                     signal the event loop to stop
+#   server.free()                                     stop + join thread + free
+#
+# ── Route patterns ────────────────────────────────────────────────────────────
+#   /static/path            — exact match
+#   /user/:id               — :id captures the next path segment
+#   /org/:org/repo/:repo    — multiple captures
+#
+# ── Link ──────────────────────────────────────────────────────────────────────
+#   Compile with -lpthread (the server event loop uses POSIX threads).
+
+import "../io";
+import "./status";
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Opaque type declarations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Incoming HTTP request, heap-allocated by the server for each connection.
+export type ServerRequest = intrinsic("i8*");
+
+# Response built by a route handler and serialised back to the client.
+export type ServerResponse = intrinsic("i8*");
+
+# The server instance: route table + event loop + listening socket.
+export type HttpServer = intrinsic("i8*");
+
+# Handler type — a function that receives a request and returns a response.
+# Closures that capture variables are supported.
+export type RouteHandler = fn(req: ServerRequest): ServerResponse;
+
+# ─────────────────────────────────────────────────────────────────────────────
+# C runtime bindings  (runtime/net_server.c)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── ServerRequest ──────────────────────────────────────────────────────────────
+extern fn sr_method(r: ServerRequest): string;
+extern fn sr_path(r: ServerRequest): string;
+extern fn sr_body(r: ServerRequest): string;
+extern fn sr_param(r: ServerRequest, key: string): string;
+extern fn sr_query(r: ServerRequest, key: string): string;
+extern fn sr_header(r: ServerRequest, key: string): string;
+extern fn sr_free(r: ServerRequest);
+
+# ── ServerResponse ─────────────────────────────────────────────────────────────
+extern fn resp_new(): ServerResponse;
+extern fn resp_ok(body: string): ServerResponse;
+extern fn resp_json(body: string): ServerResponse;
+extern fn resp_error(code: int, body: string): ServerResponse;
+extern fn resp_set_status(r: ServerResponse, code: int): ServerResponse;
+extern fn resp_set_header(r: ServerResponse, key: string, value: string): ServerResponse;
+extern fn resp_set_body(r: ServerResponse, body: string): ServerResponse;
+extern fn resp_status(r: ServerResponse): int;
+extern fn resp_body(r: ServerResponse): string;
+extern fn resp_header(r: ServerResponse, key: string): string;
+extern fn resp_free(r: ServerResponse);
+
+# ── HttpServer ─────────────────────────────────────────────────────────────────
+extern fn server_new(): HttpServer;
+extern fn server_add_route(s: HttpServer, method: string, pattern: string, handler: RouteHandler);
+extern fn server_listen(s: HttpServer, port: int);
+extern fn server_listen_async(s: HttpServer, port: int);
+extern fn server_stop(s: HttpServer);
+extern fn server_free(s: HttpServer);
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ServerRequest extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+ServerRequest extends {
+
+    # Return the HTTP method ("GET", "POST", "PUT", etc.).
+    export fn method(): string {
+        return sr_method(self);
+    }
+
+    # Return the URL path without the query string (e.g. "/user/42").
+    export fn path(): string {
+        return sr_path(self);
+    }
+
+    # Return the raw request body.
+    # For POST / PUT / PATCH requests with Content-Length, this is the body bytes.
+    # Returns "" for requests without a body.
+    export fn body(): string {
+        return sr_body(self);
+    }
+
+    # Return the value of a named route parameter.
+    # For pattern "/user/:id" and path "/user/42", req.param("id") returns "42".
+    # Returns "" if the parameter was not captured.
+    export fn param(name: string): string {
+        return sr_param(self, name);
+    }
+
+    # Return a query-string parameter from the URL.
+    # For URL "/search?q=hello&page=2", req.query("q") returns "hello".
+    # Values are percent-decoded.  Returns "" if the key is absent.
+    export fn query(name: string): string {
+        return sr_query(self, name);
+    }
+
+    # Return the value of a request header (case-insensitive lookup, lowercase key).
+    # e.g. req.header("content-type") returns "application/json".
+    # Returns "" if the header is not present.
+    export fn header(name: string): string {
+        return sr_header(self, name);
+    }
+
+    # Free the request.  The server calls this automatically after the handler
+    # returns — user code should not call free() on the ServerRequest it receives.
+    export fn free() {
+        sr_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ServerResponse extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+ServerResponse extends {
+
+    # Callable shorthand — ServerResponse("Hello") is identical to ServerResponse.ok("Hello").
+    # Implements Callable so route handlers can use ServerResponse as a constructor function:
+    #
+    #   app.get("/", fn(req: ServerRequest): ServerResponse {
+    #       return ServerResponse("Hello, World!");   # same as ServerResponse.ok(...)
+    #   });
+    export static fn call(body: string): ServerResponse {
+        return resp_ok(body);
+    }
+
+    # Allocate a new response with status 200 and an empty body.
+    export static fn new(): ServerResponse {
+        return resp_new();
+    }
+
+    # Allocate a 200 response with a plain-text body.
+    export static fn ok(body: string): ServerResponse {
+        return resp_ok(body);
+    }
+
+    # Allocate a 200 response with a JSON body and Content-Type: application/json.
+    export static fn json(body: string): ServerResponse {
+        return resp_json(body);
+    }
+
+    # Allocate a response with a custom HTTP status code and body.
+    #   ServerResponse.error(404, "Not Found")
+    #   ServerResponse.error(500, "Internal Server Error")
+    export static fn error(code: int, body: string): ServerResponse {
+        return resp_error(code, body);
+    }
+
+    # Set the HTTP status code and return self for chaining.
+    export fn status(code: int): ServerResponse {
+        return resp_set_status(self, code);
+    }
+
+    # Add or overwrite a response header and return self for chaining.
+    export fn setHeader(name: string, value: string): ServerResponse {
+        return resp_set_header(self, name, value);
+    }
+
+    # Set the response body text and return self for chaining.
+    # Named withBody to avoid collision with ServerRequest.body() which reads
+    # the incoming request body.
+    #   ServerResponse.new().status(404).withBody("Not Found")
+    export fn withBody(text: string): ServerResponse {
+        return resp_set_body(self, text);
+    }
+
+    # Set the HTTP status code from a StatusCode enum value and return self.
+    # Provides a type-safe alternative to status(int).
+    #
+    #   ServerResponse.new()
+    #       .statusCode(StatusCode::Created)
+    #       .withBody("{\"id\":42}")
+    export fn statusCode(code: StatusCode): ServerResponse {
+        return resp_set_status(self, code.toInt());
+    }
+
+    # Return the HTTP status code of the response.
+    export fn getStatus(): int {
+        return resp_status(self);
+    }
+
+    # Return the response body.
+    export fn getBody(): string {
+        return resp_body(self);
+    }
+
+    # Return the value of a response header, or "" if not set.
+    export fn getHeader(name: string): string {
+        return resp_header(self, name);
+    }
+
+    # Free the response.  The server calls this automatically — user code
+    # should not free a ServerResponse returned from the route handler.
+    export fn free() {
+        resp_free(self);
+    }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HttpServer extensions
+# ─────────────────────────────────────────────────────────────────────────────
+
+HttpServer extends {
+
+    # Create a new HTTP server.  No socket is opened until listen() or
+    # listenAsync() is called.
+    export static fn new(): HttpServer {
+        return server_new();
+    }
+
+    # Register a handler for GET requests matching `pattern`.
+    #   app.get("/hello", fn(req: ServerRequest): ServerResponse {
+    #       return ServerResponse.ok("world");
+    #   });
+    export fn get(pattern: string, handler: RouteHandler) {
+        server_add_route(self, "GET", pattern, handler);
+    }
+
+    # Register a handler for POST requests matching `pattern`.
+    export fn post(pattern: string, handler: RouteHandler) {
+        server_add_route(self, "POST", pattern, handler);
+    }
+
+    # Register a handler for PUT requests matching `pattern`.
+    export fn put(pattern: string, handler: RouteHandler) {
+        server_add_route(self, "PUT", pattern, handler);
+    }
+
+    # Register a handler for DELETE requests matching `pattern`.
+    export fn delete(pattern: string, handler: RouteHandler) {
+        server_add_route(self, "DELETE", pattern, handler);
+    }
+
+    # Register a handler for PATCH requests matching `pattern`.
+    export fn patch(pattern: string, handler: RouteHandler) {
+        server_add_route(self, "PATCH", pattern, handler);
+    }
+
+    # Start the server on `port` and block the calling thread.
+    # Returns only after server.stop() is called from another thread.
+    #
+    #   app.listen(3000);
+    export fn listen(port: int) {
+        server_listen(self, port);
+    }
+
+    # Start the server on `port` in a background thread and return immediately.
+    # The caller must call server.stop() + server.free() to shut down cleanly.
+    #
+    #   app.listenAsync(3000);
+    #   Async.sleep(100);   # wait for the server to bind
+    #   # ... make requests ...
+    #   app.stop();
+    #   app.free();
+    export fn listenAsync(port: int) {
+        server_listen_async(self, port);
+    }
+
+    # Signal the server event loop to stop accepting new connections.
+    # For a blocking listen() call, this must be called from another thread.
+    # For listenAsync(), call this before free().
+    export fn stop() {
+        server_stop(self);
+    }
+
+    # Stop the server, join the background thread (if started with listenAsync),
+    # and free all resources.
+    export fn free() {
+        server_free(self);
+    }
+}
+
+HttpServer extends Disposable {
+    export fn dispose() {
+        server_free(self);
+    }
+}
