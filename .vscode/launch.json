@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "codelang",
+      "request": "launch",
+      "name": "Debug current file",
+      "sourceFile": "${file}",
+      "args": [],
+      "stopOnEntry": false
+    },
+    {
+      "type": "codelang",
+      "request": "launch",
+      "name": "Debug current file (stop on entry)",
+      "sourceFile": "${file}",
+      "args": [],
+      "stopOnEntry": true
+    },
+    {
+      "type": "codelang",
+      "request": "launch",
+      "name": "Debug examples/hello.code",
+      "sourceFile": "${workspaceFolder}/examples/hello.code",
+      "args": [],
+      "stopOnEntry": false
+    },
+    {
+      "type": "codelang",
+      "request": "launch",
+      "name": "Debug examples/01_simple.code",
+      "sourceFile": "${workspaceFolder}/examples/01_simple.code",
+      "args": [],
+      "stopOnEntry": false
+    }
+  ]
+}
