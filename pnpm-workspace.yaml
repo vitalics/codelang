@@ -2,4 +2,4 @@ onlyBuiltDependencies:
   - esbuild
 
 allowBuilds:
-  - eslint
+  - esbuild
