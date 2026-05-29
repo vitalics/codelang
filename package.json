@@ -172,6 +172,11 @@
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "~9.0.1"
   },
+  "pnpm": {
+    "overrides": {
+      "hasown": "2.0.2"
+    }
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.73.0",
