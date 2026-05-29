@@ -1,0 +1,24 @@
+{
+  "name": "codelang-debug-adapter",
+  "version": "0.1.0",
+  "description": "CodeLang DAP debug adapter — compiles .code files and proxies to lldb-dap / gdb",
+  "type": "module",
+  "main": "./out/index.js",
+  "bin": {
+    "codelang-dap": "./out/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}
