@@ -35,3 +35,6 @@ editors/zed/Cargo.lock
 editors/zed/target/
 # VS Code extension build artifact
 *.vsix
+
+# VS Code debug build output
+.debug/

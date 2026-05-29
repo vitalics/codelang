@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Compile the currently open .code file with DWARF debug info.
+      // Output goes to ${workspaceFolder}/.debug/ so the binary is always
+      // at a predictable path regardless of where the source lives.
+      "label": "codelang: compile (debug)",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/bin/codelang.js",
+        "compile",
+        "${file}",
+        "--debug",
+        "--destination",
+        "${workspaceFolder}/.debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": {
+        "owner": "codelang",
+        "fileLocation": ["absolute"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(error|warning):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      // Same as above but for examples/hello.code specifically.
+      "label": "codelang: compile hello.code (debug)",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/bin/codelang.js",
+        "compile",
+        "${workspaceFolder}/examples/hello.code",
+        "--debug",
+        "--destination",
+        "${workspaceFolder}/.debug"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

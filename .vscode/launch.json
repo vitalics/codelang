@@ -1,37 +1,50 @@
 {
+  // Requires the CodeLLDB extension: https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb
+  // Install once: Cmd+P → "ext install vadimcn.vscode-lldb"
+  //
+  // Each configuration compiles the source file first (preLaunchTask),
+  // then hands the resulting binary to lldb.  Breakpoints, step-over/into,
+  // variable inspection, and the Debug Console all work out of the box.
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "codelang",
+      "type": "lldb",
       "request": "launch",
       "name": "Debug current file",
-      "sourceFile": "${file}",
+      "preLaunchTask": "codelang: compile (debug)",
+      "program": "${workspaceFolder}/.debug/${fileBasenameNoExtension}",
       "args": [],
-      "stopOnEntry": false
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "sourceMap": {
+        "${workspaceFolder}/.debug": "${workspaceFolder}"
+      }
     },
     {
-      "type": "codelang",
+      "type": "lldb",
       "request": "launch",
       "name": "Debug current file (stop on entry)",
-      "sourceFile": "${file}",
+      "preLaunchTask": "codelang: compile (debug)",
+      "program": "${workspaceFolder}/.debug/${fileBasenameNoExtension}",
       "args": [],
-      "stopOnEntry": true
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true,
+      "sourceMap": {
+        "${workspaceFolder}/.debug": "${workspaceFolder}"
+      }
     },
     {
-      "type": "codelang",
+      "type": "lldb",
       "request": "launch",
       "name": "Debug examples/hello.code",
-      "sourceFile": "${workspaceFolder}/examples/hello.code",
+      "preLaunchTask": "codelang: compile hello.code (debug)",
+      "program": "${workspaceFolder}/.debug/hello",
       "args": [],
-      "stopOnEntry": false
-    },
-    {
-      "type": "codelang",
-      "request": "launch",
-      "name": "Debug examples/01_simple.code",
-      "sourceFile": "${workspaceFolder}/examples/01_simple.code",
-      "args": [],
-      "stopOnEntry": false
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "sourceMap": {
+        "${workspaceFolder}/.debug": "${workspaceFolder}/examples"
+      }
     }
   ]
 }
