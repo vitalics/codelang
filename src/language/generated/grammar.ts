@@ -76,42 +76,42 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@87"
+              "$ref": "#/rules@93"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@86"
+              "$ref": "#/rules@92"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@91"
+              "$ref": "#/rules@97"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@94"
+              "$ref": "#/rules@100"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@98"
+              "$ref": "#/rules@104"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@101"
+              "$ref": "#/rules@107"
             },
             "arguments": []
           }
@@ -138,7 +138,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@114"
+                "$ref": "#/rules@120"
               },
               "arguments": []
             }
@@ -170,7 +170,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -190,7 +190,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@114"
+                "$ref": "#/rules@120"
               },
               "arguments": []
             }
@@ -222,7 +222,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -246,7 +246,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -262,7 +262,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -310,7 +310,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@114"
+                    "$ref": "#/rules@120"
                   },
                   "arguments": []
                 }
@@ -351,7 +351,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@114"
+                "$ref": "#/rules@120"
               },
               "arguments": []
             }
@@ -367,7 +367,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@114"
+                "$ref": "#/rules@120"
               },
               "arguments": []
             }
@@ -400,7 +400,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -481,7 +481,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -503,7 +503,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@114"
+                    "$ref": "#/rules@120"
                   },
                   "arguments": []
                 }
@@ -515,7 +515,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@111"
+                    "$ref": "#/rules@117"
                   },
                   "arguments": []
                 }
@@ -527,7 +527,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -553,7 +553,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -594,7 +594,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -667,7 +667,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -737,7 +737,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -804,7 +804,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -823,7 +823,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -842,7 +842,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -1050,7 +1050,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -1069,7 +1069,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -1088,7 +1088,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -1117,7 +1117,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -1189,7 +1189,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -1205,7 +1205,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@84"
+                "$ref": "#/rules@90"
               },
               "arguments": []
             }
@@ -1224,7 +1224,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -1258,7 +1258,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@111"
+                    "$ref": "#/rules@117"
                   },
                   "arguments": []
                 }
@@ -1277,7 +1277,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@111"
+                        "$ref": "#/rules@117"
                       },
                       "arguments": []
                     }
@@ -1345,7 +1345,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -1364,7 +1364,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -1383,7 +1383,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -1412,7 +1412,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -1459,7 +1459,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@114"
+                "$ref": "#/rules@120"
               },
               "arguments": []
             }
@@ -1484,7 +1484,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@84"
+            "$ref": "#/rules@90"
           },
           "arguments": []
         }
@@ -1543,7 +1543,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -1562,7 +1562,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -1632,7 +1632,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -1651,7 +1651,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -1680,7 +1680,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -1781,7 +1781,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@107"
+              "$ref": "#/rules@113"
             },
             "arguments": []
           },
@@ -1809,7 +1809,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -1851,7 +1851,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@49"
+                      "$ref": "#/rules@52"
                     },
                     "arguments": []
                   },
@@ -1859,6 +1859,27 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "$type": "RuleCall",
                     "rule": {
                       "$ref": "#/rules@29"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@34"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@33"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@32"
                     },
                     "arguments": []
                   },
@@ -1879,28 +1900,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@103"
-                    },
-                    "arguments": []
-                  },
-                  {
-                    "$type": "RuleCall",
-                    "rule": {
-                      "$ref": "#/rules@32"
-                    },
-                    "arguments": []
-                  },
-                  {
-                    "$type": "RuleCall",
-                    "rule": {
-                      "$ref": "#/rules@33"
-                    },
-                    "arguments": []
-                  },
-                  {
-                    "$type": "RuleCall",
-                    "rule": {
-                      "$ref": "#/rules@34"
+                      "$ref": "#/rules@109"
                     },
                     "arguments": []
                   },
@@ -1914,6 +1914,27 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   {
                     "$type": "RuleCall",
                     "rule": {
+                      "$ref": "#/rules@36"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@37"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@38"
+                    },
+                    "arguments": []
+                  },
+                  {
+                    "$type": "RuleCall",
+                    "rule": {
                       "$ref": "#/rules@28"
                     },
                     "arguments": []
@@ -1921,28 +1942,28 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@42"
+                      "$ref": "#/rules@45"
                     },
                     "arguments": []
                   },
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@43"
+                      "$ref": "#/rules@46"
                     },
                     "arguments": []
                   },
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@68"
+                      "$ref": "#/rules@71"
                     },
                     "arguments": []
                   },
                   {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@106"
+                      "$ref": "#/rules@112"
                     },
                     "arguments": []
                   }
@@ -1957,28 +1978,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@41"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
               "$ref": "#/rules@44"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@45"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@105"
             },
             "arguments": []
           },
@@ -1992,6 +1992,27 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
+              "$ref": "#/rules@48"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@111"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@50"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
               "$ref": "#/rules@21"
             },
             "arguments": []
@@ -1999,7 +2020,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@98"
+              "$ref": "#/rules@104"
             },
             "arguments": []
           }
@@ -2053,7 +2074,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2072,7 +2093,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -2094,7 +2115,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -2125,7 +2146,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2144,7 +2165,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -2163,7 +2184,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2191,7 +2212,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2220,7 +2241,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@110"
+                  "$ref": "#/rules@116"
                 },
                 "arguments": []
               },
@@ -2239,7 +2260,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2275,7 +2296,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -2293,7 +2314,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2312,7 +2333,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -2331,7 +2352,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -2377,7 +2398,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -2395,7 +2416,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2411,7 +2432,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2430,7 +2451,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -2449,7 +2470,509 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "MemberCallMemberCallStatement",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "selfCall",
+                "operator": "?=",
+                "terminal": {
+                  "$type": "Keyword",
+                  "value": "self"
+                }
+              },
+              {
+                "$type": "Assignment",
+                "feature": "namespace",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@116"
+                  },
+                  "arguments": []
+                }
+              }
+            ]
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "firstMember",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "firstArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "firstArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "CallMemberCallStatement",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "callee",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "callArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "callArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "CallMemberMemberCallStatement",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "callee",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "callArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "callArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "firstMember",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "firstArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "firstArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -2483,7 +3006,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -2502,7 +3025,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -2521,7 +3044,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -2550,7 +3073,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -2569,7 +3092,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -2611,7 +3134,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2647,7 +3170,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2679,7 +3202,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             },
@@ -2697,7 +3220,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
       "definition": {
         "$type": "RuleCall",
         "rule": {
-          "$ref": "#/rules@37"
+          "$ref": "#/rules@40"
         },
         "arguments": []
       },
@@ -2718,7 +3241,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@38"
+              "$ref": "#/rules@41"
             },
             "arguments": []
           },
@@ -2750,7 +3273,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@38"
+                    "$ref": "#/rules@41"
                   },
                   "arguments": []
                 }
@@ -2777,7 +3300,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@39"
+              "$ref": "#/rules@42"
             },
             "arguments": []
           },
@@ -2809,7 +3332,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@39"
+                    "$ref": "#/rules@42"
                   },
                   "arguments": []
                 }
@@ -2843,7 +3366,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@37"
+                  "$ref": "#/rules@40"
                 },
                 "arguments": []
               },
@@ -2870,7 +3393,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -2900,7 +3423,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@36"
+                "$ref": "#/rules@39"
               },
               "arguments": []
             }
@@ -2916,7 +3439,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2940,7 +3463,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -2972,7 +3495,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@36"
+                "$ref": "#/rules@39"
               },
               "arguments": []
             }
@@ -3006,7 +3529,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@41"
+                        "$ref": "#/rules@44"
                       },
                       "arguments": []
                     }
@@ -3097,7 +3620,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@36"
+                "$ref": "#/rules@39"
               },
               "arguments": []
             }
@@ -3137,7 +3660,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -3153,7 +3676,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@46"
+                "$ref": "#/rules@49"
               },
               "arguments": []
             },
@@ -3185,7 +3708,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@114"
+                    "$ref": "#/rules@120"
                   },
                   "arguments": []
                 }
@@ -3197,7 +3720,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@111"
+                    "$ref": "#/rules@117"
                   },
                   "arguments": []
                 }
@@ -3227,7 +3750,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@63"
+                    "$ref": "#/rules@66"
                   },
                   "arguments": []
                 }
@@ -3307,7 +3830,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@36"
+                "$ref": "#/rules@39"
               },
               "arguments": []
             }
@@ -3323,7 +3846,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@48"
+                "$ref": "#/rules@51"
               },
               "arguments": []
             }
@@ -3363,7 +3886,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -3403,7 +3926,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -3436,7 +3959,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@110"
+                  "$ref": "#/rules@116"
                 },
                 "arguments": []
               },
@@ -3477,7 +4000,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -3494,7 +4017,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
       "definition": {
         "$type": "RuleCall",
         "rule": {
-          "$ref": "#/rules@51"
+          "$ref": "#/rules@54"
         },
         "arguments": []
       },
@@ -3515,7 +4038,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@52"
+              "$ref": "#/rules@55"
             },
             "arguments": []
           },
@@ -3572,7 +4095,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@52"
+                    "$ref": "#/rules@55"
                   },
                   "arguments": []
                 }
@@ -3599,7 +4122,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@53"
+              "$ref": "#/rules@56"
             },
             "arguments": []
           },
@@ -3631,7 +4154,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@53"
+                    "$ref": "#/rules@56"
                   },
                   "arguments": []
                 }
@@ -3658,7 +4181,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@54"
+              "$ref": "#/rules@57"
             },
             "arguments": []
           },
@@ -3690,7 +4213,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@54"
+                    "$ref": "#/rules@57"
                   },
                   "arguments": []
                 }
@@ -3717,7 +4240,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@55"
+              "$ref": "#/rules@58"
             },
             "arguments": []
           },
@@ -3749,7 +4272,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@55"
+                    "$ref": "#/rules@58"
                   },
                   "arguments": []
                 }
@@ -3776,7 +4299,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@56"
+              "$ref": "#/rules@59"
             },
             "arguments": []
           },
@@ -3817,7 +4340,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@56"
+                    "$ref": "#/rules@59"
                   },
                   "arguments": []
                 }
@@ -3844,7 +4367,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@57"
+              "$ref": "#/rules@60"
             },
             "arguments": []
           },
@@ -3885,7 +4408,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@57"
+                    "$ref": "#/rules@60"
                   },
                   "arguments": []
                 }
@@ -3912,7 +4435,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@58"
+              "$ref": "#/rules@61"
             },
             "arguments": []
           },
@@ -3957,7 +4480,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@58"
+                    "$ref": "#/rules@61"
                   },
                   "arguments": []
                 }
@@ -4016,7 +4539,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@59"
+                    "$ref": "#/rules@62"
                   },
                   "arguments": []
                 }
@@ -4026,7 +4549,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@59"
+              "$ref": "#/rules@62"
             },
             "arguments": []
           }
@@ -4049,7 +4572,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@60"
+              "$ref": "#/rules@63"
             },
             "arguments": []
           },
@@ -4076,7 +4599,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -4095,7 +4618,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -4114,7 +4637,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@50"
+                            "$ref": "#/rules@53"
                           },
                           "arguments": []
                         }
@@ -4158,7 +4681,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@50"
+                  "$ref": "#/rules@53"
                 },
                 "arguments": []
               },
@@ -4171,27 +4694,6 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@70"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@71"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@72"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
               "$ref": "#/rules@73"
             },
             "arguments": []
@@ -4199,35 +4701,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@40"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@61"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@76"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@102"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@108"
+              "$ref": "#/rules@74"
             },
             "arguments": []
           },
@@ -4241,35 +4715,21 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@69"
+              "$ref": "#/rules@76"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@66"
+              "$ref": "#/rules@43"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@65"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@67"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@81"
+              "$ref": "#/rules@64"
             },
             "arguments": []
           },
@@ -4283,14 +4743,14 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@90"
+              "$ref": "#/rules@80"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@77"
+              "$ref": "#/rules@81"
             },
             "arguments": []
           },
@@ -4304,6 +4764,20 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
+              "$ref": "#/rules@108"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@114"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
               "$ref": "#/rules@78"
             },
             "arguments": []
@@ -4311,14 +4785,84 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@104"
+              "$ref": "#/rules@72"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@74"
+              "$ref": "#/rules@69"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@68"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@70"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@87"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@88"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@96"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@83"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@85"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@84"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@110"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@77"
             },
             "arguments": []
           }
@@ -4345,7 +4889,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -4361,7 +4905,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@62"
+                "$ref": "#/rules@65"
               },
               "arguments": []
             }
@@ -4380,7 +4924,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@62"
+                    "$ref": "#/rules@65"
                   },
                   "arguments": []
                 }
@@ -4419,7 +4963,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@114"
+                    "$ref": "#/rules@120"
                   },
                   "arguments": []
                 }
@@ -4431,7 +4975,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@111"
+                    "$ref": "#/rules@117"
                   },
                   "arguments": []
                 }
@@ -4461,7 +5005,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@63"
+                    "$ref": "#/rules@66"
                   },
                   "arguments": []
                 }
@@ -4503,7 +5047,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -4529,7 +5073,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4545,7 +5089,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4564,7 +5108,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@64"
+                    "$ref": "#/rules@67"
                   },
                   "arguments": []
                 }
@@ -4583,7 +5127,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@64"
+                        "$ref": "#/rules@67"
                       },
                       "arguments": []
                     }
@@ -4626,7 +5170,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4695,7 +5239,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -4714,7 +5258,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -4756,7 +5300,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4775,7 +5319,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -4794,7 +5338,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -4836,7 +5380,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4855,7 +5399,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -4874,7 +5418,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -4931,7 +5475,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -4949,7 +5493,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -4970,7 +5514,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@113"
+            "$ref": "#/rules@119"
           },
           "arguments": []
         }
@@ -4989,7 +5533,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@114"
+            "$ref": "#/rules@120"
           },
           "arguments": []
         }
@@ -5008,7 +5552,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@111"
+            "$ref": "#/rules@117"
           },
           "arguments": []
         }
@@ -5057,7 +5601,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           "terminal": {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@110"
+              "$ref": "#/rules@116"
             },
             "arguments": []
           },
@@ -5097,7 +5641,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@110"
+                        "$ref": "#/rules@116"
                       },
                       "arguments": []
                     }
@@ -5116,7 +5660,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -5135,7 +5679,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                             "terminal": {
                               "$type": "RuleCall",
                               "rule": {
-                                "$ref": "#/rules@84"
+                                "$ref": "#/rules@90"
                               },
                               "arguments": []
                             }
@@ -5165,7 +5709,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5184,7 +5728,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -5203,7 +5747,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -5249,7 +5793,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -5267,7 +5811,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5283,7 +5827,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5302,7 +5846,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -5321,7 +5865,509 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "MemberCallMemberCallExpr",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "selfCall",
+                "operator": "?=",
+                "terminal": {
+                  "$type": "Keyword",
+                  "value": "self"
+                }
+              },
+              {
+                "$type": "Assignment",
+                "feature": "namespace",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@116"
+                  },
+                  "arguments": []
+                }
+              }
+            ]
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "firstMember",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "firstArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "firstArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "CallMemberCallExpr",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "callee",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "callArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "callArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          }
+        ]
+      },
+      "entry": false,
+      "fragment": false,
+      "parameters": []
+    },
+    {
+      "$type": "ParserRule",
+      "name": "CallMemberMemberCallExpr",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "callee",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "callArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "callArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "firstMember",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "firstArgs",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "firstArgs",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
+          },
+          {
+            "$type": "Keyword",
+            "value": ")"
+          },
+          {
+            "$type": "Keyword",
+            "value": "."
+          },
+          {
+            "$type": "Assignment",
+            "feature": "member",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@116"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "("
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "args",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@53"
+                  },
+                  "arguments": []
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "args",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -5355,7 +6401,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5374,7 +6420,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -5393,7 +6439,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -5422,7 +6468,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -5441,7 +6487,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -5478,7 +6524,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -5508,7 +6554,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@80"
+                    "$ref": "#/rules@86"
                   },
                   "arguments": []
                 }
@@ -5527,7 +6573,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@80"
+                        "$ref": "#/rules@86"
                       },
                       "arguments": []
                     }
@@ -5580,7 +6626,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@80"
+                    "$ref": "#/rules@86"
                   },
                   "arguments": []
                 }
@@ -5599,7 +6645,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@80"
+                        "$ref": "#/rules@86"
                       },
                       "arguments": []
                     }
@@ -5645,7 +6691,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -5662,7 +6708,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -5678,7 +6724,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -5692,7 +6738,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5730,7 +6776,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -5749,7 +6795,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -5794,7 +6840,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -5813,7 +6859,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -5842,7 +6888,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -5904,7 +6950,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -5923,7 +6969,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -5942,7 +6988,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -5967,7 +7013,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -6020,7 +7066,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@110"
+                      "$ref": "#/rules@116"
                     },
                     "arguments": []
                   },
@@ -6042,7 +7088,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@111"
+                        "$ref": "#/rules@117"
                       },
                       "arguments": []
                     }
@@ -6061,7 +7107,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@111"
+                            "$ref": "#/rules@117"
                           },
                           "arguments": []
                         }
@@ -6080,7 +7126,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                             "terminal": {
                               "$type": "RuleCall",
                               "rule": {
-                                "$ref": "#/rules@111"
+                                "$ref": "#/rules@117"
                               },
                               "arguments": []
                             }
@@ -6122,7 +7168,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -6141,7 +7187,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -6191,7 +7237,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -6208,7 +7254,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@85"
+                            "$ref": "#/rules@91"
                           },
                           "arguments": []
                         }
@@ -6227,7 +7273,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                             "terminal": {
                               "$type": "RuleCall",
                               "rule": {
-                                "$ref": "#/rules@85"
+                                "$ref": "#/rules@91"
                               },
                               "arguments": []
                             }
@@ -6258,7 +7304,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -6291,7 +7337,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@112"
+                    "$ref": "#/rules@118"
                   },
                   "arguments": []
                 }
@@ -6325,7 +7371,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -6361,7 +7407,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@110"
+                      "$ref": "#/rules@116"
                     },
                     "arguments": []
                   },
@@ -6383,7 +7429,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -6402,7 +7448,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -6441,7 +7487,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -6460,7 +7506,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@84"
+                "$ref": "#/rules@90"
               },
               "arguments": []
             }
@@ -6502,7 +7548,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -6569,7 +7615,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -6588,7 +7634,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -6617,7 +7663,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -6675,7 +7721,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -6742,7 +7788,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -6761,7 +7807,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -6780,7 +7826,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -6812,14 +7858,14 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@88"
+                    "$ref": "#/rules@94"
                   },
                   "arguments": []
                 },
                 {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@89"
+                    "$ref": "#/rules@95"
                   },
                   "arguments": []
                 }
@@ -6850,7 +7896,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -6869,7 +7915,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@111"
+                    "$ref": "#/rules@117"
                   },
                   "arguments": []
                 }
@@ -6891,7 +7937,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -6910,7 +7956,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -6982,7 +8028,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7001,7 +8047,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -7020,7 +8066,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -7049,7 +8095,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -7088,7 +8134,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7104,7 +8150,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7123,7 +8169,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -7142,7 +8188,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -7195,7 +8241,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7262,7 +8308,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -7281,7 +8327,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@110"
+                        "$ref": "#/rules@116"
                       },
                       "arguments": []
                     }
@@ -7306,7 +8352,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@92"
+                    "$ref": "#/rules@98"
                   },
                   "arguments": []
                 }
@@ -7318,7 +8364,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@93"
+                    "$ref": "#/rules@99"
                   },
                   "arguments": []
                 }
@@ -7372,7 +8418,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7388,7 +8434,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@84"
+                "$ref": "#/rules@90"
               },
               "arguments": []
             }
@@ -7441,7 +8487,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7460,7 +8506,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -7479,7 +8525,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -7508,7 +8554,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -7561,7 +8607,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@110"
+                  "$ref": "#/rules@116"
                 },
                 "arguments": []
               },
@@ -7631,7 +8677,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@110"
+                    "$ref": "#/rules@116"
                   },
                   "arguments": []
                 }
@@ -7650,7 +8696,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -7669,7 +8715,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@84"
+                            "$ref": "#/rules@90"
                           },
                           "arguments": []
                         }
@@ -7701,7 +8747,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@95"
+                    "$ref": "#/rules@101"
                   },
                   "arguments": []
                 }
@@ -7713,7 +8759,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@96"
+                    "$ref": "#/rules@102"
                   },
                   "arguments": []
                 }
@@ -7778,7 +8824,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7797,7 +8843,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@83"
+                    "$ref": "#/rules@89"
                   },
                   "arguments": []
                 }
@@ -7816,7 +8862,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@83"
+                        "$ref": "#/rules@89"
                       },
                       "arguments": []
                     }
@@ -7845,7 +8891,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -7907,7 +8953,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -7923,7 +8969,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@84"
+                "$ref": "#/rules@90"
               },
               "arguments": []
             }
@@ -7939,7 +8985,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@50"
+                "$ref": "#/rules@53"
               },
               "arguments": []
             }
@@ -7964,7 +9010,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@110"
+              "$ref": "#/rules@116"
             },
             "arguments": []
           },
@@ -8019,7 +9065,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@97"
+                "$ref": "#/rules@103"
               },
               "arguments": []
             }
@@ -8042,7 +9088,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@99"
+                    "$ref": "#/rules@105"
                   },
                   "arguments": []
                 }
@@ -8061,7 +9107,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@99"
+                        "$ref": "#/rules@105"
                       },
                       "arguments": []
                     }
@@ -8090,7 +9136,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@100"
+                    "$ref": "#/rules@106"
                   },
                   "arguments": []
                 }
@@ -8139,7 +9185,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@112"
+                "$ref": "#/rules@118"
               },
               "arguments": []
             }
@@ -8165,7 +9211,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8184,7 +9230,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -8208,7 +9254,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@84"
+            "$ref": "#/rules@90"
           },
           "arguments": []
         }
@@ -8230,7 +9276,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8253,7 +9299,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -8272,7 +9318,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -8310,7 +9356,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8333,7 +9379,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -8352,7 +9398,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -8386,7 +9432,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8409,7 +9455,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -8428,7 +9474,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -8459,7 +9505,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@112"
+            "$ref": "#/rules@118"
           },
           "arguments": []
         }
@@ -8485,7 +9531,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@112"
+                "$ref": "#/rules@118"
               },
               "arguments": []
             }
@@ -8501,7 +9547,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@112"
+                "$ref": "#/rules@118"
               },
               "arguments": []
             }
@@ -8544,7 +9590,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@112"
+                    "$ref": "#/rules@118"
                   },
                   "arguments": []
                 }
@@ -8582,7 +9628,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@112"
+                "$ref": "#/rules@118"
               },
               "arguments": []
             }
@@ -8598,7 +9644,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8617,7 +9663,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@84"
+                    "$ref": "#/rules@90"
                   },
                   "arguments": []
                 }
@@ -8636,7 +9682,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@84"
+                        "$ref": "#/rules@90"
                       },
                       "arguments": []
                     }
@@ -8662,7 +9708,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@95"
+                "$ref": "#/rules@101"
               },
               "arguments": []
             },
@@ -8691,7 +9737,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8710,7 +9756,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@50"
+                    "$ref": "#/rules@53"
                   },
                   "arguments": []
                 }
@@ -8729,7 +9775,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@50"
+                        "$ref": "#/rules@53"
                       },
                       "arguments": []
                     }
@@ -8755,7 +9801,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@110"
+                "$ref": "#/rules@116"
               },
               "arguments": []
             }
@@ -8890,7 +9936,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@83"
+              "$ref": "#/rules@89"
             }
           },
           {
@@ -8908,7 +9954,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@64"
+              "$ref": "#/rules@67"
             }
           }
         ]
@@ -8929,7 +9975,7 @@ export const CodeLangGrammar = (): Grammar => loadedCodeLangGrammar ?? (loadedCo
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@87"
+              "$ref": "#/rules@93"
             }
           }
         ]

@@ -58,6 +58,7 @@ export interface CompileOptions {
     ir?:          boolean;   // emit IR only, skip clang
     noCache?:     boolean;   // force full rebuild
     cpath?:       string;    // explicit path to the clang binary
+    debug?:       boolean;   // emit DWARF debug info (-g)
 }
 
 export async function compileAction(fileName: string, opts: CompileOptions): Promise<void> {
@@ -102,7 +103,10 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
     const llFile = path.join(outDir, `${baseName}.ll`);
     let ir: string;
     try {
-        ir = generateLLVMIR(moduleGraph.modules, path.basename(fileName));
+        ir = generateLLVMIR(moduleGraph.modules, path.basename(fileName), {
+            debug: opts.debug,
+            sourceFilePath: opts.debug ? absFile : undefined,
+        });
     } catch (err) {
         console.error(formatIRError((err as Error).message));
         process.exit(1);
@@ -152,7 +156,11 @@ export async function compileAction(fileName: string, opts: CompileOptions): Pro
     const runtimeNetWsC       = path.resolve(__dirname, '..', '..', 'runtime', 'net_ws.c');
     const runtimeNetHttp2C    = path.resolve(__dirname, '..', '..', 'runtime', 'net_http2.c');
     const runtimeNetHttp3C    = path.resolve(__dirname, '..', '..', 'runtime', 'net_http3.c');
-    const clangArgs = [llFile, runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC, runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC, runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC, runtimeFsC, runtimeOsC, runtimeTuiC, runtimeAsyncC, runtimeStreamC, runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC, runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, '-o', exeFile];
+    const runtimeDateC        = path.resolve(__dirname, '..', '..', 'runtime', 'date.c');
+    const runtimeNetUriC      = path.resolve(__dirname, '..', '..', 'runtime', 'net_uri.c');
+    const runtimeNetServerC   = path.resolve(__dirname, '..', '..', 'runtime', 'net_server.c');
+    const clangArgs = [llFile, runtimeC, runtimeStringC, runtimeArrayC, runtimeSetC, runtimeMapC, runtimeReflectionC, runtimeStacktraceC, runtimeIoC, runtimeMathC, runtimeRandomC, runtimeSimdC, runtimeNpuC, runtimeNpuCoremlC, runtimeFsC, runtimeOsC, runtimeTuiC, runtimeAsyncC, runtimeStreamC, runtimeNetTcpC, runtimeNetDnsC, runtimeNetUdpC, runtimeNetHttpC, runtimeNetWsC, runtimeNetHttp2C, runtimeNetHttp3C, runtimeDateC, runtimeNetUriC, runtimeNetServerC, '-o', exeFile];
+    if (opts.debug) clangArgs.push('-g');
     // macOS: pass the active SDK path so Xcode CLT headers resolve correctly.
     // xcrun is not available on Linux or Windows — guard it explicitly.
     if (process.platform === 'darwin') {
@@ -309,8 +317,9 @@ export default function main(): void {
         .option('--ir',            'emit LLVM IR only, skip clang compilation')
         .option('--no-cache',      'force full rebuild even if source is unchanged')
         .option('--cpath <path>',  'path to the clang binary (overrides auto-detection)')
-        .action((file: string, opts: { destination?: string; ir?: boolean; cache?: boolean; cpath?: string }) =>
-            compileAction(file, { ...opts, noCache: opts.cache === false })
+        .option('-g, --debug',     'compile with debug info (DWARF) for use with lldb/gdb debugger')
+        .action((file: string, opts: { destination?: string; ir?: boolean; cache?: boolean; cpath?: string; debug?: boolean }) =>
+            compileAction(file, { ...opts, noCache: opts.cache === false, debug: opts.debug })
         );
 
     program

@@ -117,7 +117,7 @@ export function isAliasBody(item: unknown): item is AliasBody {
 }
 
 export interface AnonymousStructLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'AnonymousStructLiteral';
     fields: Array<StructFieldInit>;
 }
@@ -132,7 +132,7 @@ export function isAnonymousStructLiteral(item: unknown): item is AnonymousStruct
 }
 
 export interface ArrayLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'ArrayLiteral';
     elements: Array<Expression>;
 }
@@ -198,7 +198,7 @@ export function isBinaryCondition(item: unknown): item is BinaryCondition {
 }
 
 export interface BinaryExpr extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'BinaryExpr';
     left: Expression;
     op: '!=' | '%' | '&' | '*' | '+' | '-' | '/' | '<' | '<<' | '<=' | '==' | '>' | '>=' | '>>' | '^' | '|';
@@ -247,7 +247,7 @@ export function isBoolExprCondition(item: unknown): item is BoolExprCondition {
 }
 
 export interface BoolLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'BoolLiteral';
     value: boolean;
 }
@@ -300,7 +300,7 @@ export function isCallableMethod(item: unknown): item is CallableMethod {
 }
 
 export interface CallExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'CallExpression';
     args: Array<Expression>;
     callee: string;
@@ -316,6 +316,98 @@ export const CallExpression = {
 
 export function isCallExpression(item: unknown): item is CallExpression {
     return reflection.isInstance(item, CallExpression.$type);
+}
+
+export interface CallMemberCallExpr extends langium.AstNode {
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $type: 'CallMemberCallExpr';
+    args: Array<Expression>;
+    callArgs: Array<Expression>;
+    callee: string;
+    member: string;
+}
+
+export const CallMemberCallExpr = {
+    $type: 'CallMemberCallExpr',
+    args: 'args',
+    callArgs: 'callArgs',
+    callee: 'callee',
+    member: 'member'
+} as const;
+
+export function isCallMemberCallExpr(item: unknown): item is CallMemberCallExpr {
+    return reflection.isInstance(item, CallMemberCallExpr.$type);
+}
+
+export interface CallMemberCallStatement extends langium.AstNode {
+    readonly $container: Block | MacroBlock;
+    readonly $type: 'CallMemberCallStatement';
+    args: Array<Expression>;
+    callArgs: Array<Expression>;
+    callee: string;
+    member: string;
+}
+
+export const CallMemberCallStatement = {
+    $type: 'CallMemberCallStatement',
+    args: 'args',
+    callArgs: 'callArgs',
+    callee: 'callee',
+    member: 'member'
+} as const;
+
+export function isCallMemberCallStatement(item: unknown): item is CallMemberCallStatement {
+    return reflection.isInstance(item, CallMemberCallStatement.$type);
+}
+
+export interface CallMemberMemberCallExpr extends langium.AstNode {
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $type: 'CallMemberMemberCallExpr';
+    args: Array<Expression>;
+    callArgs: Array<Expression>;
+    callee: string;
+    firstArgs: Array<Expression>;
+    firstMember: string;
+    member: string;
+}
+
+export const CallMemberMemberCallExpr = {
+    $type: 'CallMemberMemberCallExpr',
+    args: 'args',
+    callArgs: 'callArgs',
+    callee: 'callee',
+    firstArgs: 'firstArgs',
+    firstMember: 'firstMember',
+    member: 'member'
+} as const;
+
+export function isCallMemberMemberCallExpr(item: unknown): item is CallMemberMemberCallExpr {
+    return reflection.isInstance(item, CallMemberMemberCallExpr.$type);
+}
+
+export interface CallMemberMemberCallStatement extends langium.AstNode {
+    readonly $container: Block | MacroBlock;
+    readonly $type: 'CallMemberMemberCallStatement';
+    args: Array<Expression>;
+    callArgs: Array<Expression>;
+    callee: string;
+    firstArgs: Array<Expression>;
+    firstMember: string;
+    member: string;
+}
+
+export const CallMemberMemberCallStatement = {
+    $type: 'CallMemberMemberCallStatement',
+    args: 'args',
+    callArgs: 'callArgs',
+    callee: 'callee',
+    firstArgs: 'firstArgs',
+    firstMember: 'firstMember',
+    member: 'member'
+} as const;
+
+export function isCallMemberMemberCallStatement(item: unknown): item is CallMemberMemberCallStatement {
+    return reflection.isInstance(item, CallMemberMemberCallStatement.$type);
 }
 
 export interface CallStatement extends langium.AstNode {
@@ -338,7 +430,7 @@ export function isCallStatement(item: unknown): item is CallStatement {
 }
 
 export interface ChainedMemberCallExpr extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'ChainedMemberCallExpr';
     args: Array<Expression>;
     field: string;
@@ -513,7 +605,7 @@ export function isEnumBinding(item: unknown): item is EnumBinding {
 }
 
 export interface EnumConstructor extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'EnumConstructor';
     args: Array<Expression>;
     enumName: string;
@@ -623,7 +715,7 @@ export function isEnumVariant(item: unknown): item is EnumVariant {
     return reflection.isInstance(item, EnumVariant.$type);
 }
 
-export type Expression = AnonymousStructLiteral | ArrayLiteral | BinaryExpr | BoolLiteral | CallExpression | ChainedMemberCallExpr | EnumConstructor | FieldAccess | IfExpression | LambdaExpression | MacroCallExpression | MacroCallFieldAccess | MacroVarRef | MemberCallExpression | NumberLiteral | PostfixCallExpr | SelfCallExpression | SelfExpression | StringLiteral | StructLiteral | SuperCallExpression | SwitchExpression | TemplateLiteral | UnaryExpr | VariableRef;
+export type Expression = AnonymousStructLiteral | ArrayLiteral | BinaryExpr | BoolLiteral | CallExpression | CallMemberCallExpr | CallMemberMemberCallExpr | ChainedMemberCallExpr | EnumConstructor | FieldAccess | IfExpression | LambdaExpression | MacroCallExpression | MacroCallFieldAccess | MacroVarRef | MemberCallExpression | MemberCallMemberCallExpr | NumberLiteral | PostfixCallExpr | SelfCallExpression | SelfExpression | StringLiteral | StructLiteral | SuperCallExpression | SwitchExpression | TemplateLiteral | UnaryExpr | VariableRef;
 
 export const Expression = {
     $type: 'Expression'
@@ -732,7 +824,7 @@ export function isExternDeclaration(item: unknown): item is ExternDeclaration {
 }
 
 export interface FieldAccess extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'FieldAccess';
     field?: string;
     receiver?: string;
@@ -880,7 +972,7 @@ export function isFunctionDeclaration(item: unknown): item is FunctionDeclaratio
 }
 
 export interface IfExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'IfExpression';
     condition: Condition;
     elseExpr: Expression;
@@ -935,7 +1027,7 @@ export function isIntrinsicBody(item: unknown): item is IntrinsicBody {
 }
 
 export interface LambdaExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'LambdaExpression';
     body: Block;
     parameters: Array<Parameter>;
@@ -979,7 +1071,7 @@ export function isMacroBlockElement(item: unknown): item is MacroBlockElement {
 }
 
 export interface MacroCallExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'MacroCallExpression';
     args: Array<Expression>;
     callee: string;
@@ -996,7 +1088,7 @@ export function isMacroCallExpression(item: unknown): item is MacroCallExpressio
 }
 
 export interface MacroCallFieldAccess extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'MacroCallFieldAccess';
     args: Array<Expression>;
     callee: string;
@@ -1156,7 +1248,7 @@ export function isMacroReturnType(item: unknown): item is MacroReturnType {
 }
 
 export interface MacroVarRef extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'MacroVarRef';
     name: string;
 }
@@ -1171,7 +1263,7 @@ export function isMacroVarRef(item: unknown): item is MacroVarRef {
 }
 
 export interface MemberCallExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'MemberCallExpression';
     args: Array<Expression>;
     member: string;
@@ -1191,6 +1283,56 @@ export const MemberCallExpression = {
 
 export function isMemberCallExpression(item: unknown): item is MemberCallExpression {
     return reflection.isInstance(item, MemberCallExpression.$type);
+}
+
+export interface MemberCallMemberCallExpr extends langium.AstNode {
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $type: 'MemberCallMemberCallExpr';
+    args: Array<Expression>;
+    firstArgs: Array<Expression>;
+    firstMember: string;
+    member: string;
+    namespace?: string;
+    selfCall: boolean;
+}
+
+export const MemberCallMemberCallExpr = {
+    $type: 'MemberCallMemberCallExpr',
+    args: 'args',
+    firstArgs: 'firstArgs',
+    firstMember: 'firstMember',
+    member: 'member',
+    namespace: 'namespace',
+    selfCall: 'selfCall'
+} as const;
+
+export function isMemberCallMemberCallExpr(item: unknown): item is MemberCallMemberCallExpr {
+    return reflection.isInstance(item, MemberCallMemberCallExpr.$type);
+}
+
+export interface MemberCallMemberCallStatement extends langium.AstNode {
+    readonly $container: Block | MacroBlock;
+    readonly $type: 'MemberCallMemberCallStatement';
+    args: Array<Expression>;
+    firstArgs: Array<Expression>;
+    firstMember: string;
+    member: string;
+    namespace?: string;
+    selfCall: boolean;
+}
+
+export const MemberCallMemberCallStatement = {
+    $type: 'MemberCallMemberCallStatement',
+    args: 'args',
+    firstArgs: 'firstArgs',
+    firstMember: 'firstMember',
+    member: 'member',
+    namespace: 'namespace',
+    selfCall: 'selfCall'
+} as const;
+
+export function isMemberCallMemberCallStatement(item: unknown): item is MemberCallMemberCallStatement {
+    return reflection.isInstance(item, MemberCallMemberCallStatement.$type);
 }
 
 export interface MemberCallStatement extends langium.AstNode {
@@ -1277,7 +1419,7 @@ export function isNamespaceImport(item: unknown): item is NamespaceImport {
 }
 
 export interface NumberLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'NumberLiteral';
     value: number;
 }
@@ -1332,7 +1474,7 @@ export function isParameter(item: unknown): item is Parameter {
 }
 
 export interface PostfixCallExpr extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'PostfixCallExpr';
     args: Array<Expression>;
     member: string;
@@ -1441,7 +1583,7 @@ export function isReturnStatement(item: unknown): item is ReturnStatement {
 }
 
 export interface SelfCallExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'SelfCallExpression';
     args: Array<Expression>;
 }
@@ -1456,7 +1598,7 @@ export function isSelfCallExpression(item: unknown): item is SelfCallExpression 
 }
 
 export interface SelfExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'SelfExpression';
 }
 
@@ -1468,7 +1610,7 @@ export function isSelfExpression(item: unknown): item is SelfExpression {
     return reflection.isInstance(item, SelfExpression.$type);
 }
 
-export type Statement = AssignmentStatement | BreakStatement | CallStatement | ChainedMemberCallStatement | CompoundAssignStatement | ContinueStatement | DeferStatement | EmitStatement | ForStatement | FunctionDeclaration | IfStatement | MacroCallStatement | MacroDeclaration | MacroForStatement | MemberCallStatement | PanicStatement | PrintStatement | ReturnStatement | SuperCallStatement | SwitchStatement | UsingDeclaration | VariableDeclaration | WhileStatement;
+export type Statement = AssignmentStatement | BreakStatement | CallMemberCallStatement | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallStatement | CompoundAssignStatement | ContinueStatement | DeferStatement | EmitStatement | ForStatement | FunctionDeclaration | IfStatement | MacroCallStatement | MacroDeclaration | MacroForStatement | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | PrintStatement | ReturnStatement | SuperCallStatement | SwitchStatement | UsingDeclaration | VariableDeclaration | WhileStatement;
 
 export const Statement = {
     $type: 'Statement'
@@ -1479,7 +1621,7 @@ export function isStatement(item: unknown): item is Statement {
 }
 
 export interface StringLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'StringLiteral';
     value: string;
 }
@@ -1530,7 +1672,7 @@ export function isStructFieldInit(item: unknown): item is StructFieldInit {
 }
 
 export interface StructLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'StructLiteral';
     fields: Array<StructFieldInit>;
     selfLiteral: boolean;
@@ -1586,7 +1728,7 @@ export function isStructMethod(item: unknown): item is StructMethod {
 }
 
 export interface SuperCallExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'SuperCallExpression';
     args: Array<Expression>;
     member: string;
@@ -1649,7 +1791,7 @@ export function isSwitchArm(item: unknown): item is SwitchArm {
 }
 
 export interface SwitchExpression extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'SwitchExpression';
     arms: Array<SwitchArm>;
     subject: Expression;
@@ -1750,7 +1892,7 @@ export function isSwitchStmtArm(item: unknown): item is SwitchStmtArm {
 }
 
 export interface TemplateLiteral extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'TemplateLiteral';
     value: string;
 }
@@ -1931,7 +2073,7 @@ export function isTypeReference(item: unknown): item is TypeReference {
 }
 
 export interface UnaryExpr extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'UnaryExpr';
     op: '!' | '-';
     operand: Expression;
@@ -1990,7 +2132,7 @@ export function isVariableDeclaration(item: unknown): item is VariableDeclaratio
 }
 
 export interface VariableRef extends langium.AstNode {
-    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
+    readonly $container: ArrayLiteral | AssignmentStatement | BinaryExpr | BoolExprCondition | CallExpression | CallMemberCallExpr | CallMemberCallStatement | CallMemberMemberCallExpr | CallMemberMemberCallStatement | CallStatement | ChainedMemberCallExpr | ChainedMemberCallStatement | CompoundAssignStatement | DeferStatement | EnumConstructor | ExtensionProperty | FieldDeclaration | ForUpdate | IfExpression | MacroCallExpression | MacroCallFieldAccess | MacroCallStatement | MacroExprStatement | MacroParam | MemberCallExpression | MemberCallMemberCallExpr | MemberCallMemberCallStatement | MemberCallStatement | PanicStatement | Parameter | PostfixCallExpr | PrintStatement | ReturnStatement | SelfCallExpression | StructFieldInit | SuperCallExpression | SuperCallStatement | SwitchArm | SwitchExpression | SwitchStatement | TopLevelMacroCall | UnaryExpr | UsingDeclaration | VariableDeclaration;
     readonly $type: 'VariableRef';
     ref: langium.Reference<NamedVar>;
 }
@@ -2034,6 +2176,10 @@ export type CodeLangAstType = {
     BoolLiteral: BoolLiteral
     BreakStatement: BreakStatement
     CallExpression: CallExpression
+    CallMemberCallExpr: CallMemberCallExpr
+    CallMemberCallStatement: CallMemberCallStatement
+    CallMemberMemberCallExpr: CallMemberMemberCallExpr
+    CallMemberMemberCallStatement: CallMemberMemberCallStatement
     CallStatement: CallStatement
     CallableMethod: CallableMethod
     ChainedMemberCallExpr: ChainedMemberCallExpr
@@ -2080,6 +2226,8 @@ export type CodeLangAstType = {
     MacroReturnType: MacroReturnType
     MacroVarRef: MacroVarRef
     MemberCallExpression: MemberCallExpression
+    MemberCallMemberCallExpr: MemberCallMemberCallExpr
+    MemberCallMemberCallStatement: MemberCallMemberCallStatement
     MemberCallStatement: MemberCallStatement
     MethodSignature: MethodSignature
     NamedType: NamedType
@@ -2261,6 +2409,100 @@ export class CodeLangAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [Expression.$type]
+        },
+        CallMemberCallExpr: {
+            name: CallMemberCallExpr.$type,
+            properties: {
+                args: {
+                    name: CallMemberCallExpr.args,
+                    defaultValue: []
+                },
+                callArgs: {
+                    name: CallMemberCallExpr.callArgs,
+                    defaultValue: []
+                },
+                callee: {
+                    name: CallMemberCallExpr.callee
+                },
+                member: {
+                    name: CallMemberCallExpr.member
+                }
+            },
+            superTypes: [Expression.$type]
+        },
+        CallMemberCallStatement: {
+            name: CallMemberCallStatement.$type,
+            properties: {
+                args: {
+                    name: CallMemberCallStatement.args,
+                    defaultValue: []
+                },
+                callArgs: {
+                    name: CallMemberCallStatement.callArgs,
+                    defaultValue: []
+                },
+                callee: {
+                    name: CallMemberCallStatement.callee
+                },
+                member: {
+                    name: CallMemberCallStatement.member
+                }
+            },
+            superTypes: [Statement.$type]
+        },
+        CallMemberMemberCallExpr: {
+            name: CallMemberMemberCallExpr.$type,
+            properties: {
+                args: {
+                    name: CallMemberMemberCallExpr.args,
+                    defaultValue: []
+                },
+                callArgs: {
+                    name: CallMemberMemberCallExpr.callArgs,
+                    defaultValue: []
+                },
+                callee: {
+                    name: CallMemberMemberCallExpr.callee
+                },
+                firstArgs: {
+                    name: CallMemberMemberCallExpr.firstArgs,
+                    defaultValue: []
+                },
+                firstMember: {
+                    name: CallMemberMemberCallExpr.firstMember
+                },
+                member: {
+                    name: CallMemberMemberCallExpr.member
+                }
+            },
+            superTypes: [Expression.$type]
+        },
+        CallMemberMemberCallStatement: {
+            name: CallMemberMemberCallStatement.$type,
+            properties: {
+                args: {
+                    name: CallMemberMemberCallStatement.args,
+                    defaultValue: []
+                },
+                callArgs: {
+                    name: CallMemberMemberCallStatement.callArgs,
+                    defaultValue: []
+                },
+                callee: {
+                    name: CallMemberMemberCallStatement.callee
+                },
+                firstArgs: {
+                    name: CallMemberMemberCallStatement.firstArgs,
+                    defaultValue: []
+                },
+                firstMember: {
+                    name: CallMemberMemberCallStatement.firstMember
+                },
+                member: {
+                    name: CallMemberMemberCallStatement.member
+                }
+            },
+            superTypes: [Statement.$type]
         },
         CallStatement: {
             name: CallStatement.$type,
@@ -3061,6 +3303,60 @@ export class CodeLangAstReflection extends langium.AbstractAstReflection {
                 }
             },
             superTypes: [Expression.$type]
+        },
+        MemberCallMemberCallExpr: {
+            name: MemberCallMemberCallExpr.$type,
+            properties: {
+                args: {
+                    name: MemberCallMemberCallExpr.args,
+                    defaultValue: []
+                },
+                firstArgs: {
+                    name: MemberCallMemberCallExpr.firstArgs,
+                    defaultValue: []
+                },
+                firstMember: {
+                    name: MemberCallMemberCallExpr.firstMember
+                },
+                member: {
+                    name: MemberCallMemberCallExpr.member
+                },
+                namespace: {
+                    name: MemberCallMemberCallExpr.namespace
+                },
+                selfCall: {
+                    name: MemberCallMemberCallExpr.selfCall,
+                    defaultValue: false
+                }
+            },
+            superTypes: [Expression.$type]
+        },
+        MemberCallMemberCallStatement: {
+            name: MemberCallMemberCallStatement.$type,
+            properties: {
+                args: {
+                    name: MemberCallMemberCallStatement.args,
+                    defaultValue: []
+                },
+                firstArgs: {
+                    name: MemberCallMemberCallStatement.firstArgs,
+                    defaultValue: []
+                },
+                firstMember: {
+                    name: MemberCallMemberCallStatement.firstMember
+                },
+                member: {
+                    name: MemberCallMemberCallStatement.member
+                },
+                namespace: {
+                    name: MemberCallMemberCallStatement.namespace
+                },
+                selfCall: {
+                    name: MemberCallMemberCallStatement.selfCall,
+                    defaultValue: false
+                }
+            },
+            superTypes: [Statement.$type]
         },
         MemberCallStatement: {
             name: MemberCallStatement.$type,

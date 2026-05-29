@@ -281,6 +281,9 @@ Statement:
     | UsingDeclaration
     | CompoundAssignStatement      // before AssignmentStatement — longer token (+=, -=, …)
     | AssignmentStatement
+    | CallMemberMemberCallStatement  // ID(args).m1(args).m2(args) — longest call-chain, before CallMemberCallStatement
+    | CallMemberCallStatement        // ID(args).m(args) — before CallStatement
+    | MemberCallMemberCallStatement  // ID.m1(args).m2(args) — before ChainedMemberCallStatement and MemberCallStatement
     | ChainedMemberCallStatement   // (self | ID).field.method(...) — must precede MemberCallStatement
     | MemberCallStatement
     | MacroCallStatement           // ID '!' '(' args ')' — before CallStatement (longer match when '!' present)
@@ -380,6 +383,29 @@ MemberCallStatement:
 ChainedMemberCallStatement:
     (selfCall?='self' | namespace=ID) '.' field=ID '.' member=ID
     '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// ── Method-chaining call statements ──────────────────────────────────────────
+//
+// Handles patterns where a call result is immediately used as a receiver:
+//
+//   u.searchParams().get("key");   ← MemberCallMemberCallStatement
+//   Uri("...").searchParams();     ← CallMemberCallStatement
+//   Uri("...").searchParams().get("key");  ← CallMemberMemberCallStatement
+
+// Handles: ID.method(firstArgs).method(args)  — chained call on a variable result
+MemberCallMemberCallStatement:
+    (selfCall?='self' | namespace=ID) '.' firstMember=ID '(' (firstArgs+=Expression (',' firstArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// Handles: ID(callArgs).method(args)  — method call on a callable invocation result
+CallMemberCallStatement:
+    callee=ID '(' (callArgs+=Expression (',' callArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// Handles: ID(callArgs).m1(firstArgs).m2(args)  — double-chain on a callable invocation
+CallMemberMemberCallStatement:
+    callee=ID '(' (callArgs+=Expression (',' callArgs+=Expression)*)? ')' '.' firstMember=ID '(' (firstArgs+=Expression (',' firstArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
 ;
 
 // ── Function call statement ───────────────────────────────────────────────────
@@ -700,6 +726,9 @@ ExprAtom infers Expression:
     | BoolLiteral
     | IfExpression
     | SwitchExpression            // switch subject { arm, … }
+    | CallMemberMemberCallExpr    // ID(args).m1(args).m2(args) — longest, before CallMemberCallExpr
+    | MemberCallMemberCallExpr    // ID.m1(args).m2(args) — before MemberCallExpression/ChainedMemberCallExpr
+    | CallMemberCallExpr          // ID(args).m(args) — before MacroCallFieldAccess and CallExpression
     | ChainedMemberCallExpr       // (self | ID) '.' ID '.' ID '(' ... ')' — before MemberCallExpression/FieldAccess
     | MacroCallExpression         // ID '!' '(' args ')' — before CallExpression (unique due to '!')
     | MacroCallFieldAccess        // ID '(' args ')' '.' ID — before CallExpression (longer match)
@@ -835,6 +864,29 @@ MemberCallExpression:
 ChainedMemberCallExpr:
     (selfCall?='self' | namespace=ID) '.' field=ID '.' member=ID
     '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// ── Method-chaining call expressions ─────────────────────────────────────────
+//
+// Handles patterns where a call result is immediately used as a receiver:
+//
+//   u.searchParams().get("key")         ← MemberCallMemberCallExpr
+//   Uri("...").searchParams()            ← CallMemberCallExpr
+//   Uri("...").searchParams().get("key") ← CallMemberMemberCallExpr
+
+// Handles: ID.method(firstArgs).method(args) — two-level chained call as expression
+MemberCallMemberCallExpr:
+    (selfCall?='self' | namespace=ID) '.' firstMember=ID '(' (firstArgs+=Expression (',' firstArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// Handles: ID(callArgs).method(args) — method on callable result, as expression
+CallMemberCallExpr:
+    callee=ID '(' (callArgs+=Expression (',' callArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
+;
+
+// Handles: ID(callArgs).m1(firstArgs).m2(args) — double chain on callable, as expression
+CallMemberMemberCallExpr:
+    callee=ID '(' (callArgs+=Expression (',' callArgs+=Expression)*)? ')' '.' firstMember=ID '(' (firstArgs+=Expression (',' firstArgs+=Expression)*)? ')' '.' member=ID '(' (args+=Expression (',' args+=Expression)*)? ')'
 ;
 
 // Function call expression — the result is used as a value
