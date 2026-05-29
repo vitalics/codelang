@@ -1,0 +1,64 @@
+import "../../../stdlib/atomic";
+
+# atomic_basic fixture
+#
+# Exercises Atomic<int>, Atomic<bool>, and Atomic<float> on a single thread.
+#
+# Output (13 lines):
+#   [0]  5          — initial int load
+#   [1]  10         — after store(10)
+#   [2]  10         — prev value from add(3)
+#   [3]  13         — after add(3)
+#   [4]  13         — prev value from sub(1)
+#   [5]  12         — after sub(1)
+#   [6]  true       — cas(12, 99) succeeds
+#   [7]  99         — after successful cas
+#   [8]  false      — initial bool load
+#   [9]  true       — after bool store(true)
+#   [10] 1.5        — initial float load
+#   [11] 2.5        — after float store(2.5)
+#   [12] true       — float cas(2.5, 0.0) succeeds
+
+fn main(): void {
+    # ── int ────────────────────────────────────────────────────────────────────
+    const n: Atomic<int> = Atomic.new(5);
+    print(n.load());                   # 5
+
+    n.store(10);
+    print(n.load());                   # 10
+
+    const prev1: int = n.add(3);
+    print(prev1);                      # 10  (previous value)
+    print(n.load());                   # 13
+
+    const prev2: int = n.sub(1);
+    print(prev2);                      # 13  (previous value)
+    print(n.load());                   # 12
+
+    const ok: bool = n.cas(12, 99);
+    print(ok);                         # true
+    print(n.load());                   # 99
+
+    n.free();
+
+    # ── bool ───────────────────────────────────────────────────────────────────
+    const flag: Atomic<bool> = Atomic.new(false);
+    print(flag.load());                # false
+
+    flag.store(true);
+    print(flag.load());                # true
+
+    flag.free();
+
+    # ── float ──────────────────────────────────────────────────────────────────
+    const x: Atomic<float> = Atomic.new(1.5);
+    print(x.load());                   # 1.5
+
+    x.store(2.5);
+    print(x.load());                   # 2.5
+
+    const fok: bool = x.cas(2.5, 0.0);
+    print(fok);                        # true
+
+    x.free();
+}

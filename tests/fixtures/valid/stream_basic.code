@@ -1,0 +1,49 @@
+import "stdlib/stream";
+
+# stream_basic.code — exercises MemoryStream and StringReader.
+#
+# Expected output (10 lines):
+#   hello
+#   world
+#   13
+#   0
+#   104
+#   line one
+#   line two
+#   line three
+#   foo
+#   bar
+
+fn main(): void {
+    # ── MemoryStream: text write / readLine / readAll ─────────────────────────
+    const ms: MemoryStream = MemoryStream.new();
+    ms.writeln("hello");
+    ms.writeln("world");
+    const line1: string = ms.readLine();
+    const line2: string = ms.readLine();
+    print(line1);          # hello
+    print(line2);          # world
+    ms.free();
+
+    # ── MemoryStream: length, position, writeByte / readByte ──────────────────
+    const ms2: MemoryStream = MemoryStream.new();
+    ms2.write("hello, stream");
+    print(ms2.length());          # 13
+    print(ms2.position());        # 0  (read head has not moved)
+    const b: int = ms2.readByte();
+    print(b);                     # 104  ('h')
+    ms2.free();
+
+    # ── StringReader: readLine ────────────────────────────────────────────────
+    const r: StringReader = StringReader.from("line one\nline two\nline three");
+    print(r.readLine());   # line one
+    print(r.readLine());   # line two
+    print(r.readLine());   # line three
+    r.free();
+
+    # ── MemoryStream.from: pre-loaded text ───────────────────────────────────
+    const ms3: MemoryStream = MemoryStream.from("foo\nbar\n");
+    print(ms3.readLine());   # foo
+    print(ms3.readLine());   # bar
+    ms3.free();
+}

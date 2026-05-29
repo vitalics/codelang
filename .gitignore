@@ -11,8 +11,27 @@ examples/variables
 # test fixture binaries (produced by runtime/module tests)
 tests/fixtures/valid/greetings_main
 tests/fixtures/valid/import_alias
+tests/fixtures/valid/abort_basic
+tests/fixtures/valid/atomic_shared
+tests/fixtures/valid/atomic_basic
 examples/documented
+examples/054_abort_controller
+examples/057_stream
+# test fixture binaries (stream / fs-stream / networking)
+tests/fixtures/valid/stream_io
+tests/fixtures/valid/fs_stream
+tests/fixtures/valid/net_disposable
+tests/fixtures/valid/net_tcp_disposable
 # generated documentation
 docs/
 # macOS
 .DS_Store
+
+# Zed clones grammar source here during dev-extension build
+editors/zed/grammars/codelang/
+# Zed-built extension artifacts
+editors/zed/extension.wasm
+editors/zed/Cargo.lock
+editors/zed/target/
+# VS Code extension build artifact
+*.vsix

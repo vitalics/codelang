@@ -1,0 +1,75 @@
+import "stdlib/network/server";
+import "stdlib/network/http";
+import "stdlib/async";
+
+# net_server.code — Express/Elysia-style HTTP server integration test.
+#
+# Expected output (6 lines):
+#   200
+#   world
+#   express
+#   hello post
+#   42
+#   application/json
+
+fn main(): void {
+    const app: HttpServer = HttpServer.new();
+
+    # ── GET /hello — static route ────────────────────────────────────────────
+    app.get("/hello", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok("world");
+    });
+
+    # ── GET /greet/:name — param capture ────────────────────────────────────
+    app.get("/greet/:name", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok(req.param("name"));
+    });
+
+    # ── POST /echo — body passthrough ────────────────────────────────────────
+    app.post("/echo", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok(req.body());
+    });
+
+    # ── GET /num/:n — numeric param ──────────────────────────────────────────
+    app.get("/num/:n", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok(req.param("n"));
+    });
+
+    # ── GET /json — JSON response ────────────────────────────────────────────
+    app.get("/json", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.json("{\"ok\":true}");
+    });
+
+    # ── Start server ─────────────────────────────────────────────────────────
+    app.listenAsync(18081);
+    Async.sleep(120);   # wait for the socket to bind
+
+    # ── Make requests ────────────────────────────────────────────────────────
+    const client: HttpClient = HttpClient.new();
+
+    const r1: HttpResponse = client.get("http://127.0.0.1:18081/hello");
+    print(r1.status().toString());   # 200
+    print(r1.body());                # world
+    r1.free();
+
+    const r2: HttpResponse = client.get("http://127.0.0.1:18081/greet/express");
+    print(r2.body());                # express
+    r2.free();
+
+    const r3: HttpResponse = client.post("http://127.0.0.1:18081/echo", "hello post");
+    print(r3.body());                # hello post
+    r3.free();
+
+    const r4: HttpResponse = client.get("http://127.0.0.1:18081/num/42");
+    print(r4.body());                # 42
+    r4.free();
+
+    const r5: HttpResponse = client.get("http://127.0.0.1:18081/json");
+    print(r5.header("Content-Type")); # application/json
+    r5.free();
+
+    # ── Shutdown ─────────────────────────────────────────────────────────────
+    app.stop();
+    client.free();
+    app.free();
+}

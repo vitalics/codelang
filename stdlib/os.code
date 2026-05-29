@@ -10,6 +10,7 @@
 #   OS.endianness()      → "LE" | "BE"
 #   OS.eol()             → "\n"  (POSIX)  or  "\r\n"  (Windows)
 #   OS.devNull()         → "/dev/null"  (POSIX)  or  "\\.\NUL"  (Windows)
+#   OS.target()          → Target enum  e.g. Target::Arm64AppleDarwin
 #
 # ── OS identity ───────────────────────────────────────────────────────────────
 #   OS.osType()          → uname sysname  e.g. "Darwin", "Linux"
@@ -60,6 +61,7 @@ extern fn os_platform(): string;
 extern fn os_endianness(): string;
 extern fn os_eol(): string;
 extern fn os_dev_null(): string;
+extern fn os_target_tag(): int;
 
 # OS identity
 extern fn os_type(): string;
@@ -95,6 +97,86 @@ extern fn os_gpu_is_available(): int;
 extern fn os_has_npu(): int;
 extern fn os_npu_name(): string;
 extern fn os_npu_is_available(): int;
+
+# ── Target triple enum ───────────────────────────────────────────────────────
+#
+# Returned by OS.target().  Each variant encodes one supported target triple
+# (arch-vendor-os) as a typed discriminant so callers can pattern-match
+# instead of parsing a raw string.
+#
+# Tag order mirrors os_target_tag() in runtime/os.c:
+#   0  Arm64AppleDarwin
+#   1  X8664AppleDarwin
+#   2  Aarch64UnknownLinux
+#   3  X8664UnknownLinux
+#   4  X8664PcWindows
+#   5  X8664UnknownFreebsd
+#   6  Unknown
+
+export enum Target extends Displayable {
+    Arm64AppleDarwin,       # arm64-apple-darwin
+    X8664AppleDarwin,       # x86_64-apple-darwin
+    Aarch64UnknownLinux,    # aarch64-unknown-linux
+    X8664UnknownLinux,      # x86_64-unknown-linux
+    X8664PcWindows,         # x86_64-pc-windows
+    X8664UnknownFreebsd,    # x86_64-unknown-freebsd
+    Unknown,                # unknown-unknown-unknown
+
+    # toString() — the canonical triple string for this target.
+    export fn toString(): string {
+        return switch self {
+            Target::Arm64AppleDarwin    => "arm64-apple-darwin",
+            Target::X8664AppleDarwin    => "x86_64-apple-darwin",
+            Target::Aarch64UnknownLinux => "aarch64-unknown-linux",
+            Target::X8664UnknownLinux   => "x86_64-unknown-linux",
+            Target::X8664PcWindows      => "x86_64-pc-windows",
+            Target::X8664UnknownFreebsd => "x86_64-unknown-freebsd",
+            Target::Unknown             => "unknown-unknown-unknown",
+        };
+    }
+
+    # arch() — the CPU architecture component of the triple.
+    # e.g. "arm64", "x86_64", "aarch64", "unknown".
+    export fn arch(): string {
+        return switch self {
+            Target::Arm64AppleDarwin    => "arm64",
+            Target::X8664AppleDarwin    => "x86_64",
+            Target::Aarch64UnknownLinux => "aarch64",
+            Target::X8664UnknownLinux   => "x86_64",
+            Target::X8664PcWindows      => "x86_64",
+            Target::X8664UnknownFreebsd => "x86_64",
+            Target::Unknown             => "unknown",
+        };
+    }
+
+    # vendor() — the vendor component of the triple.
+    # e.g. "apple", "pc", "unknown".
+    export fn vendor(): string {
+        return switch self {
+            Target::Arm64AppleDarwin    => "apple",
+            Target::X8664AppleDarwin    => "apple",
+            Target::Aarch64UnknownLinux => "unknown",
+            Target::X8664UnknownLinux   => "unknown",
+            Target::X8664PcWindows      => "pc",
+            Target::X8664UnknownFreebsd => "unknown",
+            Target::Unknown             => "unknown",
+        };
+    }
+
+    # os() — the operating system component of the triple.
+    # e.g. "darwin", "linux", "windows", "freebsd", "unknown".
+    export fn os(): string {
+        return switch self {
+            Target::Arm64AppleDarwin    => "darwin",
+            Target::X8664AppleDarwin    => "darwin",
+            Target::Aarch64UnknownLinux => "linux",
+            Target::X8664UnknownLinux   => "linux",
+            Target::X8664PcWindows      => "windows",
+            Target::X8664UnknownFreebsd => "freebsd",
+            Target::Unknown             => "unknown",
+        };
+    }
+}
 
 # ── OS namespace ──────────────────────────────────────────────────────────────
 
@@ -132,6 +214,28 @@ OS extends {
     # "/dev/null" on POSIX, "\\.\NUL" on Windows.
     export static const fn devNull(): string {
         return os_dev_null();
+    }
+
+    # target() — typed target triple, fully resolved at compile time.
+    # Returns a Target enum value so callers can pattern-match on the triple.
+    #
+    # Examples:
+    #   OS.target()              → Target::Arm64AppleDarwin   (Apple Silicon)
+    #   OS.target().toString()   → "arm64-apple-darwin"
+    #   OS.target().arch()       → "arm64"
+    #   OS.target().vendor()     → "apple"
+    #   OS.target().os()         → "darwin"
+    export static const fn target(): Target {
+        const tag: int = os_target_tag();
+        return switch tag {
+            0 => Target::Arm64AppleDarwin,
+            1 => Target::X8664AppleDarwin,
+            2 => Target::Aarch64UnknownLinux,
+            3 => Target::X8664UnknownLinux,
+            4 => Target::X8664PcWindows,
+            5 => Target::X8664UnknownFreebsd,
+            else => Target::Unknown,
+        };
     }
 
     # ── OS identity ───────────────────────────────────────────────────────────

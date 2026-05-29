@@ -1,0 +1,53 @@
+import "stdlib/stream";
+
+# stream_bytes.code — exercises byte-level and Buffer transfer operations.
+#
+# Expected output (6 lines):
+#   72
+#   105
+#   true
+#   4
+#   0
+#   baz
+
+fn main(): void {
+    # ── writeByte / readByte ──────────────────────────────────────────────────
+    const ms: MemoryStream = MemoryStream.new();
+    ms.writeByte(72);    # 'H'
+    ms.writeByte(105);   # 'i'
+    ms.writeByte(33);    # '!'
+    print(ms.readByte());   # 72
+    print(ms.readByte());   # 105
+    ms.free();
+
+    # ── toBuffer roundtrip ────────────────────────────────────────────────────
+    const ms2: MemoryStream = MemoryStream.new();
+    ms2.write("Hi!");
+    const snap: Buffer = ms2.toBuffer();
+    const hiStr: string = "Hi!";
+    const hi_buf: Buffer = hiStr.toBuffer();
+    print(snap.equals(hi_buf));    # true
+    snap.free();
+    hi_buf.free();
+    ms2.free();
+
+    # ── read(n) returns up to n bytes ─────────────────────────────────────────
+    const ms3: MemoryStream = MemoryStream.new();
+    ms3.write("Hi! there");
+    const chunk: Buffer = ms3.read(4);   # reads "Hi! "
+    print(chunk.length());               # 4
+    chunk.free();
+    ms3.free();
+
+    # ── StringReader: reset / position ───────────────────────────────────────
+    const sr: StringReader = StringReader.from("foo\nbaz");
+    const consumed: string = sr.readLine();   # consumes "foo"
+    sr.reset();
+    print(sr.position());   # 0
+    sr.free();
+
+    # ── MemoryStream.from + readAll ───────────────────────────────────────────
+    const ms4: MemoryStream = MemoryStream.from("baz");
+    print(ms4.readAll());   # baz
+    ms4.free();
+}

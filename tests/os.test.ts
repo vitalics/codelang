@@ -2,7 +2,7 @@
  * Tests for stdlib/os.code — OS namespace.
  *
  * Covers:
- *  1. Compile-time constants  (arch, platform, endianness, eol, devNull)
+ *  1. Compile-time constants  (arch, platform, endianness, eol, devNull, target)
  *  2. OS identity             (osType, release)
  *  3. Machine                 (hostname, homedir, tmpdir, uptime)
  *  4. Memory                  (totalmem, freemem — positive, total > free)
@@ -12,6 +12,7 @@
  *  8. NPU                     (hasNpu, npuName)
  *  9. Sanity cross-checks     (idempotency, total > free, etc.)
  * 10. IR structure             (extern declarations)
+ * 11. OS.target()              (LLVM target triple — comptime)
  *
  * Most values are machine-dependent; tests check structural invariants
  * (valid set membership, positive ranges, non-empty strings) rather than
@@ -30,12 +31,22 @@ let out:      string[]    = [];
 let ir:       string      = '';
 let exitCode: number|null = null;
 
+// Shared results for OS.target() fixture
+let targetOut:  string[]    = [];
+let targetIr:   string      = '';
+let targetExit: number|null = null;
+
 beforeAll(() => {
     const r  = compileAndRun(FIXTURE);
     exitCode = r.exitCode;
     out      = r.stdout.trim().split('\n').map(l => l.trim());
     ir       = r.ir;
-});
+
+    const rt   = compileAndRun('os_target.code');
+    targetExit = rt.exitCode;
+    targetOut  = rt.stdout.trim().split('\n').map(l => l.trim());
+    targetIr   = rt.ir;
+}, 120_000);
 
 // =============================================================================
 // 1. Compile-time constants
@@ -378,4 +389,110 @@ describe('OS — overall', () => {
         expect(out).toHaveLength(35);
     });
 
+});
+
+// =============================================================================
+// 11. OS.target() — Target enum (comptime)
+// =============================================================================
+
+/** Known string values for each triple component, from Target enum variants. */
+const KNOWN_TRIPLE_ARCHES   = ['arm64', 'aarch64', 'x86_64', 'x86', 'arm', 'riscv64', 'unknown'];
+const KNOWN_TRIPLE_VENDORS  = ['apple', 'pc', 'unknown'];
+const KNOWN_TRIPLE_OSES     = ['darwin', 'linux', 'windows', 'freebsd', 'unknown'];
+
+describe('OS.target() — Target enum', () => {
+
+    it('compiles and exits with code 0', () => {
+        expect(targetExit).toBe(0);
+    });
+
+    it('produces exactly 8 lines of output', () => {
+        expect(targetOut).toHaveLength(8);
+    });
+
+    // ── toString() ────────────────────────────────────────────────────────────
+
+    it('toString() returns the full triple e.g. "arm64-apple-darwin"', () => {
+        const triple = targetOut[0];
+        expect(triple.length).toBeGreaterThan(0);
+        expect(triple.split('-')).toHaveLength(3);
+    });
+
+    it('toString() arch segment is a known architecture', () => {
+        expect(KNOWN_TRIPLE_ARCHES).toContain(targetOut[0].split('-')[0]);
+    });
+
+    it('toString() vendor segment is a known vendor', () => {
+        expect(KNOWN_TRIPLE_VENDORS).toContain(targetOut[0].split('-')[1]);
+    });
+
+    it('toString() os segment is a known OS', () => {
+        expect(KNOWN_TRIPLE_OSES).toContain(targetOut[0].split('-')[2]);
+    });
+
+    // ── arch() / vendor() / os() ──────────────────────────────────────────────
+
+    it('arch() returns a known architecture string', () => {
+        expect(KNOWN_TRIPLE_ARCHES).toContain(targetOut[1]);
+    });
+
+    it('vendor() returns a known vendor string', () => {
+        expect(KNOWN_TRIPLE_VENDORS).toContain(targetOut[2]);
+    });
+
+    it('os() returns a known OS string', () => {
+        expect(KNOWN_TRIPLE_OSES).toContain(targetOut[3]);
+    });
+
+    it('arch() matches first segment of toString()', () => {
+        expect(targetOut[0].split('-')[0]).toBe(targetOut[1]);
+    });
+
+    it('vendor() matches second segment of toString()', () => {
+        expect(targetOut[0].split('-')[1]).toBe(targetOut[2]);
+    });
+
+    it('os() matches third segment of toString()', () => {
+        expect(targetOut[0].split('-')[2]).toBe(targetOut[3]);
+    });
+
+    // ── idempotency & invariants ───────────────────────────────────────────────
+
+    it('two calls return the same toString() (idempotent)', () => {
+        expect(targetOut[4]).toBe('true');
+    });
+
+    it('toString() is non-empty', () => {
+        expect(targetOut[5]).toBe('true');
+    });
+
+    it('arch() is non-empty', () => {
+        expect(targetOut[6]).toBe('true');
+    });
+
+    it('pattern match covers every variant — always hits a branch', () => {
+        expect(targetOut[7]).toBe('true');
+    });
+
+    // ── IR structure ──────────────────────────────────────────────────────────
+
+    it('IR: declares @os_target_tag() extern returning i32', () => {
+        expect(targetIr).toMatch(/declare i32 @os_target_tag\(\)/);
+    });
+
+    it('IR: emits %Target struct type', () => {
+        expect(targetIr).toContain('%Target = type { i32 }');
+    });
+
+    it('IR: emits Target::Arm64AppleDarwin constructor', () => {
+        expect(targetIr).toMatch(/define.*@Target_Arm64AppleDarwin\(\)/);
+    });
+
+    it('IR: OS_target is a static extension method', () => {
+        expect(targetIr).toMatch(/define.*@OS_target\(\)/);
+    });
+
+    it('IR: OS_target uses integer switch on os_target_tag()', () => {
+        expect(targetIr).toMatch(/call i32 @os_target_tag\(\)/);
+    });
 });

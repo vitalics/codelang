@@ -1,0 +1,168 @@
+import "stdlib/network/server";
+import "stdlib/network/http";
+import "stdlib/async";
+
+# examples/070_server.code
+#
+# Express / Elysia-style HTTP server.
+#
+# Demonstrates:
+#   • Route registration — get / post / put / delete
+#   • Static paths and :param captures
+#   • Request inspection — param(), query(), body(), header()
+#   • Response factories — ok(), json(), error()
+#   • StatusCode enum — type-safe status codes with reason phrases
+#   • Response builder chaining — statusCode().setHeader().withBody()
+#   • listenAsync() + Async.sleep() + stop() lifecycle
+#
+# The server starts on port 18082, handles a self-test request suite, then
+# shuts down — so the example runs to completion on its own.
+
+fn main(): void {
+    print("── stdlib/network/server demo ────────────────────────────────────");
+
+    const app: HttpServer = HttpServer.new();
+
+    # ── Health check ──────────────────────────────────────────────────────────
+    # GET /health  →  200  {"status":"ok","version":"1.0"}
+    app.get("/health", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.json("{\"status\":\"ok\",\"version\":\"1.0\"}");
+    });
+
+    # ── Static greeting ───────────────────────────────────────────────────────
+    # GET /hello  →  200  Hello from CodeLang!
+    app.get("/hello", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok("Hello from CodeLang!");
+    });
+
+    # ── Param capture — echo the segment back ─────────────────────────────────
+    # GET /greet/:name  →  200  Welcome, {name}!
+    app.get("/greet/:name", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok("Welcome, " + req.param("name") + "!");
+    });
+
+    # ── Query string ──────────────────────────────────────────────────────────
+    # GET /search?q=…  →  200  Searching for: {q}
+    app.get("/search", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.ok("Searching for: " + req.query("q"));
+    });
+
+    # ── User by id — JSON response ────────────────────────────────────────────
+    # GET /users/:id  →  200  {"id":"{id}","active":true}
+    app.get("/users/:id", fn(req: ServerRequest): ServerResponse {
+        const id: string = req.param("id");
+        return ServerResponse.json("{\"id\":\"" + id + "\",\"active\":true}");
+    });
+
+    # ── Not-found demo — StatusCode::NotFound ─────────────────────────────────
+    # GET /gone  →  404  Resource no longer available
+    app.get("/gone", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.new()
+            .statusCode(StatusCode::NotFound)
+            .withBody("Resource no longer available");
+    });
+
+    # ── Conflict demo — chained builder ──────────────────────────────────────
+    # POST /create  →  409  {"error":"already exists"}   +   X-Request-Id header
+    app.post("/create", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.new()
+            .statusCode(StatusCode::Conflict)
+            .setHeader("X-Request-Id", "abc123")
+            .withBody("{\"error\":\"already exists\"}");
+    });
+
+    # ── POST echo ─────────────────────────────────────────────────────────────
+    # POST /echo  →  201  {body mirrored}
+    app.post("/echo", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.new()
+            .statusCode(StatusCode::Created)
+            .withBody(req.body());
+    });
+
+    # ── DELETE ────────────────────────────────────────────────────────────────
+    # DELETE /items/:id  →  204  (empty body)
+    app.delete("/items/:id", fn(req: ServerRequest): ServerResponse {
+        return ServerResponse.new()
+            .statusCode(StatusCode::NoContent)
+            .withBody("");
+    });
+
+    # ── Start the server asynchronously ──────────────────────────────────────
+    app.listenAsync(18082);
+    Async.sleep(150);   # wait for the socket to bind and listen
+
+    # ── Self-test requests ────────────────────────────────────────────────────
+    const client: HttpClient = HttpClient.new();
+
+    # Health check
+    const r1: HttpResponse = client.get("http://127.0.0.1:18082/health");
+    print("GET /health        → " + r1.status().toString() + "  " + r1.body());
+    r1.free();
+
+    # Static route
+    const r2: HttpResponse = client.get("http://127.0.0.1:18082/hello");
+    print("GET /hello         → " + r2.status().toString() + "  " + r2.body());
+    r2.free();
+
+    # Param capture
+    const r3: HttpResponse = client.get("http://127.0.0.1:18082/greet/Elysia");
+    print("GET /greet/Elysia  → " + r3.status().toString() + "  " + r3.body());
+    r3.free();
+
+    # Query string
+    const r4: HttpResponse = client.get("http://127.0.0.1:18082/search?q=CodeLang");
+    print("GET /search?q=…    → " + r4.status().toString() + "  " + r4.body());
+    r4.free();
+
+    # JSON response + Content-Type header
+    const r5: HttpResponse = client.get("http://127.0.0.1:18082/users/42");
+    print("GET /users/42      → " + r5.status().toString() + "  " + r5.body());
+    print("  Content-Type     = " + r5.header("Content-Type"));
+    r5.free();
+
+    # 404 via StatusCode enum
+    const r6: HttpResponse = client.get("http://127.0.0.1:18082/gone");
+    print("GET /gone          → " + r6.status().toString() + "  " + r6.body());
+    r6.free();
+
+    # 409 Conflict with custom header
+    const r7: HttpResponse = client.post("http://127.0.0.1:18082/create", "{}");
+    print("POST /create       → " + r7.status().toString() + "  " + r7.body());
+    print("  X-Request-Id     = " + r7.header("X-Request-Id"));
+    r7.free();
+
+    # 201 Created — POST echo
+    const r8: HttpResponse = client.post("http://127.0.0.1:18082/echo", "ping");
+    print("POST /echo         → " + r8.status().toString() + "  " + r8.body());
+    r8.free();
+
+    # 204 No Content — DELETE
+    const delReq: HttpRequest = HttpRequest.new("DELETE", "http://127.0.0.1:18082/items/99");
+    const r9: HttpResponse = client.send(delReq);
+    print("DELETE /items/99   → " + r9.status().toString());
+    r9.free();
+    delReq.free();
+
+    # ── StatusCode enum ───────────────────────────────────────────────────────
+    print("── StatusCode enum ───────────────────────────────────────────────");
+    print(StatusCode::Ok.toInt().toString()                + " " + StatusCode::Ok.toString());
+    print(StatusCode::Created.toInt().toString()           + " " + StatusCode::Created.toString());
+    print(StatusCode::NoContent.toInt().toString()         + " " + StatusCode::NoContent.toString());
+    print(StatusCode::NotFound.toInt().toString()          + " " + StatusCode::NotFound.toString());
+    print(StatusCode::Conflict.toInt().toString()          + " " + StatusCode::Conflict.toString());
+    print(StatusCode::TooManyRequests.toInt().toString()   + " " + StatusCode::TooManyRequests.toString());
+    print(StatusCode::InternalServerError.toInt().toString() + " " + StatusCode::InternalServerError.toString());
+
+    print("Ok.isSuccess()?             " + StatusCode::Ok.isSuccess().toString());
+    print("Created.isSuccess()?        " + StatusCode::Created.isSuccess().toString());
+    print("NotFound.isClientError()?   " + StatusCode::NotFound.isClientError().toString());
+    print("NotFound.isError()?         " + StatusCode::NotFound.isError().toString());
+    print("BadGateway.isServerError()? " + StatusCode::BadGateway.isServerError().toString());
+    print("MovedPermanently.isRedirect()? " + StatusCode::MovedPermanently.isRedirect().toString());
+
+    # ── Shutdown ──────────────────────────────────────────────────────────────
+    app.stop();
+    client.free();
+    app.free();
+    print("── server stopped ────────────────────────────────────────────────");
+}

@@ -1,0 +1,38 @@
+import "../../../stdlib/async";
+import "../../../stdlib/atomic";
+
+# atomic_shared fixture
+#
+# Demonstrates cross-thread mutation via Atomic<int>.
+# A lambda spawned in a background thread increments a shared counter.
+# Async.wait() provides the happens-before barrier that makes the
+# updated value visible to the main thread.
+#
+# Output (3 lines):
+#   [0] 0    — counter before spawn
+#   [1] 1    — counter after single task
+#   [2] 5    — counter after five sequential tasks
+
+fn main(): void {
+    const counter: Atomic<int> = Atomic.new(0);
+
+    print(counter.load());   # 0
+
+    const t1: Task = Async.spawn(fn(): void {
+        counter.add(1);
+    });
+    Async.wait(t1);
+    print(counter.load());   # 1
+
+    let i: int = 0;
+    while i < 4 {
+        const t: Task = Async.spawn(fn(): void {
+            counter.add(1);
+        });
+        Async.wait(t);
+        i = i + 1;
+    }
+    print(counter.load());   # 5
+
+    counter.free();
+}

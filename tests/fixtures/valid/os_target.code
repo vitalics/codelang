@@ -1,0 +1,40 @@
+import "../../../stdlib/os";
+
+# os_target.code — exercises OS.target() as a typed Target enum.
+#
+# Output (8 lines):
+#   [0]  full triple string   e.g. "arm64-apple-darwin"
+#   [1]  arch component       e.g. "arm64"
+#   [2]  vendor component     e.g. "apple"
+#   [3]  os component         e.g. "darwin"
+#   [4]  true                 — two calls return same toString()
+#   [5]  true                 — toString() length > 0
+#   [6]  true                 — arch() length > 0
+#   [7]  true                 — pattern match reaches a branch
+
+fn main() {
+    const t: Target = OS.target();
+
+    print(t.toString());                             # [0]  e.g. "arm64-apple-darwin"
+    print(t.arch());                                 # [1]  e.g. "arm64"
+    print(t.vendor());                               # [2]  e.g. "apple"
+    print(t.os());                                   # [3]  e.g. "darwin"
+
+    const t2: Target = OS.target();
+    print(t.toString() == t2.toString());            # [4]  true — idempotent
+
+    print(t.toString().length() > 0);               # [5]  true
+    print(t.arch().length() > 0);                   # [6]  true
+
+    # Pattern-match on the enum — every target hits one branch
+    const matched: bool = switch t {
+        Target::Arm64AppleDarwin    => true,
+        Target::X8664AppleDarwin    => true,
+        Target::Aarch64UnknownLinux => true,
+        Target::X8664UnknownLinux   => true,
+        Target::X8664PcWindows      => true,
+        Target::X8664UnknownFreebsd => true,
+        Target::Unknown             => true,
+    };
+    print(matched);                                  # [7]  true
+}

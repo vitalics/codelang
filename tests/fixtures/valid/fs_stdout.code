@@ -1,0 +1,32 @@
+import "stdlib/fs";
+
+# fs_stdout.code — exercises File.stdout(), File.stderr(), and
+# FileReadStream.pipeTo().
+#
+# Expected stdout (3 lines):
+#   hello stdout
+#   line two
+#   piped line
+
+fn main(): void {
+    # ── File.stdout() as a writable stream ──────────────────────────────────
+    const out: FileWriteStream = File.stdout();
+    out.writeln("hello stdout");
+    out.writeln("line two");
+    out.free();
+
+    # ── File.stderr() — written to stderr, invisible in stdout test ──────────
+    const err: FileWriteStream = File.stderr();
+    err.write("debug: ok\n");
+    err.free();
+
+    # ── FileReadStream.pipeTo — pipe a temp file to stdout ───────────────────
+    const path: string = Path.join(Dir.temp(), "codelang_pipe_test.txt");
+    File.write(path, "piped line\n");
+
+    const rs: FileReadStream = File.createReadStream(path);
+    const ws: FileWriteStream = File.stdout();
+    rs.pipeTo(ws);
+    rs.free();
+    ws.free();
+}

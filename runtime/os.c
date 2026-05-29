@@ -100,6 +100,60 @@ const char *os_dev_null(void) {
 #endif
 }
 
+/* os_target — LLVM-style target triple as a string, fully resolved at compile time.
+ *
+ * Format:  <arch>-<vendor>-<os>
+ * Used internally; the CodeLang API exposes the typed Target enum instead.
+ */
+const char *os_target(void) {
+#if   (defined(__aarch64__) || defined(__arm64__)) && defined(__APPLE__)
+    return "arm64-apple-darwin";
+#elif defined(__x86_64__) && defined(__APPLE__)
+    return "x86_64-apple-darwin";
+#elif defined(__aarch64__) || defined(__arm64__)
+    return "aarch64-unknown-linux";
+#elif defined(__x86_64__) || defined(_M_X64)
+    return "x86_64-unknown-linux";
+#elif defined(_WIN32)
+    return "x86_64-pc-windows";
+#elif defined(__FreeBSD__)
+    return "x86_64-unknown-freebsd";
+#else
+    return "unknown-unknown-unknown";
+#endif
+}
+
+/* os_target_tag — integer discriminant for the Target enum.
+ *
+ * Tag values mirror the CodeLang enum declaration order:
+ *   0  Arm64AppleDarwin    arm64-apple-darwin
+ *   1  X8664AppleDarwin    x86_64-apple-darwin
+ *   2  Aarch64UnknownLinux aarch64-unknown-linux
+ *   3  X8664UnknownLinux   x86_64-unknown-linux
+ *   4  X8664PcWindows      x86_64-pc-windows
+ *   5  X8664UnknownFreebsd x86_64-unknown-freebsd
+ *   6  Unknown             unknown-unknown-unknown
+ *
+ * All branches resolved by the C preprocessor — zero runtime cost.
+ */
+int os_target_tag(void) {
+#if   (defined(__aarch64__) || defined(__arm64__)) && defined(__APPLE__)
+    return 0;
+#elif defined(__x86_64__) && defined(__APPLE__)
+    return 1;
+#elif defined(__aarch64__) || defined(__arm64__)
+    return 2;
+#elif defined(__x86_64__) || defined(_M_X64)
+    return 3;
+#elif defined(_WIN32)
+    return 4;
+#elif defined(__FreeBSD__)
+    return 5;
+#else
+    return 6;
+#endif
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * 2. OS identity  (uname)
  * ═══════════════════════════════════════════════════════════════════════════ */

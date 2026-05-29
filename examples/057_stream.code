@@ -1,0 +1,84 @@
+import "stdlib/stream";
+
+# 057_stream.code — demonstrates MemoryStream and StringReader.
+#
+# Covers:
+#   • MemoryStream.new() — write text, readLine, length, reset, readByte
+#   • MemoryStream.from(string) — pre-load data and readAll
+#   • MemoryStream byte level — writeByte, readByte, toBuffer
+#   • StringReader.from(string) — cursor-based line parsing, reset, position
+#
+# Expected output:
+#   === MemoryStream: text I/O ===
+#   Hello
+#   World
+#   length: 12
+#   reset → position: 0
+#   first byte: 72
+#   === MemoryStream.from ===
+#   one
+#   two
+#   === MemoryStream: byte I/O ===
+#   byte: 65
+#   byte: 66
+#   byte: 67
+#   buffer length: 3
+#   === StringReader ===
+#   alpha
+#   beta
+#   gamma
+#   position after two reads: 17
+#   position after reset: 0
+
+fn main(): void {
+
+    # ── MemoryStream: text write / read ───────────────────────────────────────
+    print("=== MemoryStream: text I/O ===");
+    const ms: MemoryStream = MemoryStream.new();
+    ms.writeln("Hello");
+    ms.writeln("World");
+    print(ms.readLine());         # Hello
+    print(ms.readLine());         # World
+    print("length: " + ms.length().toString());   # 12  ("Hello\nWorld\n")
+    ms.reset();
+    print("reset → position: " + ms.position().toString());  # 0
+    const firstByte: int = ms.readByte();
+    print("first byte: " + firstByte.toString());  # 72 ('H')
+    ms.free();
+
+    # ── MemoryStream.from ─────────────────────────────────────────────────────
+    print("=== MemoryStream.from ===");
+    const ms2: MemoryStream = MemoryStream.from("one\ntwo\n");
+    print(ms2.readLine());   # one
+    print(ms2.readLine());   # two
+    ms2.free();
+
+    # ── MemoryStream: byte-level I/O ──────────────────────────────────────────
+    print("=== MemoryStream: byte I/O ===");
+    const ms3: MemoryStream = MemoryStream.new();
+    ms3.writeByte(65);   # 'A'
+    ms3.writeByte(66);   # 'B'
+    ms3.writeByte(67);   # 'C'
+    const b1: int = ms3.readByte();
+    const b2: int = ms3.readByte();
+    const b3: int = ms3.readByte();
+    print("byte: " + b1.toString());   # 65
+    print("byte: " + b2.toString());   # 66
+    print("byte: " + b3.toString());   # 67
+    ms3.reset();
+    const chunk: Buffer = ms3.read(3);
+    print("buffer length: " + chunk.length().toString());  # 3
+    chunk.free();
+    ms3.free();
+
+    # ── StringReader ──────────────────────────────────────────────────────────
+    print("=== StringReader ===");
+    const sr: StringReader = StringReader.from("alpha\nbeta\ngamma\n");
+    print(sr.readLine());   # alpha
+    print(sr.readLine());   # beta
+    print(sr.readLine());   # gamma
+    print("position after two reads: " + sr.position().toString());  # 17 (end of "alpha\nbeta\ngamma\n")
+    sr.reset();
+    print("position after reset: " + sr.position().toString());  # 0
+    sr.free();
+}

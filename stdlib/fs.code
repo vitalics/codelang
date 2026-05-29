@@ -48,6 +48,8 @@
 #   File.createReadStream(path)        → FileReadStream  lazy pull reader (chunk/line-by-line)
 #   File.createWriteStream(path)       → FileWriteStream buffered writer (truncate)
 #   File.createAppendStream(path)      → FileWriteStream buffered writer (append)
+#   File.stdout()                      → FileWriteStream non-owning wrapper for process stdout
+#   File.stderr()                      → FileWriteStream non-owning wrapper for process stderr
 #
 # Note: File.readStream / writeStream / appendStream (MemoryStream-based) have
 # been replaced by the above FileReadStream / FileWriteStream API. Import
@@ -173,6 +175,9 @@ extern fn fws_write_byte(s: FileWriteStream, b: int);
 extern fn fws_flush(s: FileWriteStream);
 extern fn fws_close(s: FileWriteStream);
 extern fn fws_free(s: FileWriteStream);
+extern fn fws_stdout(): FileWriteStream;
+extern fn fws_stderr(): FileWriteStream;
+extern fn frs_pipe_to(src: FileReadStream, dst: FileWriteStream);
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FileStat — metadata snapshot for a single path
@@ -332,6 +337,27 @@ File extends {
     export static fn createAppendStream(path: string): FileWriteStream {
         return fws_open(path, 1);
     }
+
+    # Return a non-owning FileWriteStream that wraps the process standard output.
+    # Writes go directly to stdout.  Calling .free() flushes the buffer but does
+    # NOT close stdout — the process keeps its standard streams open.
+    #
+    #   const out: FileWriteStream = File.stdout();
+    #   out.writeln("hello from stream");
+    #   out.free();
+    export static fn stdout(): FileWriteStream {
+        return fws_stdout();
+    }
+
+    # Return a non-owning FileWriteStream that wraps the process standard error.
+    # Writes go to stderr.  Calling .free() flushes but does not close stderr.
+    #
+    #   const err: FileWriteStream = File.stderr();
+    #   err.writeln("error: something went wrong");
+    #   err.free();
+    export static fn stderr(): FileWriteStream {
+        return fws_stderr();
+    }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -354,6 +380,7 @@ File extends {
 #   readLine()    → string   read up to the next '\n' (strips newline)
 #   readAll()     → string   read all remaining bytes
 #   atEnd()       → bool     true when EOF is reached
+#   pipeTo(dst)              copy all remaining bytes into a FileWriteStream
 #   close()                  close the file handle (keep struct alive)
 #   free()                   close + release the struct
 
@@ -397,6 +424,19 @@ FileReadStream extends {
     # Subsequent reads return "" / -1.  Idempotent.
     export fn close() {
         frs_close(self);
+    }
+
+    # Pipe all remaining bytes from this stream into `dst`, reading in 4 KiB
+    # chunks.  The read position advances to EOF.
+    # Neither stream is closed by this method — call .free() on each afterwards.
+    #
+    #   const rs: FileReadStream = File.createReadStream("data.bin");
+    #   const ws: FileWriteStream = File.stdout();
+    #   rs.pipeTo(ws);
+    #   rs.free();
+    #   ws.free();
+    export fn pipeTo(dst: FileWriteStream) {
+        frs_pipe_to(self, dst);
     }
 
     # Close the underlying file handle and free the stream struct.

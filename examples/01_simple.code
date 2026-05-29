@@ -13,8 +13,13 @@ Number extends Lolable {
   }
 }
 
+fn qwe(a: Number) {
+  print($"a: {a}");
+}
+
 fn main() {
     let i: int = 1;
     process(10);
+    qwe(10);
     panic("Something happends!");
 }

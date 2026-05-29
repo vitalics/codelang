@@ -1,0 +1,38 @@
+import "stdlib/network/uri";
+import "stdlib/network/http";
+
+# net_disposable.code — verifies Disposable conformance on networking types.
+#
+# Uses `using` for auto-disposal on:
+#   Uri              — dispose() → uri_free
+#   UriSearchParams  — dispose() → uri_params_free
+#   HttpHeaders      — dispose() → http_headers_free
+#   HttpRequest      — dispose() → http_request_free
+#
+# Expected output (4 lines):
+#   https
+#   2
+#   application/json
+#   ok
+
+fn main(): void {
+
+    # ── Uri ───────────────────────────────────────────────────────────────────
+    using u: Uri = Uri.parse("https://api.example.com/v1?page=2");
+    print(u.scheme());   # https
+
+    # ── UriSearchParams ───────────────────────────────────────────────────────
+    using params: UriSearchParams = u.searchParams();
+    print(params.get("page"));   # 2
+
+    # ── HttpHeaders ───────────────────────────────────────────────────────────
+    using h: HttpHeaders = HttpHeaders.new();
+    h.set("Content-Type", "application/json");
+    print(h.get("Content-Type"));   # application/json
+
+    # ── HttpRequest — verify no crash on auto-free via `using` ────────────────
+    using req: HttpRequest = HttpRequest.new("POST", "http://api.example.com/data");
+    req.setHeader("Accept", "application/json");
+    req.setBody("{\"x\":1}");
+    print("ok");   # ok — proves using block ran without crash
+}

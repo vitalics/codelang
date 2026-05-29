@@ -871,13 +871,35 @@ void frs_free(FileReadStream *s) {
 
 typedef struct {
     uint8_t  freed;
+    uint8_t  owned; /* 1 = we opened the FILE* and must fclose it; 0 = stdout/stderr */
     FILE    *fp;    /* NULL when closed or path not writable */
 } FileWriteStream;
 
 FileWriteStream *fws_open(const char *path, int32_t append) {
     FileWriteStream *s = (FileWriteStream *)calloc(1, sizeof(FileWriteStream));
     s->freed = 0;
+    s->owned = 1;
     if (path) s->fp = fopen(path, append ? "ab" : "wb");
+    return s;
+}
+
+/* Return a non-owning FileWriteStream that wraps the process stdout.
+ * Calling free() on the returned stream flushes stdout and releases the
+ * struct, but does NOT close the underlying file descriptor. */
+FileWriteStream *fws_stdout(void) {
+    FileWriteStream *s = (FileWriteStream *)calloc(1, sizeof(FileWriteStream));
+    s->freed = 0;
+    s->owned = 0;
+    s->fp    = stdout;
+    return s;
+}
+
+/* Return a non-owning FileWriteStream that wraps the process stderr. */
+FileWriteStream *fws_stderr(void) {
+    FileWriteStream *s = (FileWriteStream *)calloc(1, sizeof(FileWriteStream));
+    s->freed = 0;
+    s->owned = 0;
+    s->fp    = stderr;
     return s;
 }
 
@@ -899,19 +921,45 @@ void fws_flush(FileWriteStream *s) {
     fflush(s->fp);
 }
 
-/* Close the underlying file without freeing the struct. */
+/* Close the underlying file without freeing the struct.
+ * For owned streams (regular files) the FILE* is closed.
+ * For non-owned streams (stdout / stderr) the buffer is flushed instead. */
 void fws_close(FileWriteStream *s) {
     if (!s || s->freed) return;
-    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+    if (s->fp) {
+        if (s->owned) { fclose(s->fp); }
+        else          { fflush(s->fp); }
+        s->fp = NULL;
+    }
 }
 
-/* Close the underlying file and free the struct (double-free guard).
- * fclose() flushes the stdio buffer automatically, so an explicit flush()
- * before free() is not required. */
+/* Flush, close the underlying file handle (owned only), and free the struct.
+ * Double-free is detected and aborts.
+ * For stdout / stderr wrappers (owned == 0) the buffer is flushed but the
+ * underlying FILE* is never closed — the process keeps its standard streams. */
 void fws_free(FileWriteStream *s) {
     if (!s) return;
     if (s->freed) { fprintf(stderr, "double-free: FileWriteStream\n"); abort(); }
     s->freed = 1;
-    if (s->fp) { fclose(s->fp); s->fp = NULL; }
+    if (s->fp) {
+        if (s->owned) { fclose(s->fp); }
+        else          { fflush(s->fp); }
+        s->fp = NULL;
+    }
     free(s);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * frs_pipe_to — copy all remaining bytes from a FileReadStream into a
+ * FileWriteStream, in 4 KiB chunks.  The read position advances; the
+ * caller is responsible for closing / freeing both streams afterwards.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void frs_pipe_to(FileReadStream *src, FileWriteStream *dst) {
+    if (!src || src->freed || !src->fp) return;
+    if (!dst || dst->freed || !dst->fp) return;
+    uint8_t chunk[4096];
+    size_t  n;
+    while ((n = fread(chunk, 1, sizeof(chunk), src->fp)) > 0) {
+        fwrite(chunk, 1, n, dst->fp);
+    }
 }
